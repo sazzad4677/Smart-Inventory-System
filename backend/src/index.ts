@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 
 import { config } from './config/config';
 import connectDB from './config/db';
-import { globalErrorHandler } from './middleware/error.middleware';
+import { globalErrorHandler } from './middlewares/error.middleware';
 
 const app = express();
 
