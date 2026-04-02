@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import { config } from './config/config';
 import connectDB from './config/db';
 import { globalErrorHandler } from './middlewares/error.middleware';
+import router from './routes';
 
 const app = express();
 
@@ -24,6 +25,8 @@ app.use(cookieParser());
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', message: 'Server is running' });
 });
+
+app.use('/api', router);
 
 // Global Error Handler
 app.use(globalErrorHandler);
