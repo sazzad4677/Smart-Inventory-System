@@ -20,13 +20,13 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-// Global Error Handler
-app.use(globalErrorHandler);
-
 // Routes
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', message: 'Server is running' });
 });
+
+// Global Error Handler
+app.use(globalErrorHandler);
 
 // Start server after DB connection
 const startServer = async () => {
