@@ -23,8 +23,8 @@ const handleValidationErrorDB = (err: any) => {
 };
 
 const handleZodError = (err: ZodError) => {
-  const errors = err.issues.map((el) => `${el.path.join('.')}: ${el.message}`);
-  const message = `Invalid input data. ${errors.join('. ')}`;
+  const errors = err.issues.map((el) => el.message);
+  const message = errors.join('. ');
   return new AppError(message, 400);
 };
 
@@ -71,8 +71,7 @@ export const globalErrorHandler = (err: any, req: Request, res: Response, next: 
   if (config.server.nodeEnv === 'development') {
     sendErrorDev(err, res);
   } else {
-    let error = { ...err };
-    error.message = err.message;
+    let error = err;
 
     if (error.name === 'CastError') error = handleCastErrorDB(error);
     if (error.code === 11000) error = handleDuplicateFieldsDB(error);
