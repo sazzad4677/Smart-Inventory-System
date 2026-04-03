@@ -70,11 +70,25 @@ export const getDashboardStatsFromDB = async () => {
 
   const revenueToday = revenueTodayResult.length > 0 ? revenueTodayResult[0].total : 0;
 
+  // 5. Total Products
+  const totalProducts = await Product.countDocuments();
+
+  // 6. Product Summary (Specific items and their status)
+  const products = await Product.find().sort({ createdAt: -1 }).limit(6);
+
+  const productSummary = products.map((p) => ({
+    name: p.name,
+    stock_quantity: p.stock_quantity,
+    status: p.stock_quantity < p.min_threshold ? 'Low Stock' : 'OK',
+  }));
+
   return {
     totalOrdersToday,
     pendingVsCompleted,
     lowStockCount,
     revenueToday,
+    totalProducts,
+    productSummary,
   };
 };
 

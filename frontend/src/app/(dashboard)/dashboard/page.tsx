@@ -7,43 +7,65 @@ import {
   Package,
   ArrowUpRight,
   ArrowDownRight,
+  Clock,
+  CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  getDashboardData,
+  getLatestActivities,
+} from "@/actions/dashboard.actions";
+import { Badge } from "@/components/ui/badge";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const [statsResponse, activitiesResponse] = await Promise.all([
+    getDashboardData(),
+    getLatestActivities(),
+  ]);
+
+  const dashboardData = statsResponse.success ? statsResponse.data : null;
+  const activities = activitiesResponse.success ? activitiesResponse.data : [];
+
   const stats = [
     {
       title: "Total Orders Today",
-      value: "24",
+      value: dashboardData?.totalOrdersToday?.toString() || "0",
       icon: ShoppingCart,
-      description: "+12% from yesterday",
-      trend: "up",
+      description:
+        "Pending: " + (dashboardData?.pendingVsCompleted?.Pending || 0),
+      trend: "neutral",
       color: "text-indigo-400",
       bg: "bg-indigo-500/10",
     },
     {
       title: "Revenue Today",
-      value: "$1,234.56",
+      value: new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      }).format(dashboardData?.revenueToday || 0),
       icon: DollarSign,
-      description: "+8% from yesterday",
-      trend: "up",
+      description: "Estimated",
+      trend: "neutral",
       color: "text-emerald-400",
       bg: "bg-emerald-500/10",
     },
     {
       title: "Low Stock Items",
-      value: "7",
+      value: dashboardData?.lowStockCount?.toString() || "0",
       icon: AlertTriangle,
-      description: "Needs attention",
-      trend: "down",
+      description:
+        dashboardData?.lowStockCount > 0
+          ? "Needs attention"
+          : "Everything clear",
+      trend: dashboardData?.lowStockCount > 0 ? "down" : "up",
       color: "text-rose-400",
       bg: "bg-rose-500/10",
     },
     {
       title: "Total Products",
-      value: "142",
+      value: dashboardData?.totalProducts?.toString() || "0",
       icon: Package,
-      description: "Across 12 categories",
+      description: "In inventory",
       trend: "neutral",
       color: "text-amber-400",
       bg: "bg-amber-500/10",
@@ -53,18 +75,26 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
-        title="Dashboard"
+        title="Dashboard Overview"
         description="Welcome back! Here's what's happening with your inventory today."
       />
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4 lg:gap-8">
         {stats.map((stat) => (
-          <Card key={stat.title}>
+          <Card
+            key={stat.title}
+            className="bg-slate-900/40 backdrop-blur-xl border-white/5 transition-all hover:bg-slate-900/60 hover:border-white/10 group"
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-semibold tracking-wide uppercase text-slate-500">
+              <CardTitle className="text-sm font-semibold tracking-wide uppercase text-slate-500 group-hover:text-slate-400 transition-colors">
                 {stat.title}
               </CardTitle>
-              <div className={cn("p-2.5 rounded-xl shadow-inner", stat.bg)}>
+              <div
+                className={cn(
+                  "p-2.5 rounded-xl shadow-inner transition-transform group-hover:scale-110 duration-300",
+                  stat.bg,
+                )}
+              >
                 <stat.icon className={cn("h-5 w-5", stat.color)} />
               </div>
             </CardHeader>
@@ -100,55 +130,129 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid gap-8 grid-cols-1 xl:grid-cols-7">
-        <Card className="xl:col-span-4 bg-slate-900/40 backdrop-blur-xl border-white/5">
+      <div className="grid gap-8 grid-cols-1 xl:grid-cols-7 mt-4">
+        <Card className="xl:col-span-4 bg-slate-900/40 backdrop-blur-xl border-white/5 shadow-2xl">
           <CardHeader className="pb-6">
-            <CardTitle className="text-xl font-bold text-white">
-              Recent Activity
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xl font-bold text-white flex items-center gap-2">
+                <Clock className="h-5 w-5 text-indigo-400" />
+                Recent Activity
+              </CardTitle>
+              <button className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
+                View All
+              </button>
+            </div>
           </CardHeader>
-          <CardContent className="h-[380px] p-6 pt-0">
-            <div className="space-y-4">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-4 animate-in fade-in slide-in-from-left duration-500"
-                  style={{ animationDelay: `${i * 100}ms` }}
-                >
-                  <div className="h-2 w-2 rounded-full bg-indigo-500" />
-                  <div className="h-10 grow rounded-xl bg-white/5 border border-white/5 animate-pulse" />
+          <CardContent className="min-h-[380px] p-6 pt-0">
+            <div className="space-y-6">
+              {activities.length > 0 ? (
+                activities.map((activity: any, i: number) => (
+                  <div
+                    key={activity._id}
+                    className="flex items-start gap-4 animate-in fade-in slide-in-from-left duration-500 group"
+                    style={{ animationDelay: `${i * 100}ms` }}
+                  >
+                    <div className="mt-1.5 h-2 w-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)] group-hover:scale-150 transition-transform" />
+                    <div className="flex flex-col gap-1">
+                      <p className="text-sm font-medium text-slate-200 group-hover:text-white transition-colors">
+                        <span className="text-indigo-400 font-bold">
+                          {activity.user_id?.email || "System"}
+                        </span>{" "}
+                        {activity.action}
+                      </p>
+                      <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                        {activity.details}
+                      </p>
+                      <p className="text-[10px] text-slate-600 mt-0.5">
+                        {new Date(activity.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[300px] text-slate-500 gap-3">
+                  <div className="p-4 rounded-full bg-white/5">
+                    <Clock className="h-8 w-8 opacity-20" />
+                  </div>
+                  <p className="text-sm font-medium opacity-50 uppercase tracking-widest">
+                    No recent activity detected
+                  </p>
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
-        <Card className="xl:col-span-3 bg-slate-900/40 backdrop-blur-xl border-white/5">
+
+        <Card className="xl:col-span-3 bg-slate-900/40 backdrop-blur-xl border-white/5 shadow-2xl overflow-hidden">
           <CardHeader className="pb-6">
-            <CardTitle className="text-xl font-bold text-white">
-              Top Categories
+            <CardTitle className="text-xl font-bold text-white flex items-center gap-2">
+              <Package className="h-5 w-5 text-indigo-400" />
+              Product Summary
             </CardTitle>
           </CardHeader>
-          <CardContent className="h-[380px] p-6 pt-0 flex flex-col justify-end">
-            <div className="flex gap-5 items-end h-full px-2">
-              {[60, 40, 80, 50, 90].map((h, i) => (
-                <div
-                  key={i}
-                  className="group relative flex-1 animate-in slide-in-from-bottom duration-700"
-                  style={{ animationDelay: `${i * 150}ms` }}
-                >
+          <CardContent className="h-[380px] p-6 pt-0">
+            <div className="space-y-1">
+              {dashboardData?.productSummary?.length > 0 ? (
+                dashboardData.productSummary.map((product: any, i: number) => (
                   <div
-                    style={{ height: `${h}%` }}
-                    className="w-full rounded-t-xl bg-gradient-to-t from-indigo-600/40 to-indigo-500/60 border-t border-x border-white/10 group-hover:from-indigo-500 group-hover:to-indigo-400 transition-all cursor-help"
-                  />
-                  <div className="absolute inset-0 bg-indigo-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                    key={product.name}
+                    className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-all group border border-transparent hover:border-white/5 animate-in fade-in slide-in-from-right duration-500"
+                    style={{ animationDelay: `${i * 100}ms` }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={cn(
+                          "p-2 rounded-lg transition-colors",
+                          product.status === "Low Stock"
+                            ? "bg-rose-500/10 text-rose-400"
+                            : "bg-emerald-500/10 text-emerald-400",
+                        )}
+                      >
+                        {product.status === "Low Stock" ? (
+                          <AlertTriangle className="h-4 w-4" />
+                        ) : (
+                          <CheckCircle2 className="h-4 w-4" />
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-200 group-hover:text-white transition-colors">
+                          {product.name}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                          {product.stock_quantity} in stock
+                        </span>
+                      </div>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "text-[10px] uppercase tracking-widest font-bold border-0 px-2 py-0.5",
+                        product.status === "Low Stock"
+                          ? "bg-rose-500/10 text-rose-400"
+                          : "bg-emerald-500/10 text-emerald-400",
+                      )}
+                    >
+                      {product.status}
+                    </Badge>
+                  </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[300px] text-slate-500 gap-3 opacity-30 italic">
+                  <Package className="h-8 w-8" />
+                  <p className="text-[10px] tracking-widest uppercase font-bold">
+                    No products found
+                  </p>
                 </div>
-              ))}
+              )}
             </div>
-            <div className="flex gap-5 mt-6 px-2">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="flex-1 h-1.5 rounded-full bg-white/5" />
-              ))}
-            </div>
+
+            {dashboardData?.productSummary?.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-white/5">
+                <button className="w-full py-2.5 rounded-xl bg-white/5 text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all">
+                  Manage Inventory
+                </button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -2,16 +2,12 @@
 
 import { cookies } from "next/headers";
 import { UserLoginInput, UserSignupInput } from "@/lib/validations";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { apiFetch } from "@/lib/api";
 
 export async function loginAction(data: UserLoginInput) {
   try {
-    const response = await fetch(`${API_URL}/auth/login`, {
+    const response = await apiFetch("/auth/login", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(data),
     });
 
@@ -41,11 +37,8 @@ export async function loginAction(data: UserLoginInput) {
 
 export async function signupAction(data: UserSignupInput) {
   try {
-    const response = await fetch(`${API_URL}/auth/signup`, {
+    const response = await apiFetch("/auth/signup", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(data),
     });
 
