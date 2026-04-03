@@ -51,24 +51,23 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 w-64 bg-card border-r transition-transform duration-300 ease-in-out md:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 w-64 bg-slate-900/40 backdrop-blur-xl border-r border-white/5 transition-transform duration-300 ease-in-out md:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <div className="flex h-full flex-col">
-          <div className="flex h-16 items-center border-b px-6">
+          <div className="flex h-14 items-center border-b border-white/5 px-6">
             <Link
               href="/"
-              className="flex items-center gap-2 font-bold text-xl tracking-tight"
+              className="flex items-center gap-2 font-bold text-xl tracking-tight text-white hover:opacity-90 transition-opacity"
             >
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
+              <div className="h-8 w-8 rounded-lg bg-indigo-600 shadow-lg shadow-indigo-500/30 flex items-center justify-center text-white">
                 <Package className="h-5 w-5" />
               </div>
               <span>SmartInv</span>
             </Link>
           </div>
-
-          <nav className="flex-1 space-y-1 px-3 py-4">
+          <nav className="flex-1 space-y-1 px-3 py-2">
             {navigation.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -76,29 +75,45 @@ export function Sidebar() {
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all group",
                     isActive
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
+                      : "text-slate-400 hover:bg-white/5 hover:text-white",
                   )}
                   onClick={() => setIsOpen(false)}
                 >
-                  <item.icon className="h-4 w-4" />
+                  <item.icon
+                    className={cn(
+                      "h-4 relative z-10 w-4 transition-colors",
+                      isActive
+                        ? "text-white"
+                        : "text-slate-500 group-hover:text-indigo-400",
+                    )}
+                  />
                   {item.name}
                 </Link>
               );
             })}
           </nav>
 
-          <div className="border-t p-4 mt-auto">
+          <div className="border-t border-white/5 p-4 mt-auto">
             <Link
               href="/settings"
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
-                pathname === "/settings" && "bg-accent text-accent-foreground",
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all group",
+                pathname === "/settings"
+                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
+                  : "text-slate-400 hover:bg-white/5 hover:text-white",
               )}
             >
-              <Settings className="h-4 w-4" />
+              <Settings
+                className={cn(
+                  "h-4 relative z-10 w-4 transition-colors",
+                  pathname === "/settings"
+                    ? "text-white"
+                    : "text-slate-500 group-hover:text-indigo-400",
+                )}
+              />
               Settings
             </Link>
           </div>
