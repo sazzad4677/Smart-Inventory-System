@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Inventory", href: "/inventory", icon: Package },
   { name: "Orders", href: "/orders", icon: ShoppingCart },
   { name: "Categories", href: "/categories", icon: Tags },
@@ -58,7 +58,7 @@ export function Sidebar() {
         <div className="flex h-full flex-col">
           <div className="flex h-14 items-center border-b border-white/5 px-6">
             <Link
-              href="/"
+              href="/dashboard"
               className="flex items-center gap-2 font-bold text-xl tracking-tight text-white hover:opacity-90 transition-opacity"
             >
               <div className="h-8 w-8 rounded-lg bg-indigo-600 shadow-lg shadow-indigo-500/30 flex items-center justify-center text-white">

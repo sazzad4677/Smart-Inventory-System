@@ -12,8 +12,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { logoutAction } from "@/actions/auth.actions";
+import { useRouter } from "next/navigation";
 
 export function Navbar() {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logoutAction();
+    router.refresh();
+    router.push("/login");
+  };
+
   return (
     <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-white/5 bg-slate-950/40 backdrop-blur-md px-4 sm:px-6">
       <div className="flex flex-1 items-center gap-4">
@@ -75,7 +85,10 @@ export function Navbar() {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator className="bg-white/5" />
-            <DropdownMenuItem className="text-rose-400 focus:bg-rose-500/10 focus:text-rose-400 rounded-lg mx-1 cursor-pointer">
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="text-rose-400 focus:bg-rose-500/10 focus:text-rose-400 rounded-lg mx-1 cursor-pointer"
+            >
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
