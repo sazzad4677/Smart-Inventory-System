@@ -1,5 +1,10 @@
 import express from 'express';
-import { createOrder, getOrders, updateOrderStatus } from '../controllers/order.controller';
+import {
+  createOrder,
+  getOrders,
+  updateOrderStatus,
+  deleteOrder,
+} from '../controllers/order.controller';
 import { createOrderSchema, updateOrderStatusSchema } from '../validators/order.validator';
 import { validateRequest } from '../middlewares/validateRequest.middleware';
 import { protect, restrictTo } from '../middlewares/auth.middleware';
@@ -20,5 +25,8 @@ router.put(
   validateRequest(updateOrderStatusSchema),
   updateOrderStatus,
 );
+
+// ─── Restricted Routes (Admin Only) ──────────────────────────────
+router.delete('/:id', protect, restrictTo(UserRole.Admin), deleteOrder);
 
 export default router;

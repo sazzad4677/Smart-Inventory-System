@@ -27,9 +27,18 @@ const orderSchema = new Schema<IOrderDocument, IOrderModel>(
       type: Date,
       default: Date.now,
     },
+    is_deleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true, versionKey: false },
 );
+
+// Query middleware to exclude deleted records
+orderSchema.pre(/^find/, function (this: any) {
+  this.where({ is_deleted: { $ne: true } });
+});
 
 const Order = model<IOrderDocument, IOrderModel>('Order', orderSchema);
 export default Order;

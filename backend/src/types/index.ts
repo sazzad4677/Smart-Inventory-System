@@ -45,6 +45,7 @@ export interface IOrder {
   total_price: number;
   status: OrderStatus;
   created_at: Date;
+  is_deleted: boolean;
 }
 
 export interface IOrderItem {

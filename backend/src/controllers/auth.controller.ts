@@ -6,16 +6,19 @@ import type { SignupInput, LoginInput } from '../validators/auth.validator';
 
 // ─── POST /api/auth/signup ────────────────────────────────────────────────────
 export const signup = catchAsync(async (req: Request, res: Response) => {
-  const user = await signupUser(req.body as SignupInput);
+  const { user, token } = await signupUser(req.body as SignupInput);
 
   sendResponse(res, {
     statusCode: 201,
     success: true,
     message: 'Account created successfully.',
     data: {
-      id: user._id,
-      email: user.email,
-      role: user.role,
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+      },
     },
   });
 });

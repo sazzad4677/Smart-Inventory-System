@@ -47,7 +47,7 @@ const productSchema = new Schema<IProductDocument, IProductModel>(
       default: false,
     },
   },
-  { timestamps: true, versionKey: false },
+  { timestamps: true, optimisticConcurrency: true },
 );
 
 // Pre-save: auto-set status based on stock_quantity

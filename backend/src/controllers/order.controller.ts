@@ -5,6 +5,7 @@ import {
   createOrderInDB,
   getAllOrdersFromDB,
   updateOrderStatusInDB,
+  deleteOrderFromDB,
 } from '../services/order.service';
 
 // ─── POST /api/orders ───────────────────────────────────────────────────
@@ -45,6 +46,21 @@ export const updateOrderStatus = catchAsync(async (req: Request, res: Response) 
     statusCode: 200,
     success: true,
     message: 'Order status updated successfully.',
+    data: result,
+  });
+});
+
+// ─── DELETE /api/orders/:id ──────────────────────────────────────────────
+export const deleteOrder = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req as any).user?._id;
+  const { id } = req.params;
+
+  const result = await deleteOrderFromDB(userId, id as string);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Order deleted successfully.',
     data: result,
   });
 });

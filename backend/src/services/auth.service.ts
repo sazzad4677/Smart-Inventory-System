@@ -4,7 +4,9 @@ import type { SignupInput, LoginInput } from '../validators/auth.validator';
 import jwt from 'jsonwebtoken';
 
 // ─── Signup ───────────────────────────────────────────────────────────────────
-export const signupUser = async (data: SignupInput): Promise<IUserDocument> => {
+export const signupUser = async (
+  data: SignupInput,
+): Promise<{ user: IUserDocument; token: string }> => {
   const existing = await User.findOne({ email: data.email });
   if (existing) {
     throw new AppError('An account with this email already exists.', 409);
@@ -17,7 +19,16 @@ export const signupUser = async (data: SignupInput): Promise<IUserDocument> => {
     role: data.role,
   });
 
-  return user;
+  // Generate JWT token
+  const token = jwt.sign(
+    { id: user._id, role: user.role },
+    process.env.JWT_SECRET as string,
+    {
+      expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+    } as jwt.SignOptions,
+  );
+
+  return { user, token };
 };
 
 // ─── Login ────────────────────────────────────────────────────────────────────

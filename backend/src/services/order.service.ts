@@ -16,7 +16,7 @@ export const createOrderInDB = async (userId: string, payload: CreateOrderInput)
   const productIds = items.map((item) => item.product_id);
   const uniqueProductIds = new Set(productIds);
   if (uniqueProductIds.size !== productIds.length) {
-    throw new AppError('Conflict Detection: Duplicate products found in the order.', 400);
+    throw new AppError('Duplicate products found in the order.', 400);
   }
 
   const session = await mongoose.startSession();
@@ -92,7 +92,7 @@ export const createOrderInDB = async (userId: string, payload: CreateOrderInput)
         ...item,
         order_id: order._id,
       })),
-      { session },
+      { session, ordered: true },
     );
 
     // 8. Create Activity Log entry
@@ -104,7 +104,7 @@ export const createOrderInDB = async (userId: string, payload: CreateOrderInput)
           timestamp: new Date(),
         },
       ],
-      { session },
+      { session, ordered: true },
     );
 
     await session.commitTransaction();
@@ -141,21 +141,86 @@ export const updateOrderStatusInDB = async (
   session.startTransaction();
 
   try {
+    // 1. Get the current order BEFORE updating to check its previous status
+    const existingOrder = await Order.findById(orderId).session(session);
+    if (!existingOrder) {
+      throw new AppError('Order not found', 404);
+    }
+
+    // 2. Prevent redundant cancellations or updating already cancelled orders
+    if (existingOrder.status === OrderStatus.Cancelled) {
+      throw new AppError('Order is already cancelled.', 400);
+    }
+
+    // 3. Handle Restocking if the new status is Cancelled
+    if (status === OrderStatus.Cancelled) {
+      const orderItems = await OrderItem.find({ order_id: orderId }).session(session);
+
+      for (const item of orderItems) {
+        const product = await Product.findById(item.product_id).session(session);
+        if (product) {
+          product.stock_quantity += item.quantity;
+
+          // Reverse the restock flag if returning stock pushes it above threshold
+          if (product.stock_quantity >= product.min_threshold) {
+            product.is_restock_required = false;
+          }
+
+          // pre-save hook on Product should automatically set
+          // status back to 'Active' if stock goes above 0 here!
+          await product.save({ session });
+        }
+      }
+    }
+
+    // 4. Update the order
+    existingOrder.status = status;
+    await existingOrder.save({ session });
+
+    // 5. Log activity
+    await ActivityLog.create(
+      [
+        {
+          action_text: `Order #${existingOrder._id} status updated to ${status}`,
+          user_id: userId,
+          timestamp: new Date(),
+        },
+      ],
+      { session },
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return existingOrder;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
+};
+
+// ─── Delete Order From DB (Soft Delete) ─────────────────────────────────
+export const deleteOrderFromDB = async (userId: string, orderId: string) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
     const order = await Order.findByIdAndUpdate(
       orderId,
-      { status },
-      { returnDocument: 'after', runValidators: true, session },
+      { is_deleted: true },
+      { new: true, runValidators: true, session },
     );
 
     if (!order) {
       throw new AppError('Order not found', 404);
     }
 
-    // [Trigger] Activity log on status change
+    // Log activity
     await ActivityLog.create(
       [
         {
-          action_text: `Order #${order._id} status updated to ${status}`,
+          action_text: `Order #${order._id} soft-deleted`,
           user_id: userId,
           timestamp: new Date(),
         },
