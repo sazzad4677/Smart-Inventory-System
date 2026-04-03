@@ -42,6 +42,10 @@ const productSchema = new Schema<IProductDocument, IProductModel>(
       required: [true, 'Status is required'],
       default: ProductStatus.Active,
     },
+    is_restock_required: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true, versionKey: false },
 );

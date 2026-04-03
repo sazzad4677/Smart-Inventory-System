@@ -28,13 +28,26 @@ class QueryBuilder<T> {
 
   // ─── Filter ─────────────────────────────────────────────────────────────
   filter() {
-    const queryObj = { ...this.query }; // copy query
+    const queryObj = { ...this.query };
 
     // Filtering
-    const excludeFields = ['searchTerm', 'sort', 'limit', 'page', 'fields'];
+    const excludeFields = ['searchTerm', 'sort', 'limit', 'page', 'fields', 'startDate', 'endDate'];
     excludeFields.forEach((el) => delete queryObj[el]);
 
-    this.modelQuery = this.modelQuery.find(queryObj as any);
+    // Construct Date Range Query
+    const dateQuery: Record<string, any> = {};
+    if (this.query?.startDate || this.query?.endDate) {
+      const createdAtQuery: Record<string, any> = {};
+      if (this.query.startDate) {
+        createdAtQuery['$gte'] = new Date(this.query.startDate as string);
+      }
+      if (this.query.endDate) {
+        createdAtQuery['$lte'] = new Date(this.query.endDate as string);
+      }
+      dateQuery['createdAt'] = createdAtQuery;
+    }
+
+    this.modelQuery = this.modelQuery.find({ ...queryObj, ...dateQuery } as any);
 
     return this;
   }

@@ -25,7 +25,7 @@ export const protect = catchAsync(async (req: Request, res: Response, next: Next
   }
 
   // decoded payload to req.user for use in middleware and controllers
-  req.user = currentUser;
+  (req as any).user = currentUser;
 
   next();
 });
@@ -33,11 +33,12 @@ export const protect = catchAsync(async (req: Request, res: Response, next: Next
 // Middleware to restrict access based on roles
 export const restrictTo = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user || !req.user.role) {
+    const user = (req as any).user;
+    if (!user || !user.role) {
       return next(new AppError('You are not logged in or your role is undefined.', 401));
     }
 
-    if (!roles.includes(req.user.role)) {
+    if (!roles.includes(user.role)) {
       return next(new AppError('You do not have permission to perform this action', 403));
     }
 

@@ -37,6 +37,7 @@ export interface IProduct {
   stock_quantity: number;
   min_threshold: number;
   status: ProductStatus;
+  is_restock_required: boolean;
 }
 
 export interface IOrder {
