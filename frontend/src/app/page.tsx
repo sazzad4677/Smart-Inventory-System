@@ -1,65 +1,138 @@
-import Image from "next/image";
+import { PageHeader } from "@/components/layout/page-header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  ShoppingCart,
+  AlertTriangle,
+  DollarSign,
+  Package,
+  ArrowUpRight,
+  ArrowDownRight,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export default function Home() {
+export default function DashboardPage() {
+  const stats = [
+    {
+      title: "Total Orders Today",
+      value: "24",
+      icon: ShoppingCart,
+      description: "+12% from yesterday",
+      trend: "up",
+      color: "text-blue-600",
+      bg: "bg-blue-100/50 dark:bg-blue-900/20",
+    },
+    {
+      title: "Revenue Today",
+      value: "$1,234.56",
+      icon: DollarSign,
+      description: "+8% from yesterday",
+      trend: "up",
+      color: "text-emerald-600",
+      bg: "bg-emerald-100/50 dark:bg-emerald-900/20",
+    },
+    {
+      title: "Low Stock Items",
+      value: "7",
+      icon: AlertTriangle,
+      description: "Needs attention",
+      trend: "down",
+      color: "text-rose-600",
+      bg: "bg-rose-100/50 dark:bg-rose-900/20",
+    },
+    {
+      title: "Total Products",
+      value: "142",
+      icon: Package,
+      description: "Across 12 categories",
+      trend: "neutral",
+      color: "text-amber-600",
+      bg: "bg-amber-100/50 dark:bg-amber-900/20",
+    },
+  ];
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="flex flex-col gap-8">
+      <PageHeader
+        title="Dashboard"
+        description="Welcome back! Here's what's happening with your inventory today."
+      />
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <Card key={stat.title} className="shadow-sm border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {stat.title}
+              </CardTitle>
+              <div className={cn("p-2 rounded-full", stat.bg)}>
+                <stat.icon className={cn("h-4 w-4", stat.color)} />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold tracking-tight">
+                {stat.value}
+              </div>
+              <p className="flex items-center text-xs mt-1">
+                {stat.trend === "up" && (
+                  <>
+                    <ArrowUpRight className="mr-1 h-3.5 w-3.5 text-emerald-500 font-bold" />
+                    <span className="text-emerald-500 font-medium">
+                      {stat.description}
+                    </span>
+                  </>
+                )}
+                {stat.trend === "down" && (
+                  <>
+                    <ArrowDownRight className="mr-1 h-3.5 w-3.5 text-rose-500 font-bold" />
+                    <span className="text-rose-500 font-medium">
+                      {stat.description}
+                    </span>
+                  </>
+                )}
+                {stat.trend === "neutral" && (
+                  <span className="text-muted-foreground font-medium">
+                    {stat.description}
+                  </span>
+                )}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-7">
+        <Card className="lg:col-span-4 border-dashed bg-muted/20">
+          <CardHeader>
+            <CardTitle className="text-lg">Recent Activity</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[350px] p-6 space-y-4">
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div
+                  key={i}
+                  className="h-10 w-full animate-pulse rounded-md bg-muted/60"
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="lg:col-span-3 border-dashed bg-muted/20">
+          <CardHeader>
+            <CardTitle className="text-lg">Top Categories</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[350px] p-6 flex flex-col justify-end space-y-3">
+            <div className="flex gap-4 items-end h-full">
+              {[60, 40, 80, 50, 90].map((h, i) => (
+                <div
+                  key={i}
+                  style={{ height: `${h}%` }}
+                  className="w-full animate-pulse rounded-t-md bg-muted/80"
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
