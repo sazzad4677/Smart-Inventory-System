@@ -1,6 +1,6 @@
 "use client";
 
-import { useFieldArray, UseFormReturn } from "react-hook-form";
+import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 import { OrderInput } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, ShoppingCart, AlertCircle } from "lucide-react";
@@ -26,19 +26,25 @@ export function OrderItemsField({ form, products }: OrderItemsFieldProps) {
     name: "items",
   });
 
-  const watchItems = form.watch("items");
+  const watchItems = useWatch({
+    control: form.control,
+    name: "items",
+    defaultValue: form.getValues("items"),
+  });
 
   const totalPrice = useMemo(() => {
-    return watchItems.reduce((acc, item) => {
+    return (watchItems || []).reduce((acc, item) => {
+      if (!item.product_id) return acc;
       const product = products.find((p) => p._id === item.product_id);
       if (product) {
-        return acc + product.price * (item.quantity || 0);
+        const qty = Number(item.quantity) || 0;
+        return acc + product.price * qty;
       }
       return acc;
     }, 0);
   }, [watchItems, products]);
 
-  const selectedProductIds = watchItems.map((item) => item.product_id);
+  const selectedProductIds = (watchItems || []).map((item) => item.product_id);
 
   return (
     <div className="space-y-4 pt-2">
@@ -61,14 +67,16 @@ export function OrderItemsField({ form, products }: OrderItemsFieldProps) {
 
       <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
         {fields.map((field, index) => {
-          const currentProductId = form.getValues(`items.${index}.product_id`);
+          const itemValue = watchItems?.[index];
+          const currentProductId = itemValue?.product_id;
           const currentProduct = products.find(
             (p) => p._id === currentProductId,
           );
+          const currentQuantity = Number(itemValue?.quantity || 0);
+
           const isInvalid =
             currentProduct &&
-            (Number(form.watch(`items.${index}.quantity`)) >
-              currentProduct.stock_quantity ||
+            (currentQuantity > currentProduct.stock_quantity ||
               currentProduct.stock_quantity === 0);
 
           return (
