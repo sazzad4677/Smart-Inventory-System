@@ -5,7 +5,7 @@ import { apiFetch } from "@/lib/api";
 export async function getDashboardData() {
   try {
     const response = await apiFetch("/dashboard", {
-      next: { revalidate: 3600 }, // Cache for 1 hour
+      next: { revalidate: 60 }, // Cache for 1 minute
     });
 
     const result = await response.json();

@@ -15,7 +15,14 @@ import {
 import { logoutAction } from "@/actions/auth.actions";
 import { useRouter } from "next/navigation";
 
-export function Navbar() {
+interface NavbarProps {
+  user: {
+    email: string;
+    role: string;
+  } | null;
+}
+
+export function Navbar({ user }: NavbarProps) {
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -62,9 +69,11 @@ export function Navbar() {
             </div>
             <div className="hidden flex-col items-start text-sm md:flex">
               <span className="font-semibold leading-none text-white">
-                Admin User
+                {user?.role || "Guest"}
               </span>
-              <span className="text-xs text-slate-500">admin@example.com</span>
+              <span className="text-xs text-slate-500">
+                {user?.email || "guest@example.com"}
+              </span>
             </div>
             <ChevronDown className="h-4 w-4 text-slate-500" />
           </DropdownMenuTrigger>
