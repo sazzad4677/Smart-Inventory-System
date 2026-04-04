@@ -20,6 +20,7 @@ export default async function CategoriesPage() {
       <div className="relative group">
         {categories.length === 0 ? (
           <EmptyState
+            className="py-12 bg-slate-900/10 border-white/5 rounded-2xl"
             icon={<Tags className="h-12 w-12 text-indigo-500/40" />}
             title="No categories found"
             description="Start organizing your inventory by creating your first product category today."

@@ -25,8 +25,8 @@ export default async function InventoryPage({
   const categories = await getCategoriesAction();
 
   const categoryName = params.category;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const selectedCategory = categories.find(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (cat: any) => cat.name === categoryName,
   );
 
