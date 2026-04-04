@@ -146,6 +146,7 @@ export default async function DashboardPage() {
           <CardContent className="min-h-[380px] p-6 pt-0">
             <div className="space-y-6">
               {activities.length > 0 ? (
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 activities.map((activity: any, i: number) => (
                   <div
                     key={activity._id}
@@ -193,6 +194,7 @@ export default async function DashboardPage() {
           <CardContent className="h-[380px] p-6 pt-0">
             <div className="space-y-1">
               {dashboardData?.productSummary?.length > 0 ? (
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 dashboardData.productSummary.map((product: any, i: number) => (
                   <div
                     key={product.name}

@@ -1,26 +1,33 @@
 import { PageHeader } from "@/components/layout/page-header";
-import { Button } from "@/components/ui/button";
-import { Plus, Tags } from "lucide-react";
+import { Tags } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { getCategoriesAction } from "@/actions/category.actions";
+import { AddCategoryDialog } from "./_components/add-category-dialog";
+import { CategoryList } from "./_components/category-list";
 
-export default function CategoriesPage() {
+export default async function CategoriesPage() {
+  const categories = await getCategoriesAction();
+
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
         title="Categories"
         description="Organize your products into categories for better filtering."
       >
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Category
-        </Button>
+        <AddCategoryDialog />
       </PageHeader>
 
-      <EmptyState
-        icon={<Tags />}
-        title="No categories"
-        description="Organize your products by creating categories. This makes browsing and managing stock much easier."
-      />
+      <div className="relative group">
+        {categories.length === 0 ? (
+          <EmptyState
+            icon={<Tags className="h-12 w-12 text-indigo-500/40" />}
+            title="No categories found"
+            description="Start organizing your inventory by creating your first product category today."
+          />
+        ) : (
+          <CategoryList categories={categories} />
+        )}
+      </div>
     </div>
   );
 }

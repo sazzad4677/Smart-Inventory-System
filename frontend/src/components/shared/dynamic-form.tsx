@@ -125,7 +125,7 @@ export function DynamicForm<T extends FieldValues>({
                               type={field.type}
                               placeholder={field.placeholder}
                               className={cn(
-                                "bg-slate-900/50 border-white/10 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:ring-indigo-500/20 transition-all",
+                                "bg-slate-900/50 border-white/10 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:ring-indigo-500/20 transition-all py-6",
                                 Icon && "pl-10",
                               )}
                               {...formField}
