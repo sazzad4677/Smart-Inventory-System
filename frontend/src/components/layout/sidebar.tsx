@@ -12,6 +12,7 @@ import {
   Menu,
   X,
   History,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Categories", href: "/categories", icon: Tags },
   { name: "Inventory", href: "/inventory", icon: Package },
+  { name: "Restock Queue", href: "/restock-queue", icon: ClipboardList },
   { name: "Orders", href: "/orders", icon: ShoppingCart },
   { name: "Activity", href: "/activity", icon: History },
 ];

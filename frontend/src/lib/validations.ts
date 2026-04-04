@@ -72,3 +72,13 @@ export const OrderSchema = z.object({
 });
 
 export type OrderInput = z.infer<typeof OrderSchema>;
+
+// Restock Validation
+export const RestockSchema = z.object({
+  quantity_to_add: z.coerce
+    .number()
+    .int()
+    .positive("Quantity must be at least 1"),
+});
+
+export type RestockInput = z.infer<typeof RestockSchema>;

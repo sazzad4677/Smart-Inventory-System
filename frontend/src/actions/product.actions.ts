@@ -77,3 +77,35 @@ export async function createProductAction(data: ProductInput) {
     return { success: false, error: "Something went wrong" };
   }
 }
+
+export async function updateProductStockAction(
+  id: string,
+  current_stock: number,
+  quantity_to_add: number,
+) {
+  try {
+    const new_stock = current_stock + quantity_to_add;
+
+    const response = await apiFetch(`/products/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ stock_quantity: new_stock }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: result.message || "Failed to update stock",
+      };
+    }
+
+    revalidatePath("/inventory");
+    revalidatePath("/restock-queue");
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error) {
+    console.error("Update Stock Error:", error);
+    return { success: false, error: "Something went wrong" };
+  }
+}

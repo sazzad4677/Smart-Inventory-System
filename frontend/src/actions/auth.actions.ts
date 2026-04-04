@@ -28,6 +28,17 @@ export async function loginAction(data: UserLoginInput) {
       });
     }
 
+    if (result.data?.user) {
+      const cookieStore = await cookies();
+      cookieStore.set("user", JSON.stringify(result.data.user), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+      });
+    }
+
     return { success: true };
   } catch (error) {
     console.error("Login Error:", error);
@@ -59,6 +70,17 @@ export async function signupAction(data: UserSignupInput) {
       });
     }
 
+    if (result.data?.user) {
+      const cookieStore = await cookies();
+      cookieStore.set("user", JSON.stringify(result.data.user), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+      });
+    }
+
     return { success: true };
   } catch (error) {
     console.error("Signup Error:", error);
@@ -69,4 +91,19 @@ export async function signupAction(data: UserSignupInput) {
 export async function logoutAction() {
   const cookieStore = await cookies();
   cookieStore.delete("token");
+  cookieStore.delete("user");
+}
+
+export async function getCurrentUser() {
+  const cookieStore = await cookies();
+  const userData = cookieStore.get("user")?.value;
+
+  if (!userData) return null;
+
+  try {
+    return JSON.parse(userData);
+  } catch (error) {
+    console.error("Error parsing user cookie:", error);
+    return null;
+  }
 }

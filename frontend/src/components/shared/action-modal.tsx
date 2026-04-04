@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 
 interface ActionModalProps {
-  trigger: ReactElement;
+  trigger?: ReactElement;
   title: string;
   description?: string;
   children: ReactNode;
@@ -32,7 +32,7 @@ export function ActionModal({
 }: ActionModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogTrigger render={trigger} />
+      {trigger && <DialogTrigger render={trigger} />}
       <DialogContent
         className={cn(
           "sm:max-w-[450px] bg-slate-950/80 backdrop-blur-2xl border border-white/10 shadow-[0_0_50px_-12px_rgba(79,70,229,0.2)] dark",
