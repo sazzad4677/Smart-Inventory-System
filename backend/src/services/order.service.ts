@@ -53,8 +53,8 @@ export const createOrderInDB = async (userId: string, payload: CreateOrderInput)
       // 5. Update stock and handle Trigger B
       product.stock_quantity -= item.quantity;
 
-      // If stock < min_threshold, flag for Restock Queue
-      if (product.stock_quantity < product.min_threshold) {
+      // If stock <= min_threshold, flag for Restock Queue
+      if (product.stock_quantity <= product.min_threshold) {
         product.is_restock_required = true;
       }
 
@@ -173,7 +173,7 @@ export const updateOrderStatusInDB = async (
         const product = await Product.findById(item.product_id).session(session);
         if (product) {
           product.stock_quantity += item.quantity;
-          if (product.stock_quantity >= product.min_threshold) {
+          if (product.stock_quantity > product.min_threshold) {
             product.is_restock_required = false;
           }
           await product.save({ session });

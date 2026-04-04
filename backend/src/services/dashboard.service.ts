@@ -5,7 +5,7 @@ import ActivityLog from '../models/activity-log.model';
 // ─── GET /api/dashboard/restock-queue (Permissions: Admin, Manager) ──────────
 export const getRestockQueueFromDB = async () => {
   const products = await Product.find({
-    $expr: { $lt: ['$stock_quantity', '$min_threshold'] },
+    $expr: { $lte: ['$stock_quantity', '$min_threshold'] },
   }).sort({ stock_quantity: 1 });
 
   const result = products.map((product) => {
@@ -54,7 +54,7 @@ export const getDashboardStatsFromDB = async () => {
 
   // 3. Low stock count
   const lowStockCount = await Product.countDocuments({
-    $expr: { $lt: ['$stock_quantity', '$min_threshold'] },
+    $expr: { $lte: ['$stock_quantity', '$min_threshold'] },
   });
 
   // 4. Revenue today
@@ -79,7 +79,7 @@ export const getDashboardStatsFromDB = async () => {
   const productSummary = products.map((p) => ({
     name: p.name,
     stock_quantity: p.stock_quantity,
-    status: p.stock_quantity < p.min_threshold ? 'Low Stock' : 'OK',
+    status: p.stock_quantity <= p.min_threshold ? 'Low Stock' : 'OK',
   }));
 
   return {

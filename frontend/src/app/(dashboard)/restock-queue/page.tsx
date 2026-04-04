@@ -1,5 +1,5 @@
 import { PageHeader } from "@/components/layout/page-header";
-import { getRestockQueue } from "@/actions/restock.action";
+import { getRestockQueue } from "@/actions/restock.actions";
 import { RestockQueueTable } from "./_components/restock-queue-table";
 import { AlertCircle, ClipboardList } from "lucide-react";
 
