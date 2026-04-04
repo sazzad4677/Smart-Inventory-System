@@ -17,7 +17,7 @@ export function AddProductDialog({ categoryOptions }: AddProductDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const fields: FieldConfig[] = [
+  const fields: FieldConfig<ProductInput>[] = [
     {
       name: "name",
       label: "Product Name",
@@ -53,12 +53,16 @@ export function AddProductDialog({ categoryOptions }: AddProductDialogProps) {
 
   const onSubmit = (data: ProductInput) => {
     startTransition(async () => {
-      const result = await createProductAction(data);
-      if (result.success) {
-        setIsOpen(false);
-        toast.success("Product added successfully");
-      } else {
-        toast.error(result.error || "Failed to add product");
+      try {
+        const result = await createProductAction(data);
+        if (result.success) {
+          setIsOpen(false);
+          toast.success("Product added successfully");
+        } else {
+          toast.error(result.error || "Failed to add product");
+        }
+      } catch {
+        toast.error("Something went wrong");
       }
     });
   };

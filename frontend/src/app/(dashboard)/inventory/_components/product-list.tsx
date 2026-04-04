@@ -1,7 +1,7 @@
 "use client";
 
 import { DataTable, Column } from "@/components/shared/data-table";
-import { StatusBadge, ProductStatus } from "@/components/shared/status-badge";
+import { StatusBadge, StatusType } from "@/components/shared/status-badge";
 import { cn } from "@/lib/utils";
 
 interface Product {
@@ -17,7 +17,7 @@ interface Product {
   status: string;
 }
 
-const getProductStatus = (stock: number, threshold: number): ProductStatus => {
+const getProductStatus = (stock: number, threshold: number): StatusType => {
   if (stock <= 0) return "Out of Stock";
   if (stock <= threshold) return "Restock Queue";
   return "In Stock";

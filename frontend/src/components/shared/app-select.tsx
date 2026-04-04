@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 export interface AppSelectOption {
   label: string;
   value: string;
+  disabled?: boolean;
 }
 
 interface AppSelectProps {
@@ -69,7 +70,8 @@ export function AppSelect({
             <SelectItem
               key={opt.value}
               value={opt.value}
-              className="focus:bg-indigo-500/20 focus:text-indigo-400 py-3"
+              disabled={opt.disabled}
+              className="focus:bg-indigo-500/20 focus:text-indigo-400 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {opt.label}
             </SelectItem>
