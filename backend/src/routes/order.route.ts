@@ -13,22 +13,23 @@ import { UserRole } from '../types';
 
 const router: Router = express.Router();
 
-// ─── Protected Routes (Logged In Users) ───────────────────────────────────
-router.post('/', protect, validateRequest(createOrderSchema), createOrder);
+router.use(protect);
 
-router.get('/', protect, getOrders);
-router.get('/:id', protect, getOrderById);
+// ─── Protected Routes (Logged In Users) ───────────────────────────────────
+router.post('/', validateRequest(createOrderSchema), createOrder);
+
+router.get('/', getOrders);
+router.get('/:id', getOrderById);
 
 // ─── Restricted Routes (Admin/Manager Only) ──────────────────────────────
 router.put(
   '/:id/status',
-  protect,
   restrictTo(UserRole.Admin, UserRole.Manager),
   validateRequest(updateOrderStatusSchema),
   updateOrderStatus,
 );
 
 // ─── Restricted Routes (Admin Only) ──────────────────────────────
-router.delete('/:id', protect, restrictTo(UserRole.Admin), deleteOrder);
+router.delete('/:id', restrictTo(UserRole.Admin), deleteOrder);
 
 export default router;

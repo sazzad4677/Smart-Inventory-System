@@ -7,19 +7,14 @@ import { UserRole } from '../types';
 
 const router: Router = Router();
 
+router.use(protect);
+
 router.get('/', getProducts);
 
-router.post(
-  '/',
-  protect,
-  restrictTo(UserRole.Admin),
-  validateRequest(createProductSchema),
-  createProduct,
-);
+router.post('/', restrictTo(UserRole.Admin), validateRequest(createProductSchema), createProduct);
 
 router.put(
   '/:id',
-  protect,
   restrictTo(UserRole.Admin, UserRole.Manager),
   validateRequest(updateProductSchema),
   updateProduct,

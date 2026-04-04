@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import Order from '../models/order.model';
 import OrderItem from '../models/order-item.model';
 import Product from '../models/product.model';
@@ -148,7 +148,7 @@ export const getOrderByIdFromDB = async (orderId: string) => {
 
 // ─── Update Order Status In DB ───────────────────────────────────────────
 export const updateOrderStatusInDB = async (
-  userId: string,
+  userId: Types.ObjectId,
   orderId: string,
   status: OrderStatus,
 ) => {
@@ -216,7 +216,7 @@ export const updateOrderStatusInDB = async (
 };
 
 // ─── Delete Order From DB (Soft Delete) ─────────────────────────────────
-export const deleteOrderFromDB = async (userId: string, orderId: string) => {
+export const deleteOrderFromDB = async (userId: Types.ObjectId, orderId: string) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 

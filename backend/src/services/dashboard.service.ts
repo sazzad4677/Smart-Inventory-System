@@ -73,8 +73,8 @@ export const getDashboardStatsFromDB = async () => {
   // 5. Total Products
   const totalProducts = await Product.countDocuments();
 
-  // 6. Product Summary (Specific items and their status)
-  const products = await Product.find().sort({ createdAt: -1 }).limit(6);
+  // 6. Product Summary (Prioritize Low Stock Items)
+  const products = await Product.find().sort({ stock_quantity: 1, createdAt: -1 }).limit(6);
 
   const productSummary = products.map((p) => ({
     name: p.name,

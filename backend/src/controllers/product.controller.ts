@@ -10,7 +10,8 @@ import type { CreateProductInput, UpdateProductInput } from '../validators/produ
 
 // ─── POST /api/products ───────────────────────────────────────────────────
 export const createProduct = catchAsync(async (req: Request, res: Response) => {
-  const result = await createProductIntoDB(req.body as CreateProductInput);
+  const userId = (req as any).user?._id;
+  const result = await createProductIntoDB(userId, req.body as CreateProductInput);
 
   sendResponse(res, {
     statusCode: 201,
@@ -36,7 +37,8 @@ export const getProducts = catchAsync(async (req: Request, res: Response) => {
 // ─── PUT /api/products/:id ────────────────────────────────────────────────
 export const updateProduct = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await updateProductInDB(id as string, req.body as UpdateProductInput);
+  const userId = (req as any).user?._id;
+  const result = await updateProductInDB(userId, id as string, req.body as UpdateProductInput);
 
   sendResponse(res, {
     statusCode: 200,

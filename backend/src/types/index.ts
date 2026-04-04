@@ -1,5 +1,7 @@
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
+import { Types } from 'mongoose';
+
 export enum UserRole {
   Admin = 'Admin',
   Manager = 'Manager',
@@ -21,6 +23,7 @@ export enum OrderStatus {
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
 export interface IUser {
+  _id: Types.ObjectId;
   email: string;
   password_hash: string;
   role: UserRole;

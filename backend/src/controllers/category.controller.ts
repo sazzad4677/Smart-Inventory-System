@@ -6,7 +6,8 @@ import type { CreateCategoryInput } from '../validators/category.validator';
 
 // ─── POST /api/categories ──────────────────────────────────────────────────
 export const createCategory = catchAsync(async (req: Request, res: Response) => {
-  const result = await createCategoryIntoDB(req.body as CreateCategoryInput);
+  const userId = (req as any).user._id;
+  const result = await createCategoryIntoDB(userId, req.body as CreateCategoryInput);
 
   sendResponse(res, {
     statusCode: 201,
