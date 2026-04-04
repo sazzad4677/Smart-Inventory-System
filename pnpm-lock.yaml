@@ -96,9 +96,6 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.72.0(react@19.2.4))
-      '@inventory/shared':
-        specifier: workspace:*
-        version: link:../packages/shared
       '@radix-ui/react-label':
         specifier: ^2.1.8
         version: 2.1.8(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -169,12 +166,6 @@ importers:
       typescript:
         specifier: ^5
         version: 5.9.3
-
-  packages/shared:
-    dependencies:
-      zod:
-        specifier: ^3.24
-        version: 3.25.76
 
 packages:
 
