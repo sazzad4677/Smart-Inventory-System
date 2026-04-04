@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Lock, Mail, ArrowRight, Zap } from "lucide-react";
 
@@ -39,8 +39,11 @@ const loginFields: FieldConfig[] = [
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 
   async function onSubmit(data: UserLoginInput) {
     setError(null);
@@ -48,7 +51,7 @@ export default function LoginPage() {
       const result = await loginAction(data);
       if (result.success) {
         toast.success("Logged in successfully!");
-        router.push("/dashboard");
+        router.push(callbackUrl);
       } else {
         const errorMessage = result.error || "Login failed";
         setError(errorMessage);

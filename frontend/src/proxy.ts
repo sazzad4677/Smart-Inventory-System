@@ -1,37 +1,34 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const protectedRoutes = [
-  "/dashboard",
-  "/inventory",
-  "/categories",
-  "/orders",
-  "/activity",
-];
-const publicRoutes = ["/login", "/signup"];
+export function proxy(request: NextRequest) {
+  const token = request.cookies.get("token")?.value;
+  const { pathname } = request.nextUrl;
 
-export default function middleware(req: NextRequest) {
-  const token = req.cookies.get("token")?.value;
-  const path = req.nextUrl.pathname;
+  // Define public routes
+  const isPublicRoute =
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/signup") ||
+    pathname === "/" ||
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/_next") ||
+    pathname.includes(".");
 
-  const isProtectedRoute = protectedRoutes.some(
-    (route) => path === route || path.startsWith(route + "/"),
-  );
-  const isPublicRoute = publicRoutes.includes(path);
-
-  // Redirect / to /dashboard if logged in, or to /login if not
-  if (path === "/") {
-    return NextResponse.redirect(
-      new URL(token ? "/dashboard" : "/login", req.nextUrl),
-    );
+  // If no token and not a public route, redirect to login with callbackUrl
+  if (!token && !isPublicRoute) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("callbackUrl", pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
-  if (isProtectedRoute && !token) {
-    return NextResponse.redirect(new URL("/login", req.nextUrl));
+  // If token exists and on login/signup, redirect to dashboard
+  if (token && (pathname === "/login" || pathname === "/signup")) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  if (isPublicRoute && token) {
-    return NextResponse.redirect(new URL("/dashboard", req.nextUrl));
+  // Redirect / to /dashboard if logged in
+  if (token && pathname === "/") {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();
