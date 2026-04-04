@@ -35,11 +35,11 @@ export function DataTable<T>({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-white/5 bg-slate-900/20 backdrop-blur-sm overflow-hidden shadow-2xl shadow-indigo-500/5",
+        "w-full rounded-2xl border border-white/5 bg-slate-900/20 backdrop-blur-sm overflow-hidden shadow-2xl shadow-indigo-500/5",
         className,
       )}
     >
-      <div className="overflow-x-auto">
+      <div className="w-full overflow-x-auto">
         <Table>
           <TableHeader className="bg-white/[0.02]">
             <TableRow className="hover:bg-transparent border-white/5">

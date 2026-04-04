@@ -8,9 +8,11 @@ export async function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-full min-h-full font-sans text-slate-100">
       <Sidebar aria-label="Sidebar navigation" />
-      <div className="flex flex-1 flex-col md:pl-64">
+      <div className="flex flex-1 flex-col md:pl-64 min-w-0">
         <Navbar aria-label="Top navigation" user={user} />
-        <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8">{children}</main>
+        <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8 min-w-0">
+          {children}
+        </main>
       </div>
     </div>
   );
