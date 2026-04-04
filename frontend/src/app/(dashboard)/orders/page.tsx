@@ -7,6 +7,7 @@ import { OrderTable } from "./_components/order-table";
 import { AddOrderDialog } from "./_components/add-order-dialog";
 import { OrderFilters } from "./_components/order-filters";
 import { Pagination } from "@/components/shared/pagination";
+import { getCurrentUser } from "@/actions/auth.actions";
 
 interface OrdersPageProps {
   searchParams: Promise<{
@@ -19,13 +20,9 @@ interface OrdersPageProps {
 }
 
 export default async function OrdersPage({ searchParams }: OrdersPageProps) {
-  const {
-    page = "1",
-    limit = "10",
-    status,
-    startDate,
-    endDate,
-  } = await searchParams;
+  const [params, user] = await Promise.all([searchParams, getCurrentUser()]);
+
+  const { page = "1", limit = "10", status, startDate, endDate } = params;
 
   const { data, meta } = await getOrdersAction({
     page,
@@ -57,7 +54,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
 
       {data.length > 0 ? (
         <div className="flex flex-col gap-6">
-          <OrderTable orders={data} />
+          <OrderTable orders={data} userRole={user?.role} />
           <Pagination meta={meta} />
         </div>
       ) : (

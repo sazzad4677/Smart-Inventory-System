@@ -121,3 +121,27 @@ export async function updateOrderStatusAction(
     return { success: false, error: "Something went wrong" };
   }
 }
+
+export async function deleteOrderAction(id: string) {
+  try {
+    const response = await apiFetch(`/orders/${id}`, {
+      method: "DELETE",
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: result.message || "Failed to delete order",
+      };
+    }
+
+    revalidatePath("/orders");
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error) {
+    console.error("Delete Order Error:", error);
+    return { success: false, error: "Something went wrong" };
+  }
+}

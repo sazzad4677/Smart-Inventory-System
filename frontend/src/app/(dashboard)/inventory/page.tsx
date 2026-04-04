@@ -7,6 +7,7 @@ import { AddProductDialog } from "./_components/add-product-dialog";
 import { ProductList } from "./_components/product-list";
 import { InventoryFilters } from "./_components/inventory-filters";
 import { Pagination } from "@/components/shared/pagination";
+import { getCurrentUser } from "@/actions/auth.actions";
 
 interface InventoryPageProps {
   searchParams: Promise<{
@@ -20,7 +21,7 @@ interface InventoryPageProps {
 export default async function InventoryPage({
   searchParams,
 }: InventoryPageProps) {
-  const params = await searchParams;
+  const [params, user] = await Promise.all([searchParams, getCurrentUser()]);
 
   const categories = await getCategoriesAction();
 
@@ -51,7 +52,9 @@ export default async function InventoryPage({
         title="Inventory"
         description="Manage your products, stock levels, and pricing."
       >
-        <AddProductDialog categoryOptions={categoryOptions} />
+        {user?.role === "Admin" && (
+          <AddProductDialog categoryOptions={categoryOptions} />
+        )}
       </PageHeader>
 
       <div className="flex flex-col gap-6">

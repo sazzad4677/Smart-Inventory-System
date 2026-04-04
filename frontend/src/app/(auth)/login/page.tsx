@@ -17,7 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const loginFields: FieldConfig[] = [
@@ -57,11 +57,12 @@ export default function LoginPage() {
     });
   }
 
-  const handleDemoLogin = () => {
-    onSubmit({
-      email: "admin@demo.com",
-      password: "admin123",
-    });
+  const handleDemoLogin = (role: "Admin" | "Manager") => {
+    const credentials = {
+      Admin: { email: "admin@demo.com", password: "admin123" },
+      Manager: { email: "manager@demo.com", password: "manager123" },
+    };
+    onSubmit(credentials[role]);
   };
 
   return (
@@ -96,16 +97,30 @@ export default function LoginPage() {
             submitText="Sign In to Dashboard"
             isPending={isPending}
           />
-          <button
-            onClick={handleDemoLogin}
-            disabled={isPending}
-            className={cn(
-              buttonVariants({ variant: "outline" }),
-              "w-full mt-3 border-white/5 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white transition-all rounded-xl py-6",
-            )}
-          >
-            Login with Demo Account
-          </button>
+
+          <div className="grid grid-cols-2 gap-3 mt-4">
+            <Button
+              onClick={() => handleDemoLogin("Admin")}
+              disabled={isPending}
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "border-white/5 bg-indigo-500/5 text-indigo-300 hover:bg-indigo-500/10 hover:text-indigo-200 transition-all rounded-xl py-6 text-xs font-bold",
+              )}
+            >
+              Admin Demo
+            </Button>
+            <Button
+              onClick={() => handleDemoLogin("Manager")}
+              disabled={isPending}
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "border-white/5 bg-emerald-500/5 text-emerald-300 hover:bg-emerald-500/10 hover:text-emerald-200 transition-all rounded-xl py-6 text-xs font-bold",
+              )}
+            >
+              Manager Demo
+            </Button>
+          </div>
+
           {error && (
             <div className="mt-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
               {error}
