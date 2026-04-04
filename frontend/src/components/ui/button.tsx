@@ -33,6 +33,8 @@ const buttonVariants = cva(
         "icon-sm":
           "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
         "icon-lg": "size-9",
+        dashboard:
+          "h-11 px-6 rounded-xl shadow-lg shadow-indigo-500/10 active:scale-[0.98]",
       },
     },
     defaultVariants: {
