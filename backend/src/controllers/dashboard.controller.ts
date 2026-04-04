@@ -7,7 +7,7 @@ import {
   getLatestActivitiesFromDB,
 } from '../services/dashboard.service';
 
-// ─── GET /api/restock-queue ───────────────────────────────────────────────
+// ─── GET /api/dashboard/restock-queue (Permissions: Admin, Manager) ──────────
 export const getRestockQueue = catchAsync(async (req: Request, res: Response) => {
   const result = await getRestockQueueFromDB();
 
@@ -19,7 +19,7 @@ export const getRestockQueue = catchAsync(async (req: Request, res: Response) =>
   });
 });
 
-// ─── GET /api/dashboard ───────────────────────────────────────────────────
+// ─── GET /api/dashboard/dashboard (Permissions: Admin, Manager) ──────────────
 export const getDashboardStats = catchAsync(async (req: Request, res: Response) => {
   const result = await getDashboardStatsFromDB();
 
@@ -31,7 +31,7 @@ export const getDashboardStats = catchAsync(async (req: Request, res: Response) 
   });
 });
 
-// ─── GET /api/activities ──────────────────────────────────────────────────
+// ─── GET /api/dashboard/activities (Permissions: Admin, Manager) ─────────────
 export const getLatestActivities = catchAsync(async (req: Request, res: Response) => {
   const result = await getLatestActivitiesFromDB();
 

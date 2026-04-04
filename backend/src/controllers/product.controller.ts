@@ -8,7 +8,7 @@ import {
 } from '../services/product.service';
 import type { CreateProductInput, UpdateProductInput } from '../validators/product.validator';
 
-// ─── POST /api/products ───────────────────────────────────────────────────
+// ─── POST /api/product (Permissions: Admin Only) ─────────────────────────────
 export const createProduct = catchAsync(async (req: Request, res: Response) => {
   const userId = (req as any).user?._id;
   const result = await createProductIntoDB(userId, req.body as CreateProductInput);
@@ -21,7 +21,7 @@ export const createProduct = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// ─── GET /api/products ────────────────────────────────────────────────────
+// ─── GET /api/product (Permissions: Admin, Manager) ──────────────────────────
 export const getProducts = catchAsync(async (req: Request, res: Response) => {
   const { meta, result } = await getAllProductsFromDB(req.query);
 
@@ -34,7 +34,7 @@ export const getProducts = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// ─── PUT /api/products/:id ────────────────────────────────────────────────
+// ─── PUT /api/product/:id (Permissions: Admin, Manager) ──────────────────────
 export const updateProduct = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const userId = (req as any).user?._id;

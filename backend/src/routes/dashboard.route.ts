@@ -13,13 +13,13 @@ const router: Router = Router();
 router.use(protect);
 router.use(restrictTo(UserRole.Admin, UserRole.Manager));
 
-// ─── GET /api/restock-queue ───────────────────────────────────────────────
+// ─── GET /api/dashboard/restock-queue (Permissions: Admin, Manager) ──────────
 router.get('/restock-queue', getRestockQueue);
 
-// ─── GET /api/dashboard ───────────────────────────────────────────────────
+// ─── GET /api/dashboard/dashboard (Permissions: Admin, Manager) ──────────────
 router.get('/dashboard', getDashboardStats);
 
-// ─── GET /api/activities ──────────────────────────────────────────────────
+// ─── GET /api/dashboard/activities (Permissions: Admin, Manager) ─────────────
 router.get('/activities', getLatestActivities);
 
 export default router;

@@ -4,7 +4,7 @@ import { sendResponse } from '../utils/sendResponse';
 import { signupUser, loginUser } from '../services/auth.service';
 import type { SignupInput, LoginInput } from '../validators/auth.validator';
 
-// ─── POST /api/auth/signup ────────────────────────────────────────────────────
+// ─── POST /api/auth/signup (Permissions: Public) ────────────────────────────────
 export const signup = catchAsync(async (req: Request, res: Response) => {
   const { user, token } = await signupUser(req.body as SignupInput);
 
@@ -23,7 +23,7 @@ export const signup = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// ─── POST /api/auth/login ─────────────────────────────────────────────────────
+// ─── POST /api/auth/login (Permissions: Public) ─────────────────────────────────
 export const login = catchAsync(async (req: Request, res: Response) => {
   const { user, token } = await loginUser(req.body as LoginInput);
 

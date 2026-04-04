@@ -4,7 +4,7 @@ import { sendResponse } from '../utils/sendResponse';
 import { createCategoryIntoDB, getAllCategoriesFromDB } from '../services/category.service';
 import type { CreateCategoryInput } from '../validators/category.validator';
 
-// ─── POST /api/categories ──────────────────────────────────────────────────
+// ─── POST /api/category (Permissions: Admin, Manager) ────────────────────────
 export const createCategory = catchAsync(async (req: Request, res: Response) => {
   const userId = (req as any).user._id;
   const result = await createCategoryIntoDB(userId, req.body as CreateCategoryInput);
@@ -17,7 +17,7 @@ export const createCategory = catchAsync(async (req: Request, res: Response) => 
   });
 });
 
-// ─── GET /api/categories ───────────────────────────────────────────────────
+// ─── GET /api/category (Permissions: Admin, Manager) ─────────────────────────
 export const getCategories = catchAsync(async (_req: Request, res: Response) => {
   const result = await getAllCategoriesFromDB();
 

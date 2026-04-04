@@ -4,7 +4,7 @@ import ActivityLog from '../models/activity-log.model';
 import { CreateProductInput, UpdateProductInput } from '../validators/product.validator';
 import { Types } from 'mongoose';
 
-// ─── Create Product Into DB ────────────────────────────────────────────────
+// ─── POST /api/product (Permissions: Admin Only) ─────────────────────────────
 export const createProductIntoDB = async (userId: Types.ObjectId, payload: CreateProductInput) => {
   const result = await Product.create(payload as any);
 
@@ -19,7 +19,7 @@ export const createProductIntoDB = async (userId: Types.ObjectId, payload: Creat
   return result;
 };
 
-// ─── Get All Products From DB ───────────────────────────────────────────────
+// ─── GET /api/product (Permissions: Admin, Manager) ──────────────────────────
 export const getAllProductsFromDB = async (query: Record<string, unknown>) => {
   const searchableFields = ['name']; // As per user request
 
@@ -42,7 +42,7 @@ export const getAllProductsFromDB = async (query: Record<string, unknown>) => {
   };
 };
 
-// ─── Update Product In DB ──────────────────────────────────────────────────
+// ─── PUT /api/product/:id (Permissions: Admin, Manager) ──────────────────────
 export const updateProductInDB = async (
   userId: Types.ObjectId,
   id: string,

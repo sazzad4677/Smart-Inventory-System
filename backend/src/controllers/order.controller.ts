@@ -9,7 +9,7 @@ import {
   deleteOrderFromDB,
 } from '../services/order.service';
 
-// ─── POST /api/orders ───────────────────────────────────────────────────
+// ─── POST /api/order (Permissions: Private) ──────────────────────────────────
 export const createOrder = catchAsync(async (req: Request, res: Response) => {
   const userId = (req as any).user?._id;
   const result = await createOrderInDB(userId, req.body);
@@ -22,7 +22,7 @@ export const createOrder = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// ─── GET /api/orders ────────────────────────────────────────────────────
+// ─── GET /api/order (Permissions: Private) ───────────────────────────────────
 export const getOrders = catchAsync(async (req: Request, res: Response) => {
   const { meta, result } = await getAllOrdersFromDB(req.query);
 
@@ -35,7 +35,7 @@ export const getOrders = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// ─── GET /api/orders/:id ────────────────────────────────────────────────
+// ─── GET /api/order/:id (Permissions: Private) ───────────────────────────────
 export const getOrderById = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const result = await getOrderByIdFromDB(id as string);
@@ -48,7 +48,7 @@ export const getOrderById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// ─── PUT /api/orders/:id/status ──────────────────────────────────────────
+// ─── PUT /api/order/:id/status (Permissions: Admin, Manager) ─────────────────
 export const updateOrderStatus = catchAsync(async (req: Request, res: Response) => {
   const userId = (req as any).user?._id;
   const { id } = req.params;
@@ -64,7 +64,7 @@ export const updateOrderStatus = catchAsync(async (req: Request, res: Response) 
   });
 });
 
-// ─── DELETE /api/orders/:id ──────────────────────────────────────────────
+// ─── DELETE /api/order/:id (Permissions: Admin Only) ──────────────────────────
 export const deleteOrder = catchAsync(async (req: Request, res: Response) => {
   const userId = (req as any).user?._id;
   const { id } = req.params;

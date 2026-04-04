@@ -13,15 +13,19 @@ import { UserRole } from '../types';
 
 const router: Router = express.Router();
 
+// Apply auth protection to all order routes
 router.use(protect);
 
-// ─── Protected Routes (Logged In Users) ───────────────────────────────────
+// ─── POST /api/order (Permissions: Private) ──────────────────────────────────
 router.post('/', validateRequest(createOrderSchema), createOrder);
 
+// ─── GET /api/order (Permissions: Private) ───────────────────────────────────
 router.get('/', getOrders);
+
+// ─── GET /api/order/:id (Permissions: Private) ───────────────────────────────
 router.get('/:id', getOrderById);
 
-// ─── Restricted Routes (Admin/Manager Only) ──────────────────────────────
+// ─── PUT /api/order/:id/status (Permissions: Admin, Manager) ─────────────────
 router.put(
   '/:id/status',
   restrictTo(UserRole.Admin, UserRole.Manager),
@@ -29,7 +33,7 @@ router.put(
   updateOrderStatus,
 );
 
-// ─── Restricted Routes (Admin Only) ──────────────────────────────
+// ─── DELETE /api/order/:id (Permissions: Admin Only) ──────────────────────────
 router.delete('/:id', restrictTo(UserRole.Admin), deleteOrder);
 
 export default router;

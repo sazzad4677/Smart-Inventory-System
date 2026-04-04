@@ -3,7 +3,7 @@ import { AppError } from '../utils/AppError';
 import type { SignupInput, LoginInput } from '../validators/auth.validator';
 import jwt from 'jsonwebtoken';
 
-// ─── Signup ───────────────────────────────────────────────────────────────────
+// ─── POST /api/auth/signup (Permissions: Public) ────────────────────────────────
 export const signupUser = async (
   data: SignupInput,
 ): Promise<{ user: IUserDocument; token: string }> => {
@@ -31,7 +31,7 @@ export const signupUser = async (
   return { user, token };
 };
 
-// ─── Login ────────────────────────────────────────────────────────────────────
+// ─── POST /api/auth/login (Permissions: Public) ─────────────────────────────────
 export const loginUser = async (
   data: LoginInput,
 ): Promise<{ user: IUserDocument; token: string }> => {

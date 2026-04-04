@@ -3,7 +3,7 @@ import ActivityLog from '../models/activity-log.model';
 import { CreateCategoryInput } from '../validators/category.validator';
 import { Types } from 'mongoose';
 
-// ─── Create Category Into DB ───────────────────────────────────────────────
+// ─── POST /api/category (Permissions: Admin, Manager) ────────────────────────
 export const createCategoryIntoDB = async (
   userId: Types.ObjectId,
   payload: CreateCategoryInput,
@@ -21,7 +21,7 @@ export const createCategoryIntoDB = async (
   return result;
 };
 
-// ─── Get All Categories From DB ──────────────────────────────────────────────
+// ─── GET /api/category (Permissions: Admin, Manager) ─────────────────────────
 export const getAllCategoriesFromDB = async () => {
   const result = await Category.find().sort({ name: 1 });
   return result;

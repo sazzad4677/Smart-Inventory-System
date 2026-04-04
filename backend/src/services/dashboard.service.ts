@@ -2,7 +2,7 @@ import Product from '../models/product.model';
 import Order from '../models/order.model';
 import ActivityLog from '../models/activity-log.model';
 
-// ─── GET /api/restock-queue Logic ───────────────────────────────────────────
+// ─── GET /api/dashboard/restock-queue (Permissions: Admin, Manager) ──────────
 export const getRestockQueueFromDB = async () => {
   const products = await Product.find({
     $expr: { $lt: ['$stock_quantity', '$min_threshold'] },
@@ -28,7 +28,7 @@ export const getRestockQueueFromDB = async () => {
   return result;
 };
 
-// ─── GET /api/dashboard Logic ──────────────────────────────────────────────
+// ─── GET /api/dashboard/dashboard (Permissions: Admin, Manager) ──────────────
 export const getDashboardStatsFromDB = async () => {
   const startToday = new Date();
   startToday.setHours(0, 0, 0, 0);
@@ -92,7 +92,7 @@ export const getDashboardStatsFromDB = async () => {
   };
 };
 
-// ─── GET /api/activities Logic ──────────────────────────────────────────────
+// ─── GET /api/dashboard/activities (Permissions: Admin, Manager) ─────────────
 export const getLatestActivitiesFromDB = async () => {
   const activities = await ActivityLog.find()
     .sort({ timestamp: -1 })

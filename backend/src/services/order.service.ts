@@ -9,7 +9,7 @@ import { OrderStatus, ProductStatus } from '../types';
 import QueryBuilder from '../builders/QueryBuilder';
 import { formatOrderId } from '../utils/formatOrderId';
 
-// ─── Create Order In DB ──────────────────────────────────────────────────
+// ─── POST /api/order (Permissions: Private) ──────────────────────────────────
 export const createOrderInDB = async (userId: string, payload: CreateOrderInput) => {
   const { customer_name, items } = payload;
 
@@ -119,7 +119,7 @@ export const createOrderInDB = async (userId: string, payload: CreateOrderInput)
   }
 };
 
-// ─── Get All Orders From DB ──────────────────────────────────────────────
+// ─── GET /api/order (Permissions: Private) ───────────────────────────────────
 export const getAllOrdersFromDB = async (query: Record<string, unknown>) => {
   const orderQuery = new QueryBuilder(Order.find(), query).filter().sort().paginate().fields();
 
@@ -132,7 +132,7 @@ export const getAllOrdersFromDB = async (query: Record<string, unknown>) => {
   };
 };
 
-// ─── Get Single Order By ID From DB ─────────────────────────────────────
+// ─── GET /api/order/:id (Permissions: Private) ───────────────────────────────
 export const getOrderByIdFromDB = async (orderId: string) => {
   const order = await Order.findById(orderId);
   if (!order) {
@@ -147,7 +147,7 @@ export const getOrderByIdFromDB = async (orderId: string) => {
   };
 };
 
-// ─── Update Order Status In DB ───────────────────────────────────────────
+// ─── PUT /api/order/:id/status (Permissions: Admin, Manager) ─────────────────
 export const updateOrderStatusInDB = async (
   userId: Types.ObjectId,
   orderId: string,
@@ -157,18 +157,15 @@ export const updateOrderStatusInDB = async (
   session.startTransaction();
 
   try {
-    // 1. Get the current order BEFORE updating to check its previous status
     const existingOrder = await Order.findById(orderId).session(session);
     if (!existingOrder) {
       throw new AppError('Order not found', 404);
     }
 
-    // 2. Prevent redundant cancellations or updating already cancelled orders
     if (existingOrder.status === OrderStatus.Cancelled) {
       throw new AppError('Order is already cancelled.', 400);
     }
 
-    // 3. Handle Restocking if the new status is Cancelled
     if (status === OrderStatus.Cancelled) {
       const orderItems = await OrderItem.find({ order_id: orderId }).session(session);
 
@@ -176,24 +173,17 @@ export const updateOrderStatusInDB = async (
         const product = await Product.findById(item.product_id).session(session);
         if (product) {
           product.stock_quantity += item.quantity;
-
-          // Reverse the restock flag if returning stock pushes it above threshold
           if (product.stock_quantity >= product.min_threshold) {
             product.is_restock_required = false;
           }
-
-          // pre-save hook on Product should automatically set
-          // status back to 'Active' if stock goes above 0 here!
           await product.save({ session });
         }
       }
     }
 
-    // 4. Update the order
     existingOrder.status = status;
     await existingOrder.save({ session });
 
-    // 5. Log activity
     await ActivityLog.create(
       [
         {
@@ -216,7 +206,7 @@ export const updateOrderStatusInDB = async (
   }
 };
 
-// ─── Delete Order From DB (Soft Delete) ─────────────────────────────────
+// ─── DELETE /api/order/:id (Permissions: Admin Only) ──────────────────────────
 export const deleteOrderFromDB = async (userId: Types.ObjectId, orderId: string) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -232,7 +222,6 @@ export const deleteOrderFromDB = async (userId: Types.ObjectId, orderId: string)
       throw new AppError('Order not found', 404);
     }
 
-    // Log activity
     await ActivityLog.create(
       [
         {
