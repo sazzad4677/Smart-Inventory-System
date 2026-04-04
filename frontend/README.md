@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📈 Smart Inventory System - Frontend
 
-## Getting Started
+A modern, responsive, and data-driven dashboard for the Smart Inventory Management System. Built with **Next.js 15**, **React 19**, and **Tailwind CSS 4**, this interface provides real-time access to stock tracking, order management, and detailed analytics.
 
-First, run the development server:
+## 🛠️ Technologies
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Framework**: [Next.js 15 (App Router)](https://nextjs.org/)
+- **Library**: React 19
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+- **UI Components**: [Shadcn UI](https://ui.shadcn.com/), Radix UI
+- **Icons**: Lucide React
+- **Forms**: React Hook Form, Zod
+- **Notifications**: Sonner (Toast)
+
+## 📂 Project Structure
+
+```text
+src/
+├── actions/      # Next.js Server Actions for API communication
+├── app/          # App Router pages and layouts
+│   ├── (auth)/     # Authentication routes (Login/Signup)
+│   ├── (dashboard)/# Main application dashboard and management pages
+│   └── layout.tsx  # Global layout and theme provider
+├── components/   # Reusable UI and layout components
+├── hooks/        # Custom React hooks
+├── lib/          # Utilities and shared configurations
+└── proxy.ts      # API proxy configuration
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Getting Started
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 1. Installation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm install
+```
 
-## Learn More
+### 2. Environment Setup
 
-To learn more about Next.js, take a look at the following resources:
+Create a `.env.local` file based on `.env.example`:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+cp .env.example .env.local
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 3. Running the Application
 
-## Deploy on Vercel
+```bash
+# Development mode
+pnpm dev
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Production build
+pnpm build
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## ✨ Features
+
+- **🔐 Auth Flow**: Secure login and signup with server-side validation.
+- **📊 Analytics Dashboard**: Live metrics for products, categories, and inventory status.
+- **📦 Inventory Tracker**: Manage products with low-stock alerts and category filters.
+- **🛒 Order History**: Track order lifecycle from pending to delivered.
+- **🌓 Theme Support**: Built-in dark and light mode for better accessibility.
+
+---
+
+## 🎨 UI/UX Design
+
+- **shadcn/ui**: High-quality, accessible components for a premium feel.
+- **Lucide Icons**: Consistent and modern iconography throughout the app.
+- **Responsive Layout**: Optimized for seamless use across desktop and mobile devices.
