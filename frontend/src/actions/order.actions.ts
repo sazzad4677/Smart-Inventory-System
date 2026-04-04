@@ -7,6 +7,9 @@ import { OrderInput, OrderStatusType } from "@/lib/validations";
 export interface GetOrdersParams {
   page?: string | number;
   limit?: string | number;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export async function getOrdersAction(params?: GetOrdersParams) {
@@ -14,6 +17,9 @@ export async function getOrdersAction(params?: GetOrdersParams) {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.append("page", params.page.toString());
     if (params?.limit) searchParams.append("limit", params.limit.toString());
+    if (params?.status) searchParams.append("status", params.status);
+    if (params?.startDate) searchParams.append("startDate", params.startDate);
+    if (params?.endDate) searchParams.append("endDate", params.endDate);
 
     const queryString = searchParams.toString();
     const endpoint = `/orders${queryString ? `?${queryString}` : ""}`;

@@ -32,17 +32,8 @@ export function Navbar({ user }: NavbarProps) {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-white/5 bg-slate-950/40 backdrop-blur-md px-4 sm:px-6">
-      <div className="flex flex-1 items-center gap-4">
-        <div className="relative hidden w-full max-w-sm md:block lg:max-w-md group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
-          <Input
-            type="search"
-            placeholder="Search products, orders..."
-            className="w-full bg-slate-900/50 border-white/5 pl-10 text-white placeholder:text-slate-500 ring-offset-slate-950 transition-all focus-visible:ring-1 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500/50 rounded-xl"
-          />
-        </div>
-      </div>
+    <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-white/5 bg-slate-950/40 backdrop-blur-md px-4 sm:px-6">
+      <div className="flex flex-1 items-center gap-4"></div>
 
       <div className="flex items-center gap-3">
         <Button

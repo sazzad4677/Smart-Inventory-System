@@ -5,15 +5,35 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { getOrdersAction } from "@/actions/order.actions";
 import { OrderTable } from "./_components/order-table";
 import { AddOrderDialog } from "./_components/add-order-dialog";
+import { OrderFilters } from "./_components/order-filters";
 import { Pagination } from "@/components/shared/pagination";
 
 interface OrdersPageProps {
-  searchParams: Promise<{ page?: string; limit?: string }>;
+  searchParams: Promise<{
+    page?: string;
+    limit?: string;
+    status?: string;
+    startDate?: string;
+    endDate?: string;
+  }>;
 }
 
 export default async function OrdersPage({ searchParams }: OrdersPageProps) {
-  const { page = "1", limit = "10" } = await searchParams;
-  const { data, meta } = await getOrdersAction({ page, limit });
+  const {
+    page = "1",
+    limit = "10",
+    status,
+    startDate,
+    endDate,
+  } = await searchParams;
+
+  const { data, meta } = await getOrdersAction({
+    page,
+    limit,
+    status,
+    startDate,
+    endDate,
+  });
 
   return (
     <div className="flex flex-col gap-8">
@@ -24,7 +44,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
-            className="border-white/10 hover:bg-white/5 text-slate-300"
+            className="border-white/10 hover:bg-white/5 text-slate-300 rounded-xl"
           >
             <Download className="mr-2 h-4 w-4" />
             Export
@@ -33,11 +53,13 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
         </div>
       </PageHeader>
 
+      <OrderFilters />
+
       {data.length > 0 ? (
-        <>
+        <div className="flex flex-col gap-6">
           <OrderTable orders={data} />
           <Pagination meta={meta} />
-        </>
+        </div>
       ) : (
         <EmptyState
           icon={<ShoppingCart className="h-12 w-12 text-slate-500" />}

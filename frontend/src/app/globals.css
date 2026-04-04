@@ -109,6 +109,13 @@
   --sidebar-ring: 250 84% 54%;
 }
 
+@layer utilities {
+  .hide-calendar-icon::-webkit-calendar-picker-indicator {
+    display: none !important;
+    -webkit-appearance: none;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
