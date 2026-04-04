@@ -16,14 +16,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+
+import { AppSelect } from "./app-select";
 
 export type FieldType =
   | "text"
@@ -92,28 +87,13 @@ export function DynamicForm<T extends FieldValues>({
                         );
                       case "select":
                         return (
-                          <Select
+                          <AppSelect
+                            options={field.options || []}
+                            value={formField.value}
                             onValueChange={formField.onChange}
-                            defaultValue={formField.value}
-                          >
-                            <SelectTrigger className="bg-slate-900/50 border-white/10 text-white focus:border-indigo-500 focus:ring-indigo-500/20 transition-all">
-                              {Icon && (
-                                <Icon className="mr-2 h-4 w-4 text-slate-500" />
-                              )}
-                              <SelectValue placeholder={field.placeholder} />
-                            </SelectTrigger>
-                            <SelectContent className="bg-slate-900 border-white/10 text-slate-200">
-                              {field.options?.map((option) => (
-                                <SelectItem
-                                  key={option.value}
-                                  value={option.value}
-                                  className="focus:bg-indigo-600 focus:text-white"
-                                >
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                            placeholder={field.placeholder}
+                            triggerClassName="w-full"
+                          />
                         );
                       default:
                         return (
@@ -124,10 +104,7 @@ export function DynamicForm<T extends FieldValues>({
                             <Input
                               type={field.type}
                               placeholder={field.placeholder}
-                              className={cn(
-                                "bg-slate-900/50 border-white/10 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:ring-indigo-500/20 transition-all py-6",
-                                Icon && "pl-10",
-                              )}
+                              className={cn(Icon && "pl-10")}
                               {...formField}
                             />
                           </div>
@@ -142,7 +119,9 @@ export function DynamicForm<T extends FieldValues>({
         ))}
         <Button
           type="submit"
-          className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-6 rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-indigo-500/20"
+          variant="default"
+          size="dashboard"
+          className="w-full bg-indigo-600 hover:bg-indigo-500 text-white"
           disabled={isPending}
         >
           {isPending ? (
