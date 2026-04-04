@@ -7,7 +7,7 @@ import {
 import { protect, restrictTo } from '../middlewares/auth.middleware';
 import { UserRole } from '../types';
 
-const router = Router();
+const router: Router = Router();
 
 // Apply protection to all dashboard routes
 router.use(protect);

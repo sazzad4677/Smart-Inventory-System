@@ -5,7 +5,7 @@ import { createProduct, getProducts, updateProduct } from '../controllers/produc
 import { protect, restrictTo } from '../middlewares/auth.middleware';
 import { UserRole } from '../types';
 
-const router = Router();
+const router: Router = Router();
 
 router.get('/', getProducts);
 

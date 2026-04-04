@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Router } from 'express';
 import {
   createOrder,
   getOrders,
@@ -11,7 +11,7 @@ import { validateRequest } from '../middlewares/validateRequest.middleware';
 import { protect, restrictTo } from '../middlewares/auth.middleware';
 import { UserRole } from '../types';
 
-const router = express.Router();
+const router: Router = express.Router();
 
 // ─── Protected Routes (Logged In Users) ───────────────────────────────────
 router.post('/', protect, validateRequest(createOrderSchema), createOrder);
