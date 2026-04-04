@@ -6,164 +6,104 @@ import Product from '../models/product.model';
 import Order from '../models/order.model';
 import OrderItem from '../models/order-item.model';
 import ActivityLog from '../models/activity-log.model';
-import { UserRole, ProductStatus, OrderStatus } from '../types';
+import { UserRole, OrderStatus } from '../types';
 
 const seed = async () => {
   try {
-    console.log('🌱 Starting database seeding...');
+    console.log('🌱 Starting large-scale database seeding...');
     await mongoose.connect(config.db.uri);
-    console.log('🔌 Connected to MongoDB');
 
     // 1. Clear existing data
     const collections = await mongoose.connection.db?.collections();
     if (collections) {
       for (const collection of collections) {
         await collection.deleteMany({});
-        console.log(`🧹 Cleared collection: ${collection.collectionName}`);
       }
     }
+    console.log('🧹 Database cleared');
 
-    // 2. Seed Admin User
+    // 2. Seed Users
     const admin = await User.create({
       email: 'admin@demo.com',
-      password_hash: 'admin123', // Will be hashed by pre-save hook
+      password_hash: 'admin123',
       role: UserRole.Admin,
     });
-    console.log('👤 Seeded Admin User: admin@demo.com / admin123');
+    const manager = await User.create({
+      email: 'manager@demo.com',
+      password_hash: 'manager123',
+      role: UserRole.Manager,
+    });
 
     // 3. Seed Categories
-    const categoriesData = [{ name: 'Electronics' }, { name: 'Furniture' }, { name: 'Groceries' }];
-    const categories = await Category.insertMany(categoriesData);
-    console.log('📂 Seeded 3 Categories');
+    const catNames = ['Electronics', 'Furniture', 'Groceries', 'Apparel', 'Books', 'Toys'];
+    const categories = await Category.insertMany(catNames.map((name) => ({ name })));
+    console.log(`📂 Seeded ${categories.length} Categories`);
 
-    const electronicsId = (categories[0] as any)._id;
-    const furnitureId = (categories[1] as any)._id;
-    const groceriesId = (categories[2] as any)._id;
+    // 4. Seed 50+ Products
+    const productsData = [];
+    for (let i = 1; i <= 60; i++) {
+      const category = categories[Math.floor(Math.random() * categories.length)];
+      const price = parseFloat((Math.random() * (1000 - 5) + 5).toFixed(2));
+      const stock = Math.floor(Math.random() * 150);
+      const threshold = 20;
 
-    // 4. Seed Products (10 total)
-    const productsData = [
-      // Electronics
-      {
-        name: 'Smartphone X',
-        category_id: electronicsId,
-        price: 699,
-        stock_quantity: 50,
-        min_threshold: 10,
-      },
-      {
-        name: 'Laptop Pro',
-        category_id: electronicsId,
-        price: 1299,
-        stock_quantity: 5,
-        min_threshold: 10,
-      }, // Low stock
-      {
-        name: 'Wireless Earbuds',
-        category_id: electronicsId,
-        price: 149,
-        stock_quantity: 100,
-        min_threshold: 20,
-      },
-      {
-        name: 'Smartwatch',
-        category_id: electronicsId,
-        price: 299,
-        stock_quantity: 0,
-        min_threshold: 5,
-      }, // Out of stock
-
-      // Furniture
-      {
-        name: 'Ergonomic Chair',
-        category_id: furnitureId,
-        price: 199,
-        stock_quantity: 15,
-        min_threshold: 5,
-      },
-      {
-        name: 'Office Desk',
-        category_id: furnitureId,
-        price: 349,
-        stock_quantity: 3,
-        min_threshold: 10,
-      }, // Low stock
-      {
-        name: 'Bookshelf',
-        category_id: furnitureId,
-        price: 89,
-        stock_quantity: 25,
-        min_threshold: 5,
-      },
-
-      // Groceries
-      {
-        name: 'Organic Coffee',
-        category_id: groceriesId,
-        price: 12.99,
-        stock_quantity: 200,
-        min_threshold: 50,
-      },
-      {
-        name: 'Premium Tea',
-        category_id: groceriesId,
-        price: 8.5,
-        stock_quantity: 40,
-        min_threshold: 50,
-      }, // Low stock
-      {
-        name: 'Avo Toast Kit',
-        category_id: groceriesId,
-        price: 15.0,
-        stock_quantity: 12,
-        min_threshold: 5,
-      },
-    ];
-
+      productsData.push({
+        name: `Product SKU-${1000 + i}`,
+        category_id: (category as any)._id,
+        price,
+        stock_quantity: stock,
+        min_threshold: threshold,
+        description: `High-quality item from our ${category?.name || `Random-${1000 + i}`} collection.`,
+      });
+    }
     const products = await Product.insertMany(productsData);
-    console.log('📦 Seeded 10 Products');
+    console.log(`📦 Seeded ${products.length} Products`);
 
-    // 5. Seed Orders (3 total)
-    const ordersData = [
-      {
-        customer_name: 'John Doe',
-        total_price: 699,
-        status: OrderStatus.Pending,
-        created_at: new Date(),
-      },
-      {
-        customer_name: 'Jane Smith',
-        total_price: 349.5,
-        status: OrderStatus.Confirmed,
-        created_at: new Date(),
-      },
-      {
-        customer_name: 'Bob Wilson',
-        total_price: 25.98,
-        status: OrderStatus.Delivered,
-        created_at: new Date(),
-      },
-    ];
+    // 5. Seed 20+ Orders with diverse statuses
+    const statuses = Object.values(OrderStatus);
+    const ordersData = [];
+    for (let i = 1; i <= 25; i++) {
+      ordersData.push({
+        customer_name: `Customer ${String.fromCharCode(65 + (i % 26))}`,
+        total_price: 0, // Will update after items
+        status: statuses[Math.floor(Math.random() * statuses.length)],
+        created_at: new Date(Date.now() - Math.floor(Math.random() * 10) * 86400000),
+      });
+    }
+    const orders = await Order.insertMany(ordersData);
+    console.log(`🛒 Seeded ${orders.length} Orders`);
 
-    const orders = await Order.create(ordersData);
-    console.log('🛒 Seeded 3 Orders');
+    // 6. Seed Order Items (Linking Orders and Products)
+    console.log('🔗 Linking items to orders...');
+    for (const order of orders) {
+      let orderTotal = 0;
+      const itemsToCreate = Math.floor(Math.random() * 3) + 1; // 1-4 items per order
 
-    // Seed some corresponding OrderItems for the first order
-    await OrderItem.create([
-      {
-        order_id: (orders[0] as any)._id,
-        product_id: (products[0] as any)._id,
-        quantity: 1,
-        unit_price: 699,
-      },
-    ]);
+      for (let j = 0; j < itemsToCreate; j++) {
+        const product = products[Math.floor(Math.random() * products.length)];
+        const qty = Math.floor(Math.random() * 3) + 1;
 
-    // Seed some activity logs
-    await ActivityLog.create([
-      { action_text: 'System populated with seed data', user_id: admin._id, timestamp: new Date() },
-      { action_text: 'Admin logged in', user_id: admin._id, timestamp: new Date() },
-    ]);
+        await OrderItem.create({
+          order_id: (order as any)._id,
+          product_id: (product as any)._id,
+          quantity: qty,
+          unit_price: product?.price || 0,
+        });
+        orderTotal += (product?.price || 0) * qty;
+      }
+      // Update the order with the calculated total
+      await Order.findByIdAndUpdate(order._id, { total_price: orderTotal.toFixed(2) });
+    }
 
-    console.log('✅ Seeding completed successfully!');
+    // 7. Activity Logs
+    const logs = Array.from({ length: 15 }).map((_, i) => ({
+      action_text: `User performed action #${i + 1}`,
+      user_id: i % 2 === 0 ? admin._id : manager._id,
+      timestamp: new Date(),
+    }));
+    await ActivityLog.insertMany(logs);
+
+    console.log('✅ Seeding completed successfully with 100+ total records!');
     process.exit(0);
   } catch (error) {
     console.error('❌ Seeding failed:', error);
