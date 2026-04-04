@@ -1,9 +1,20 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, ShoppingCart } from "lucide-react";
+import { Download, ShoppingCart } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { getOrdersAction } from "@/actions/order.actions";
+import { OrderTable } from "./_components/order-table";
+import { AddOrderDialog } from "./_components/add-order-dialog";
+import { Pagination } from "@/components/shared/pagination";
 
-export default function OrdersPage() {
+interface OrdersPageProps {
+  searchParams: Promise<{ page?: string; limit?: string }>;
+}
+
+export default async function OrdersPage({ searchParams }: OrdersPageProps) {
+  const { page = "1", limit = "10" } = await searchParams;
+  const { data, meta } = await getOrdersAction({ page, limit });
+
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
@@ -11,22 +22,29 @@ export default function OrdersPage() {
         description="Monitor customer orders, status updates, and fulfillment."
       >
         <div className="flex items-center gap-3">
-          <Button variant="outline">
+          <Button
+            variant="outline"
+            className="border-white/10 hover:bg-white/5 text-slate-300"
+          >
             <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Order
-          </Button>
+          <AddOrderDialog />
         </div>
       </PageHeader>
 
-      <EmptyState
-        icon={<ShoppingCart />}
-        title="No orders yet"
-        description="You haven't received any orders yet. Once customers start buying, you'll see them here."
-      />
+      {data.length > 0 ? (
+        <>
+          <OrderTable orders={data} />
+          <Pagination meta={meta} />
+        </>
+      ) : (
+        <EmptyState
+          icon={<ShoppingCart className="h-12 w-12 text-slate-500" />}
+          title="No orders yet"
+          description="You haven't received any orders yet. Once customers start buying, you'll see them here."
+        />
+      )}
     </div>
   );
 }

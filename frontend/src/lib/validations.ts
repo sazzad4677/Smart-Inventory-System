@@ -47,3 +47,28 @@ export const ProductSchema = z.object({
 });
 
 export type ProductInput = z.infer<typeof ProductSchema>;
+
+// Order Validation
+export const OrderStatus = {
+  Pending: "Pending",
+  Confirmed: "Confirmed",
+  Shipped: "Shipped",
+  Delivered: "Delivered",
+  Cancelled: "Cancelled",
+};
+
+export type OrderStatusType = (typeof OrderStatus)[keyof typeof OrderStatus];
+
+export const OrderSchema = z.object({
+  customer_name: z.string().min(1, "Customer name is required"),
+  items: z
+    .array(
+      z.object({
+        product_id: z.string().min(1, "Product is required"),
+        quantity: z.coerce.number().int().positive("Quantity must be positive"),
+      }),
+    )
+    .min(1, "At least one item is required"),
+});
+
+export type OrderInput = z.infer<typeof OrderSchema>;
