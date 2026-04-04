@@ -154,19 +154,23 @@ export default async function DashboardPage() {
                     style={{ animationDelay: `${i * 100}ms` }}
                   >
                     <div className="mt-1.5 h-2 w-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)] group-hover:scale-150 transition-transform" />
-                    <div className="flex flex-col gap-1">
-                      <p className="text-sm font-medium text-slate-200 group-hover:text-white transition-colors">
-                        <span className="text-indigo-400 font-bold">
-                          {activity.user_id?.email || "System"}
-                        </span>{" "}
-                        {activity.action}
+                    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-200 group-hover:text-white transition-all duration-300 leading-snug">
+                        {activity.action_text}
                       </p>
-                      <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                        {activity.details}
-                      </p>
-                      <p className="text-[10px] text-slate-600 mt-0.5">
-                        {new Date(activity.timestamp).toLocaleString()}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-indigo-400/80 bg-indigo-500/5 px-1.5 py-0.5 rounded border border-indigo-500/10 tracking-tight">
+                          {activity.user_id?.email?.split("@")[0] || "System"}
+                        </span>
+                        <span className="text-[10px] text-slate-600 font-medium">
+                          {new Intl.DateTimeFormat("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }).format(new Date(activity.timestamp))}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))

@@ -7,6 +7,7 @@ import { CreateOrderInput } from '../validators/order.validator';
 import { AppError } from '../utils/AppError';
 import { OrderStatus, ProductStatus } from '../types';
 import QueryBuilder from '../builders/QueryBuilder';
+import { formatOrderId } from '../utils/formatOrderId';
 
 // ─── Create Order In DB ──────────────────────────────────────────────────
 export const createOrderInDB = async (userId: string, payload: CreateOrderInput) => {
@@ -99,7 +100,7 @@ export const createOrderInDB = async (userId: string, payload: CreateOrderInput)
     await ActivityLog.create(
       [
         {
-          action_text: `Order #${order._id} created for ${customer_name}`,
+          action_text: `Order ${formatOrderId(order._id)} created for ${customer_name}`,
           user_id: userId,
           timestamp: new Date(),
         },
@@ -196,7 +197,7 @@ export const updateOrderStatusInDB = async (
     await ActivityLog.create(
       [
         {
-          action_text: `Order #${existingOrder._id} status updated to ${status}`,
+          action_text: `Order ${formatOrderId(existingOrder._id)} status updated to ${status}`,
           user_id: userId,
           timestamp: new Date(),
         },
@@ -235,7 +236,7 @@ export const deleteOrderFromDB = async (userId: Types.ObjectId, orderId: string)
     await ActivityLog.create(
       [
         {
-          action_text: `Order #${order._id} soft-deleted`,
+          action_text: `Order ${formatOrderId(order._id)} soft-deleted`,
           user_id: userId,
           timestamp: new Date(),
         },
