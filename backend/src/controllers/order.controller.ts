@@ -4,6 +4,7 @@ import { sendResponse } from '../utils/sendResponse';
 import {
   createOrderInDB,
   getAllOrdersFromDB,
+  getOrderByIdFromDB,
   updateOrderStatusInDB,
   deleteOrderFromDB,
 } from '../services/order.service';
@@ -30,6 +31,19 @@ export const getOrders = catchAsync(async (req: Request, res: Response) => {
     success: true,
     message: 'Orders fetched successfully.',
     meta: meta,
+    data: result,
+  });
+});
+
+// ─── GET /api/orders/:id ────────────────────────────────────────────────
+export const getOrderById = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await getOrderByIdFromDB(id as string);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Order fetched successfully.',
     data: result,
   });
 });

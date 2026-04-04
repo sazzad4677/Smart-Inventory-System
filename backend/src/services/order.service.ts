@@ -131,6 +131,21 @@ export const getAllOrdersFromDB = async (query: Record<string, unknown>) => {
   };
 };
 
+// ─── Get Single Order By ID From DB ─────────────────────────────────────
+export const getOrderByIdFromDB = async (orderId: string) => {
+  const order = await Order.findById(orderId);
+  if (!order) {
+    throw new AppError('Order not found', 404);
+  }
+
+  const items = await OrderItem.find({ order_id: orderId }).populate('product_id');
+
+  return {
+    order,
+    items,
+  };
+};
+
 // ─── Update Order Status In DB ───────────────────────────────────────────
 export const updateOrderStatusInDB = async (
   userId: string,

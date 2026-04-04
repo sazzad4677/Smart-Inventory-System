@@ -2,6 +2,7 @@ import express from 'express';
 import {
   createOrder,
   getOrders,
+  getOrderById,
   updateOrderStatus,
   deleteOrder,
 } from '../controllers/order.controller';
@@ -16,6 +17,7 @@ const router = express.Router();
 router.post('/', protect, validateRequest(createOrderSchema), createOrder);
 
 router.get('/', protect, getOrders);
+router.get('/:id', protect, getOrderById);
 
 // ─── Restricted Routes (Admin/Manager Only) ──────────────────────────────
 router.put(
