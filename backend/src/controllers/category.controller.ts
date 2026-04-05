@@ -18,13 +18,14 @@ export const createCategory = catchAsync(async (req: Request, res: Response) => 
 });
 
 // ─── GET /api/category (Permissions: Admin, Manager) ─────────────────────────
-export const getCategories = catchAsync(async (_req: Request, res: Response) => {
-  const result = await getAllCategoriesFromDB();
+export const getCategories = catchAsync(async (req: Request, res: Response) => {
+  const result = await getAllCategoriesFromDB(req.query);
 
   sendResponse(res, {
     statusCode: 200,
     success: true,
     message: 'Categories fetched successfully.',
-    data: result,
+    meta: result.meta,
+    data: result.result,
   });
 });

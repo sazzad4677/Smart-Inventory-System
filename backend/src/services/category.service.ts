@@ -1,4 +1,5 @@
-import Category from '../models/category.model';
+import QueryBuilder from '../builders/QueryBuilder';
+import Category, { ICategoryDocument } from '../models/category.model';
 import ActivityLog from '../models/activity-log.model';
 import { CreateCategoryInput } from '../validators/category.validator';
 import { Types } from 'mongoose';
@@ -22,7 +23,21 @@ export const createCategoryIntoDB = async (
 };
 
 // ─── GET /api/category (Permissions: Admin, Manager) ─────────────────────────
-export const getAllCategoriesFromDB = async () => {
-  const result = await Category.find().sort({ name: 1 });
-  return result;
+export const getAllCategoriesFromDB = async (query: Record<string, unknown>) => {
+  const searchableFields = ['name'];
+
+  const categoryQuery = new QueryBuilder<ICategoryDocument>(Category.find(), query)
+    .search(searchableFields)
+    .filter()
+    .sort()
+    .paginate()
+    .fields();
+
+  const result = await categoryQuery.modelQuery;
+  const meta = await categoryQuery.countTotal();
+
+  return {
+    meta,
+    result,
+  };
 };

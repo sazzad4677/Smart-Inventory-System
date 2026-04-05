@@ -5,6 +5,18 @@ export type ActionResult<T = void> =
   | { success: true; data: T }
   | { success: false; error: string; statusCode?: number };
 
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPage: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: PaginationMeta;
+}
+
 export interface Product {
   _id: string;
   product_id: string;

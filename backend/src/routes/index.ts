@@ -4,6 +4,7 @@ import categoryRouter from './category.route';
 import productRouter from './product.route';
 import orderRouter from './order.route';
 import dashboardRouter from './dashboard.route';
+import restockRouter from './restock.route';
 
 const router: Router = Router();
 
@@ -12,6 +13,7 @@ const moduleRoutes = [
   { path: '/categories', route: categoryRouter },
   { path: '/products', route: productRouter },
   { path: '/orders', route: orderRouter },
+  { path: '/restock-queue', route: restockRouter },
   { path: '/', route: dashboardRouter },
 ];
 

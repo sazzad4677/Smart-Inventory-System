@@ -9,9 +9,50 @@ export const metadata = {
   description: "Monitor and replenish low-stock items in your inventory",
 };
 
-export default async function RestockQueuePage() {
-  const result = await getRestockQueue();
-  const restockItems = (result.success ? result.data : []) as Product[];
+import { FilterBar, FilterField } from "@/components/shared/filter-bar";
+import { Pagination } from "@/components/shared/pagination";
+
+interface RestockQueuePageProps {
+  searchParams: Promise<{
+    page?: string;
+    limit?: string;
+    searchTerm?: string;
+  }>;
+}
+
+export default async function RestockQueuePage({
+  searchParams,
+}: RestockQueuePageProps) {
+  const params = await searchParams;
+  const result = await getRestockQueue({
+    page: params.page,
+    limit: params.limit,
+    searchTerm: params.searchTerm,
+  });
+
+  const restockItems = (result.success ? result.data.data : []) as Product[];
+  const meta = result.success
+    ? result.data.meta
+    : { page: 1, limit: 10, total: 0, totalPage: 0 };
+
+  const filters: FilterField[] = [
+    {
+      key: "searchTerm",
+      label: "Search",
+      type: "search",
+      placeholder: "Search products...",
+    },
+    {
+      key: "limit",
+      label: "Limit",
+      type: "select",
+      options: [
+        { label: "10 per page", value: "10" },
+        { label: "20 per page", value: "20" },
+        { label: "50 per page", value: "50" },
+      ],
+    },
+  ];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -20,7 +61,9 @@ export default async function RestockQueuePage() {
         description="Monitor and replenish low-stock items. Items will automatically move out of the queue once restocked."
       />
 
-      {restockItems.length === 0 ? (
+      <FilterBar filters={filters} />
+
+      {restockItems.length === 0 && !params.searchTerm ? (
         <div className="flex flex-col items-center justify-center p-20 rounded-3xl border border-dashed border-white/10 bg-slate-900/10 backdrop-blur-sm shadow-2xl shadow-indigo-500/5 transition-all">
           <div className="rounded-2xl bg-emerald-500/10 p-5 mb-6 ring-1 ring-emerald-500/20 shadow-lg shadow-emerald-500/10">
             <ClipboardList className="h-10 w-10 text-emerald-400" />
@@ -38,12 +81,13 @@ export default async function RestockQueuePage() {
             <AlertCircle className="h-5 w-5 text-indigo-400" />
             <p className="text-sm font-medium">
               <span className="font-bold text-white pr-2">
-                {restockItems.length} items
+                {meta.total} items
               </span>
               require immediate attention based on their minimum thresholds.
             </p>
           </div>
           <RestockClient initialProducts={restockItems} />
+          <Pagination meta={meta} />
         </div>
       )}
     </div>

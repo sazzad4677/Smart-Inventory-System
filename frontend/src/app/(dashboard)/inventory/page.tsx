@@ -24,9 +24,9 @@ export default async function InventoryPage({
 }: InventoryPageProps) {
   const [params, user] = await Promise.all([searchParams, getCurrentUser()]);
 
-  const categoriesResponse = await getCategoriesAction();
+  const categoriesResponse = await getCategoriesAction({ limit: "100" }); // Fetch all for dropdown
   const categories: Category[] = categoriesResponse.success
-    ? categoriesResponse.data
+    ? categoriesResponse.data.data
     : [];
 
   const categoryName = params.category;

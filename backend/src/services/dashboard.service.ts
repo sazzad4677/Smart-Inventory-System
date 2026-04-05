@@ -2,32 +2,6 @@ import Product from '../models/product.model';
 import Order from '../models/order.model';
 import ActivityLog from '../models/activity-log.model';
 
-// ─── GET /api/dashboard/restock-queue (Permissions: Admin, Manager) ──────────
-export const getRestockQueueFromDB = async () => {
-  const products = await Product.find({
-    $expr: { $lte: ['$stock_quantity', '$min_threshold'] },
-  }).sort({ stock_quantity: 1 });
-
-  const result = products.map((product) => {
-    let priority = 'Low';
-    if (product.stock_quantity === 0) {
-      priority = 'High';
-    } else if (product.stock_quantity <= product.min_threshold / 2) {
-      priority = 'Medium';
-    }
-
-    return {
-      _id: product._id,
-      name: product.name,
-      stock_quantity: product.stock_quantity,
-      min_threshold: product.min_threshold,
-      priority,
-    };
-  });
-
-  return result;
-};
-
 // ─── GET /api/dashboard/dashboard (Permissions: Admin, Manager) ──────────────
 export const getDashboardStatsFromDB = async () => {
   const startToday = new Date();
