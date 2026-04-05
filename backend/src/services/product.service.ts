@@ -3,10 +3,12 @@ import Product, { IProductDocument } from '../models/product.model';
 import ActivityLog from '../models/activity-log.model';
 import { CreateProductInput, UpdateProductInput } from '../validators/product.validator';
 import { Types } from 'mongoose';
+import { generateNextId } from '../utils/id.utils';
 
 // ─── POST /api/product (Permissions: Admin Only) ─────────────────────────────
 export const createProductIntoDB = async (userId: Types.ObjectId, payload: CreateProductInput) => {
-  const result = await Product.create(payload as any);
+  const product_id = await generateNextId('product_id', 'PRD');
+  const result = await Product.create({ ...payload, product_id } as any);
 
   if (result) {
     await ActivityLog.create({
@@ -21,7 +23,7 @@ export const createProductIntoDB = async (userId: Types.ObjectId, payload: Creat
 
 // ─── GET /api/product (Permissions: Admin, Manager) ──────────────────────────
 export const getAllProductsFromDB = async (query: Record<string, unknown>) => {
-  const searchableFields = ['name']; // As per user request
+  const searchableFields = ['name', 'product_id']; // As per user request
 
   const productQuery = new QueryBuilder<IProductDocument>(
     Product.find().populate('category_id'),

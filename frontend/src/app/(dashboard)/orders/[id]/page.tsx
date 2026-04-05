@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { notFound } from "next/navigation";
-import { Order, OrderItem } from "@/lib/types";
 
 interface OrderIdPageProps {
   params: Promise<{ id: string }>;
@@ -19,8 +18,13 @@ interface OrderIdPageProps {
 
 export async function generateMetadata({ params }: OrderIdPageProps) {
   const { id } = await params;
+  const result = await getOrderByIdAction(id);
+  const orderTitle =
+    result.success && result.data
+      ? result.data.order.order_id
+      : id.slice(-6).toUpperCase();
   return {
-    title: `Order #${id.slice(-6).toUpperCase()} | Smart Inventory`,
+    title: `Order ${orderTitle} | Smart Inventory`,
   };
 }
 
@@ -32,16 +36,13 @@ export default async function OrderIdPage({ params }: OrderIdPageProps) {
     notFound();
   }
 
-  const { order, items } = result.data as {
-    order: Order;
-    items: (OrderItem & { product_id: { _id: string; name: string } })[];
-  };
+  const { order, items } = result.data;
 
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
         title={`Order Details`}
-        description={`Viewing detailed information for Order #${order._id.slice(-6).toUpperCase()}`}
+        description={`Viewing detailed information for Order ${order.order_id}`}
       >
         <OrderStatusUpdate orderId={order._id} currentStatus={order.status} />
       </PageHeader>
@@ -134,7 +135,7 @@ export default async function OrderIdPage({ params }: OrderIdPageProps) {
                               {item.product_id?.name || "Unknown Product"}
                             </span>
                             <span className="text-[10px] font-mono text-slate-500">
-                              ID: {item.product_id?._id}
+                              ID: {item.product_id?.product_id}
                             </span>
                           </div>
                         </td>

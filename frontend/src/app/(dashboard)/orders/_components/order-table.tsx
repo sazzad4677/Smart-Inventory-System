@@ -36,10 +36,10 @@ export function OrderTable({ orders, userRole }: OrderTableProps) {
   const columns: Column<Order>[] = [
     {
       header: "Order ID",
-      accessorKey: "_id",
+      accessorKey: "order_id",
       cell: (order) => (
         <span className="font-mono text-xs text-indigo-400">
-          #{order._id.slice(-6).toUpperCase()}
+          {order.order_id}
         </span>
       ),
     },

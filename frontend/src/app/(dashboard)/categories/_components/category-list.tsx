@@ -2,12 +2,7 @@
 
 import { Calendar } from "lucide-react";
 import { DataTable, Column } from "@/components/shared/data-table";
-
-interface Category {
-  _id: string;
-  name: string;
-  createdAt: string;
-}
+import { Category } from "@/lib/types";
 
 const columns: Column<Category>[] = [
   {

@@ -54,10 +54,10 @@ export default async function DashboardPage() {
       value: dashboardData?.lowStockCount?.toString() || "0",
       icon: AlertTriangle,
       description:
-        dashboardData?.lowStockCount > 0
+        (dashboardData?.lowStockCount ?? 0) > 0
           ? "Needs attention"
           : "Everything clear",
-      trend: dashboardData?.lowStockCount > 0 ? "down" : "up",
+      trend: (dashboardData?.lowStockCount ?? 0) > 0 ? "down" : "up",
       color: "text-rose-400",
       bg: "bg-rose-500/10",
     },
@@ -146,8 +146,7 @@ export default async function DashboardPage() {
           <CardContent className="min-h-[380px] p-6 pt-0">
             <div className="space-y-6">
               {activities.length > 0 ? (
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                activities.map((activity: any, i: number) => (
+                activities.map((activity, i: number) => (
                   <div
                     key={activity._id}
                     className="flex items-start gap-4 animate-in fade-in slide-in-from-left duration-500 group"
@@ -197,9 +196,8 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent className="h-[380px] p-6 pt-0">
             <div className="space-y-1">
-              {dashboardData?.productSummary?.length > 0 ? (
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                dashboardData.productSummary.map((product: any, i: number) => (
+              {dashboardData && dashboardData.productSummary.length > 0 ? (
+                dashboardData.productSummary.map((product, i: number) => (
                   <div
                     key={product.name}
                     className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-all group border border-transparent hover:border-white/5 animate-in fade-in slide-in-from-right duration-500"
@@ -252,7 +250,7 @@ export default async function DashboardPage() {
               )}
             </div>
 
-            {dashboardData?.productSummary?.length > 0 && (
+            {dashboardData && dashboardData.productSummary.length > 0 && (
               <div className="mt-4 pt-4 border-t border-white/5">
                 <button className="w-full py-2.5 rounded-xl bg-white/5 text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all">
                   Manage Inventory

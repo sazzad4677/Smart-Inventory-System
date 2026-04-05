@@ -34,6 +34,7 @@ export interface ICategory {
 }
 
 export interface IProduct {
+  product_id: string;
   name: string;
   category_id: import('mongoose').Types.ObjectId;
   price: number;
@@ -44,6 +45,7 @@ export interface IProduct {
 }
 
 export interface IOrder {
+  order_id: string;
   customer_name: string;
   total_price: number;
   status: OrderStatus;

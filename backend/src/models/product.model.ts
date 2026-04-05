@@ -9,6 +9,10 @@ export interface IProductModel extends Model<IProductDocument> {}
 
 const productSchema = new Schema<IProductDocument, IProductModel>(
   {
+    product_id: {
+      type: String,
+      unique: true,
+    },
     name: {
       type: String,
       required: [true, 'Product name is required'],

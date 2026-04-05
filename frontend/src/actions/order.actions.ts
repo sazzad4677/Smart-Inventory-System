@@ -3,7 +3,7 @@
 import { apiFetch } from "@/lib/api";
 import { revalidatePath } from "next/cache";
 import { OrderInput, OrderStatusType } from "@/lib/validations";
-import { ActionResult, Order } from "@/lib/types";
+import { ActionResult, Order, OrderDetailResponse } from "@/lib/types";
 import { tryAction } from "@/lib/error-utils";
 
 export interface GetOrdersParams {
@@ -51,7 +51,7 @@ export async function getOrdersAction(
 
 export async function getOrderByIdAction(
   id: string,
-): Promise<ActionResult<unknown>> {
+): Promise<ActionResult<OrderDetailResponse>> {
   return tryAction(async () => {
     const response = await apiFetch(`/orders/${id}`, {
       next: { tags: [`order-${id}`] },

@@ -27,7 +27,7 @@ export default async function CategoriesPage() {
             description="Start organizing your inventory by creating your first product category today."
           />
         ) : (
-          <CategoryList categories={categories as any} />
+          <CategoryList categories={categories} />
         )}
       </div>
     </div>

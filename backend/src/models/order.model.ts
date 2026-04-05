@@ -7,6 +7,10 @@ export interface IOrderModel extends Model<IOrderDocument> {}
 
 const orderSchema = new Schema<IOrderDocument, IOrderModel>(
   {
+    order_id: {
+      type: String,
+      unique: true,
+    },
     customer_name: {
       type: String,
       required: [true, 'Customer name is required'],

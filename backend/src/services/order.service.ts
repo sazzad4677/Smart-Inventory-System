@@ -8,10 +8,13 @@ import { AppError } from '../utils/AppError';
 import { OrderStatus, ProductStatus } from '../types';
 import QueryBuilder from '../builders/QueryBuilder';
 import { formatOrderId } from '../utils/formatOrderId';
+import { generateNextId } from '../utils/id.utils';
 
 // ─── POST /api/order (Permissions: Private) ──────────────────────────────────
 export const createOrderInDB = async (userId: string, payload: CreateOrderInput) => {
   const { customer_name, items } = payload;
+
+  const order_id = await generateNextId('order_id', 'ORD');
 
   // 1. Check for duplicate product_ids
   const productIds = items.map((item) => item.product_id);
@@ -76,6 +79,7 @@ export const createOrderInDB = async (userId: string, payload: CreateOrderInput)
       [
         {
           customer_name,
+          order_id,
           total_price: totalPrice,
           status: OrderStatus.Pending,
         },
@@ -121,7 +125,13 @@ export const createOrderInDB = async (userId: string, payload: CreateOrderInput)
 
 // ─── GET /api/order (Permissions: Private) ───────────────────────────────────
 export const getAllOrdersFromDB = async (query: Record<string, unknown>) => {
-  const orderQuery = new QueryBuilder(Order.find(), query).filter().sort().paginate().fields();
+  const searchableFields = ['customer_name', 'order_id'];
+  const orderQuery = new QueryBuilder(Order.find(), query)
+    .search(searchableFields)
+    .filter()
+    .sort()
+    .paginate()
+    .fields();
 
   const result = await orderQuery.modelQuery;
   const meta = await orderQuery.countTotal();

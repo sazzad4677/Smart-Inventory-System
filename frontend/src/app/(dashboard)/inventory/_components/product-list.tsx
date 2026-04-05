@@ -13,6 +13,11 @@ const getProductStatus = (stock: number, threshold: number): StatusType => {
 
 const columns: Column<Product>[] = [
   {
+    header: "ID",
+    accessorKey: "product_id",
+    className: "font-mono text-[10px] text-indigo-400/70",
+  },
+  {
     header: "Name",
     accessorKey: "name",
     className: "font-semibold text-slate-100",
