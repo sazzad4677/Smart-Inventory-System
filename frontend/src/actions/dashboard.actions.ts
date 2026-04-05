@@ -1,47 +1,27 @@
 "use server";
 
 import { apiFetch } from "@/lib/api";
+import { ActionResult } from "@/lib/types";
+import { tryAction } from "@/lib/error-utils";
 
-export async function getDashboardData() {
-  try {
+export async function getDashboardData(): Promise<ActionResult<unknown>> {
+  return tryAction(async () => {
     const response = await apiFetch("/dashboard", {
       next: { revalidate: 60 }, // Cache for 1 minute
     });
 
     const result = await response.json();
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: result.message || "Failed to fetch dashboard data",
-      };
-    }
-
-    return { success: true, data: result.data };
-  } catch (error) {
-    console.error("Dashboard Data Fetch Error:", error);
-    return { success: false, error: "Something went wrong" };
-  }
+    return result.data;
+  }, "Failed to fetch dashboard data");
 }
 
-export async function getLatestActivities() {
-  try {
+export async function getLatestActivities(): Promise<ActionResult<unknown[]>> {
+  return tryAction(async () => {
     const response = await apiFetch("/activities", {
       next: { revalidate: 60 }, // Cache for 1 minute
     });
 
     const result = await response.json();
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: result.message || "Failed to fetch activities",
-      };
-    }
-
-    return { success: true, data: result.data };
-  } catch (error) {
-    console.error("Activities Fetch Error:", error);
-    return { success: false, error: "Something went wrong" };
-  }
+    return result.data;
+  }, "Failed to fetch activities");
 }

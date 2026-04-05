@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { getRestockQueue } from "@/actions/restock.actions";
 import { RestockClient } from "./_components/restock-client";
 import { AlertCircle, ClipboardList } from "lucide-react";
+import { Product } from "@/lib/types";
 
 export const metadata = {
   title: "Restock Queue | Smart Inventory",
@@ -10,7 +11,7 @@ export const metadata = {
 
 export default async function RestockQueuePage() {
   const result = await getRestockQueue();
-  const restockItems = result.data || [];
+  const restockItems = (result.success ? result.data : []) as Product[];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">

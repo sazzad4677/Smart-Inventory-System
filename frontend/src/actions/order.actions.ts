@@ -3,6 +3,8 @@
 import { apiFetch } from "@/lib/api";
 import { revalidatePath } from "next/cache";
 import { OrderInput, OrderStatusType } from "@/lib/validations";
+import { ActionResult } from "@/lib/types";
+import { tryAction } from "@/lib/error-utils";
 
 export interface GetOrdersParams {
   page?: string | number;
@@ -12,8 +14,15 @@ export interface GetOrdersParams {
   endDate?: string;
 }
 
-export async function getOrdersAction(params?: GetOrdersParams) {
-  try {
+export type OrdersResponse = {
+  data: unknown[];
+  meta: { page: number; limit: number; total: number; totalPage: number };
+};
+
+export async function getOrdersAction(
+  params?: GetOrdersParams,
+): Promise<ActionResult<OrdersResponse>> {
+  return tryAction(async () => {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.append("page", params.page.toString());
     if (params?.limit) searchParams.append("limit", params.limit.toString());
@@ -30,118 +39,64 @@ export async function getOrdersAction(params?: GetOrdersParams) {
 
     const result = await response.json();
 
-    if (!response.ok) {
-      console.error("Failed to fetch orders:", result.message);
-      return { data: [], meta: { page: 1, limit: 10, total: 0, totalPage: 0 } };
-    }
-
     return {
       data: result.data || [],
       meta: result.meta || { page: 1, limit: 10, total: 0, totalPage: 0 },
     };
-  } catch (error) {
-    console.error("Get Orders Error:", error);
-    return { data: [], meta: { page: 1, limit: 10, total: 0, totalPage: 0 } };
-  }
+  }, "Failed to fetch orders");
 }
 
-export async function getOrderByIdAction(id: string) {
-  try {
+export async function getOrderByIdAction(
+  id: string,
+): Promise<ActionResult<unknown>> {
+  return tryAction(async () => {
     const response = await apiFetch(`/orders/${id}`, {
       next: { tags: [`order-${id}`] },
     });
 
     const result = await response.json();
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: result.message || "Failed to fetch order",
-      };
-    }
-
-    return { success: true, data: result.data };
-  } catch (error) {
-    console.error("Get Order Error:", error);
-    return { success: false, error: "Something went wrong" };
-  }
+    return result.data;
+  }, "Failed to fetch order");
 }
 
-export async function createOrderAction(data: OrderInput) {
-  try {
-    const response = await apiFetch("/orders", {
+export async function createOrderAction(
+  data: OrderInput,
+): Promise<ActionResult> {
+  return tryAction(async () => {
+    await apiFetch("/orders", {
       method: "POST",
       body: JSON.stringify(data),
     });
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: result.message || "Failed to create order",
-      };
-    }
-
     revalidatePath("/orders");
     revalidatePath("/inventory");
     revalidatePath("/dashboard");
-    return { success: true };
-  } catch (error) {
-    console.error("Create Order Error:", error);
-    return { success: false, error: "Something went wrong" };
-  }
+  }, "Failed to create order");
 }
 
 export async function updateOrderStatusAction(
   id: string,
   status: OrderStatusType,
-) {
-  try {
-    const response = await apiFetch(`/orders/${id}/status`, {
+): Promise<ActionResult> {
+  return tryAction(async () => {
+    await apiFetch(`/orders/${id}/status`, {
       method: "PUT",
       body: JSON.stringify({ status }),
     });
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: result.message || "Failed to update order status",
-      };
-    }
-
     revalidatePath("/orders");
     revalidatePath(`/orders/${id}`);
     revalidatePath("/dashboard");
-    return { success: true };
-  } catch (error) {
-    console.error("Update Order Status Error:", error);
-    return { success: false, error: "Something went wrong" };
-  }
+  }, "Failed to update order status");
 }
 
-export async function deleteOrderAction(id: string) {
-  try {
-    const response = await apiFetch(`/orders/${id}`, {
+export async function deleteOrderAction(id: string): Promise<ActionResult> {
+  return tryAction(async () => {
+    await apiFetch(`/orders/${id}`, {
       method: "DELETE",
     });
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: result.message || "Failed to delete order",
-      };
-    }
-
     revalidatePath("/orders");
     revalidatePath("/dashboard");
-    return { success: true };
-  } catch (error) {
-    console.error("Delete Order Error:", error);
-    return { success: false, error: "Something went wrong" };
-  }
+  }, "Failed to delete order");
 }

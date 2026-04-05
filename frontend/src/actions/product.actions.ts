@@ -3,6 +3,8 @@
 import { apiFetch } from "@/lib/api";
 import { revalidatePath } from "next/cache";
 import { ProductInput, ProductSchema } from "@/lib/validations";
+import { ActionResult } from "@/lib/types";
+import { tryAction } from "@/lib/error-utils";
 
 export interface GetProductsParams {
   searchTerm?: string;
@@ -11,8 +13,15 @@ export interface GetProductsParams {
   limit?: string | number;
 }
 
-export async function getProductsAction(params?: GetProductsParams) {
-  try {
+export type ProductsResponse = {
+  data: unknown[];
+  meta: { page: number; limit: number; total: number; totalPage: number };
+};
+
+export async function getProductsAction(
+  params?: GetProductsParams,
+): Promise<ActionResult<ProductsResponse>> {
+  return tryAction(async () => {
     const searchParams = new URLSearchParams();
     if (params?.searchTerm)
       searchParams.append("searchTerm", params.searchTerm);
@@ -30,22 +39,16 @@ export async function getProductsAction(params?: GetProductsParams) {
 
     const result = await response.json();
 
-    if (!response.ok) {
-      console.error("Failed to fetch products:", result.message);
-      return { data: [], meta: { page: 1, limit: 10, total: 0, totalPage: 0 } };
-    }
-
     return {
       data: result.data || [],
       meta: result.meta || { page: 1, limit: 10, total: 0, totalPage: 0 },
     };
-  } catch (error) {
-    console.error("Get Products Error:", error);
-    return { data: [], meta: { page: 1, limit: 10, total: 0, totalPage: 0 } };
-  }
+  }, "Failed to fetch products");
 }
 
-export async function createProductAction(data: ProductInput) {
+export async function createProductAction(
+  data: ProductInput,
+): Promise<ActionResult> {
   const validatedFields = ProductSchema.safeParse(data);
 
   if (!validatedFields.success) {
@@ -55,98 +58,52 @@ export async function createProductAction(data: ProductInput) {
     };
   }
 
-  try {
-    const response = await apiFetch("/products", {
+  return tryAction(async () => {
+    await apiFetch("/products", {
       method: "POST",
       body: JSON.stringify(validatedFields.data),
     });
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: result.message || "Failed to create product",
-      };
-    }
-
     revalidatePath("/inventory");
-    return { success: true };
-  } catch (error) {
-    console.error("Create Product Error:", error);
-    return { success: false, error: "Something went wrong" };
-  }
+  }, "Failed to create product");
 }
 
 export async function updateProductStockAction(
   id: string,
   current_stock: number,
   quantity_to_add: number,
-) {
-  try {
+): Promise<ActionResult> {
+  return tryAction(async () => {
     const new_stock = current_stock + quantity_to_add;
 
-    const response = await apiFetch(`/products/${id}`, {
+    await apiFetch(`/products/${id}`, {
       method: "PATCH",
       body: JSON.stringify({ stock_quantity: new_stock }),
     });
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: result.message || "Failed to update stock",
-      };
-    }
-
     revalidatePath("/inventory");
     revalidatePath("/restock-queue");
     revalidatePath("/dashboard");
-    return { success: true };
-  } catch (error) {
-    console.error("Update Stock Error:", error);
-    return { success: false, error: "Something went wrong" };
-  }
+  }, "Failed to update stock");
 }
+
 export async function restockProductAction(
   productId: string,
   addedStock: number,
-) {
-  try {
+): Promise<ActionResult> {
+  return tryAction(async () => {
     const response = await apiFetch(`/products/${productId}`);
     const result = await response.json();
-
-    if (!response.ok) {
-      return {
-        success: false,
-        error: result.message || "Failed to fetch product",
-      };
-    }
 
     const currentStock = result.data.stock_quantity;
     const newStock = currentStock + addedStock;
 
-    const updateResponse = await apiFetch(`/products/${productId}`, {
+    await apiFetch(`/products/${productId}`, {
       method: "PATCH",
       body: JSON.stringify({ stock_quantity: newStock }),
     });
 
-    const updateResult = await updateResponse.json();
-
-    if (!updateResponse.ok) {
-      return {
-        success: false,
-        error: updateResult.message || "Failed to restock product",
-      };
-    }
-
     revalidatePath("/restock-queue");
     revalidatePath("/inventory");
-
-    return { success: true };
-  } catch (error) {
-    console.error("Restock Action Error:", error);
-    return { success: false, error: "Something went wrong" };
-  }
+  }, "Failed to restock product");
 }

@@ -37,23 +37,15 @@ export function RestockClient({ initialProducts }: RestockClientProps) {
   );
 
   const handleRestock = async (productId: string, amount: number) => {
-    // IMMEDIATELY update the UI optimistically
-    startTransition(() => {
-      addOptimisticRestock({ id: productId, amount });
-    });
-
-    // Wrap the server call in a transition
     startTransition(async () => {
-      try {
-        const result = await restockProductAction(productId, amount);
-        if (result?.error) {
-          toast.error(result.error || "Failed to restock");
-        } else {
-          toast.success("Restocked successfully");
-        }
-      } catch (error) {
-        toast.error("Something went wrong");
-        console.error("Restock error:", error);
+      // Optimistic update
+      addOptimisticRestock({ id: productId, amount });
+
+      const result = await restockProductAction(productId, amount);
+      if (!result.success) {
+        toast.error(result.error);
+      } else {
+        toast.success("Restocked successfully");
       }
     });
   };

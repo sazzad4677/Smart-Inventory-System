@@ -3,9 +3,11 @@
 import { cookies } from "next/headers";
 import { UserLoginInput, UserSignupInput } from "@/lib/validations";
 import { apiFetch } from "@/lib/api";
+import { ActionResult } from "@/lib/types";
+import { tryAction } from "@/lib/error-utils";
 
-export async function loginAction(data: UserLoginInput) {
-  try {
+export async function loginAction(data: UserLoginInput): Promise<ActionResult> {
+  return tryAction(async () => {
     const response = await apiFetch("/auth/login", {
       method: "POST",
       body: JSON.stringify(data),
@@ -13,10 +15,6 @@ export async function loginAction(data: UserLoginInput) {
 
     const result = await response.json();
 
-    if (!response.ok) {
-      return { success: false, error: result.message || "Invalid credentials" };
-    }
-
     if (result.data?.token) {
       const cookieStore = await cookies();
       cookieStore.set("token", result.data.token, {
@@ -38,16 +36,13 @@ export async function loginAction(data: UserLoginInput) {
         maxAge: 60 * 60 * 24 * 7, // 7 days
       });
     }
-
-    return { success: true };
-  } catch (error) {
-    console.error("Login Error:", error);
-    return { success: false, error: "Something went wrong. Please try again." };
-  }
+  }, "Login failed");
 }
 
-export async function signupAction(data: UserSignupInput) {
-  try {
+export async function signupAction(
+  data: UserSignupInput,
+): Promise<ActionResult> {
+  return tryAction(async () => {
     const response = await apiFetch("/auth/signup", {
       method: "POST",
       body: JSON.stringify(data),
@@ -55,10 +50,6 @@ export async function signupAction(data: UserSignupInput) {
 
     const result = await response.json();
 
-    if (!response.ok) {
-      return { success: false, error: result.message || "Signup failed" };
-    }
-
     if (result.data?.token) {
       const cookieStore = await cookies();
       cookieStore.set("token", result.data.token, {
@@ -80,12 +71,7 @@ export async function signupAction(data: UserSignupInput) {
         maxAge: 60 * 60 * 24 * 7, // 7 days
       });
     }
-
-    return { success: true };
-  } catch (error) {
-    console.error("Signup Error:", error);
-    return { success: false, error: "Something went wrong. Please try again." };
-  }
+  }, "Signup failed");
 }
 
 export async function logoutAction() {
