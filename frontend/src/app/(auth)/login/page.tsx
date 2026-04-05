@@ -47,17 +47,27 @@ export default function LoginPage() {
 
   async function onSubmit(data: UserLoginInput) {
     setError(null);
-    startTransition(async () => {
-      const result = await loginAction(data);
-      if (result.success) {
-        toast.success("Logged in successfully!");
-        router.push(callbackUrl);
-      } else {
-        const errorMessage = result.error || "Login failed";
-        setError(errorMessage);
-        toast.error(errorMessage);
-      }
+    let success = false;
+
+    // Use a promise to wait for the transition to finish the API call
+    await new Promise<void>((resolve) => {
+      startTransition(async () => {
+        const result = await loginAction(data);
+        if (result.success) {
+          success = true;
+          toast.success("Logged in successfully!");
+        } else {
+          const errorMessage = result.error || "Login failed";
+          setError(errorMessage);
+          toast.error(errorMessage);
+        }
+        resolve();
+      });
     });
+
+    if (success) {
+      router.push(callbackUrl);
+    }
   }
 
   const handleDemoLogin = (role: "Admin" | "Manager") => {
