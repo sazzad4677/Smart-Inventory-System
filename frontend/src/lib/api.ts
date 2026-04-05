@@ -32,9 +32,6 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
 
     // Handle 401 Unauthorized globally
     if (response.status === 401 && !endpoint.includes("/auth/login")) {
-      const cookieStore = await cookies();
-      cookieStore.delete("token");
-      cookieStore.delete("user");
       redirect("/login");
     }
 

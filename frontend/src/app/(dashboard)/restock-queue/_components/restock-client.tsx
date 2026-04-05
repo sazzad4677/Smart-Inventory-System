@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useOptimistic, startTransition, useState } from "react";
 import { DataTable, Column } from "@/components/shared/data-table";
+import { restockProductAction } from "@/actions/product.actions";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { RestockModal } from "./restock-modal";
 import { cn } from "@/lib/utils";
 import { AlertCircle, ArrowUpCircle, Info } from "lucide-react";
 
-interface RestockItem {
+interface Product {
   _id: string;
   name: string;
   stock_quantity: number;
@@ -15,22 +17,48 @@ interface RestockItem {
   priority: "High" | "Medium" | "Low";
 }
 
-interface RestockQueueTableProps {
-  data: RestockItem[];
+interface RestockClientProps {
+  initialProducts: Product[];
 }
 
-export function RestockQueueTable({ data }: RestockQueueTableProps) {
-  const [selectedProduct, setSelectedProduct] = useState<RestockItem | null>(
-    null,
-  );
+export function RestockClient({ initialProducts }: RestockClientProps) {
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleRestock = (product: RestockItem) => {
-    setSelectedProduct(product);
-    setIsModalOpen(true);
+  const [optimisticProducts, addOptimisticRestock] = useOptimistic(
+    initialProducts,
+    (state: Product[], update: { id: string; amount: number }) => {
+      return state.map((p) =>
+        p._id === update.id
+          ? { ...p, stock_quantity: p.stock_quantity + update.amount }
+          : p,
+      );
+    },
+  );
+
+  const handleRestock = async (productId: string, amount: number) => {
+    // IMMEDIATELY update the UI optimistically
+    startTransition(() => {
+      addOptimisticRestock({ id: productId, amount });
+    });
+
+    // Wrap the server call in a transition
+    startTransition(async () => {
+      try {
+        const result = await restockProductAction(productId, amount);
+        if (result?.error) {
+          toast.error(result.error || "Failed to restock");
+        } else {
+          toast.success("Restocked successfully");
+        }
+      } catch (error) {
+        toast.error("Something went wrong");
+        console.error("Restock error:", error);
+      }
+    });
   };
 
-  const columns: Column<RestockItem>[] = [
+  const columns: Column<Product>[] = [
     {
       header: "Product Name",
       accessorKey: "name",
@@ -96,7 +124,10 @@ export function RestockQueueTable({ data }: RestockQueueTableProps) {
       header: "Actions",
       cell: (item) => (
         <Button
-          onClick={() => handleRestock(item)}
+          onClick={() => {
+            setSelectedProduct(item);
+            setIsModalOpen(true);
+          }}
           size="sm"
           className="bg-indigo-600/10 text-indigo-400 hover:bg-indigo-600 hover:text-white border border-indigo-500/20 rounded-lg transition-all h-8 px-4"
         >
@@ -110,12 +141,14 @@ export function RestockQueueTable({ data }: RestockQueueTableProps) {
 
   return (
     <>
-      <DataTable data={data} columns={columns} />
+      <DataTable data={optimisticProducts} columns={columns} />
+
       {selectedProduct && (
         <RestockModal
           product={selectedProduct}
           isOpen={isModalOpen}
           onOpenChange={setIsModalOpen}
+          onRestock={handleRestock}
         />
       )}
     </>

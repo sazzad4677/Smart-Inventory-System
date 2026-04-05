@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { getRestockQueue } from "@/actions/restock.actions";
-import { RestockQueueTable } from "./_components/restock-queue-table";
+import { RestockClient } from "./_components/restock-client";
 import { AlertCircle, ClipboardList } from "lucide-react";
 
 export const metadata = {
@@ -42,7 +42,7 @@ export default async function RestockQueuePage() {
               require immediate attention based on their minimum thresholds.
             </p>
           </div>
-          <RestockQueueTable data={restockItems} />
+          <RestockClient initialProducts={restockItems} />
         </div>
       )}
     </div>

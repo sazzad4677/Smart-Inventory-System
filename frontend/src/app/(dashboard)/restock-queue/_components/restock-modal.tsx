@@ -16,12 +16,14 @@ interface RestockModalProps {
   };
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  onRestock?: (id: string, amount: number) => Promise<void>;
 }
 
 export function RestockModal({
   product,
   isOpen,
   onOpenChange,
+  onRestock,
 }: RestockModalProps) {
   const [isPending, startTransition] = useTransition();
 
@@ -35,6 +37,12 @@ export function RestockModal({
   ];
 
   const onSubmit = (data: RestockInput) => {
+    if (onRestock) {
+      onRestock(product._id, data.quantity_to_add);
+      onOpenChange(false);
+      return;
+    }
+
     startTransition(async () => {
       try {
         const result = await updateProductStockAction(
