@@ -42,6 +42,11 @@ export const getAllProductsFromDB = async (query: Record<string, unknown>) => {
   };
 };
 
+// ─── GET /api/product/:id (Permissions: Admin, Manager) ──────────────────────
+export const getProductByIdFromDB = async (id: string) => {
+  return await Product.findById(id).populate('category_id');
+};
+
 // ─── PUT /api/product/:id (Permissions: Admin, Manager) ──────────────────────
 export const updateProductInDB = async (
   userId: Types.ObjectId,

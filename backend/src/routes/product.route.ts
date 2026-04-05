@@ -1,7 +1,12 @@
 import { Router } from 'express';
 import { validateRequest } from '../middlewares/validateRequest.middleware';
 import { createProductSchema, updateProductSchema } from '../validators/product.validator';
-import { createProduct, getProducts, updateProduct } from '../controllers/product.controller';
+import {
+  createProduct,
+  getProducts,
+  updateProduct,
+  getProductById,
+} from '../controllers/product.controller';
 import { protect, restrictTo } from '../middlewares/auth.middleware';
 import { UserRole } from '../types';
 
@@ -12,6 +17,9 @@ router.use(protect);
 
 // ─── GET /api/product (Permissions: Admin, Manager) ──────────────────────────
 router.get('/', getProducts);
+
+// ─── GET /api/product/:id (Permissions: Admin, Manager) ──────────────────────
+router.get('/:id', getProductById);
 
 // ─── POST /api/product (Permissions: Admin Only) ─────────────────────────────
 router.post('/', restrictTo(UserRole.Admin), validateRequest(createProductSchema), createProduct);

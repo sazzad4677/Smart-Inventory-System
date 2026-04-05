@@ -5,6 +5,7 @@ import {
   createProductIntoDB,
   getAllProductsFromDB,
   updateProductInDB,
+  getProductByIdFromDB,
 } from '../services/product.service';
 import type { CreateProductInput, UpdateProductInput } from '../validators/product.validator';
 
@@ -30,6 +31,19 @@ export const getProducts = catchAsync(async (req: Request, res: Response) => {
     success: true,
     message: 'Products fetched successfully.',
     meta: meta,
+    data: result,
+  });
+});
+
+// ─── GET /api/product/:id (Permissions: Admin, Manager) ──────────────────────
+export const getProductById = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await getProductByIdFromDB(id as string);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Product fetched successfully.',
     data: result,
   });
 });
