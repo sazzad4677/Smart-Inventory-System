@@ -5,7 +5,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { getOrdersAction } from "@/actions/order.actions";
 import { OrderTable } from "./_components/order-table";
 import { AddOrderDialog } from "./_components/add-order-dialog";
-import { OrderFilters } from "./_components/order-filters";
+import { FilterBar, FilterField } from "@/components/shared/filter-bar";
+import { OrderStatus } from "@/lib/validations";
 import { Pagination } from "@/components/shared/pagination";
 import { getCurrentUser } from "@/actions/auth.actions";
 
@@ -46,6 +47,44 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
     ? result.data.meta
     : { page: 1, limit: 10, total: 0, totalPage: 0 };
 
+  const filters: FilterField[] = [
+    {
+      key: "searchTerm",
+      label: "Search",
+      type: "search",
+      placeholder: "Search orders...",
+    },
+    {
+      key: "status",
+      label: "Status",
+      type: "select",
+      options: [
+        { label: "All Statuses", value: "all" },
+        ...Object.values(OrderStatus).map((s) => ({ label: s, value: s })),
+      ],
+    },
+    {
+      key: "startDate",
+      label: "Start Date",
+      type: "date",
+    },
+    {
+      key: "endDate",
+      label: "End Date",
+      type: "date",
+    },
+    {
+      key: "limit",
+      label: "Limit",
+      type: "select",
+      options: [
+        { label: "10 per page", value: "10" },
+        { label: "20 per page", value: "20" },
+        { label: "50 per page", value: "50" },
+      ],
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
@@ -64,7 +103,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
         </div>
       </PageHeader>
 
-      <OrderFilters />
+      <FilterBar filters={filters} />
 
       {data.length > 0 ? (
         <div className="flex flex-col gap-6">

@@ -5,7 +5,7 @@ import { getProductsAction } from "@/actions/product.actions";
 import { getCategoriesAction } from "@/actions/category.actions";
 import { AddProductDialog } from "./_components/add-product-dialog";
 import { ProductList } from "./_components/product-list";
-import { InventoryFilters } from "./_components/inventory-filters";
+import { FilterBar, FilterField } from "@/components/shared/filter-bar";
 import { Pagination } from "@/components/shared/pagination";
 import { getCurrentUser } from "@/actions/auth.actions";
 import { Category } from "@/lib/types";
@@ -49,6 +49,37 @@ export default async function InventoryPage({
     value: cat._id,
   }));
 
+  const filters: FilterField[] = [
+    {
+      key: "searchTerm",
+      label: "Search",
+      type: "search",
+      placeholder: "Search products...",
+    },
+    {
+      key: "category",
+      label: "Category",
+      type: "select",
+      options: [
+        { label: "All Categories", value: "all" },
+        ...categories.map((cat) => ({ label: cat.name, value: cat.name })),
+      ],
+      placeholder: "Filter by Category",
+    },
+    {
+      key: "limit",
+      label: "Limit",
+      type: "select",
+      options: [
+        { label: "5 per page", value: "5" },
+        { label: "10 per page", value: "10" },
+        { label: "20 per page", value: "20" },
+        { label: "50 per page", value: "50" },
+      ],
+      placeholder: "Rows per page",
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
@@ -61,7 +92,7 @@ export default async function InventoryPage({
       </PageHeader>
 
       <div className="flex flex-col gap-6">
-        <InventoryFilters categoryOptions={categoryOptions} />
+        <FilterBar filters={filters} />
 
         <div className="relative group">
           {products.length === 0 ? (
