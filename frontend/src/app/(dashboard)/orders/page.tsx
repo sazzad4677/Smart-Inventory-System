@@ -16,13 +16,21 @@ interface OrdersPageProps {
     status?: string;
     startDate?: string;
     endDate?: string;
+    searchTerm?: string;
   }>;
 }
 
 export default async function OrdersPage({ searchParams }: OrdersPageProps) {
   const [params, user] = await Promise.all([searchParams, getCurrentUser()]);
 
-  const { page = "1", limit = "10", status, startDate, endDate } = params;
+  const {
+    page = "1",
+    limit = "10",
+    status,
+    startDate,
+    endDate,
+    searchTerm,
+  } = params;
 
   const result = await getOrdersAction({
     page,
@@ -30,6 +38,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
     status,
     startDate,
     endDate,
+    searchTerm,
   });
 
   const data = result.success ? result.data.data : [];

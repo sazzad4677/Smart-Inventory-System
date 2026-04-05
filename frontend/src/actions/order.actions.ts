@@ -12,6 +12,7 @@ export interface GetOrdersParams {
   status?: string;
   startDate?: string;
   endDate?: string;
+  searchTerm?: string;
 }
 
 export type OrdersResponse = {
@@ -29,6 +30,8 @@ export async function getOrdersAction(
     if (params?.status) searchParams.append("status", params.status);
     if (params?.startDate) searchParams.append("startDate", params.startDate);
     if (params?.endDate) searchParams.append("endDate", params.endDate);
+    if (params?.searchTerm)
+      searchParams.append("searchTerm", params.searchTerm);
 
     const queryString = searchParams.toString();
     const endpoint = `/orders${queryString ? `?${queryString}` : ""}`;
