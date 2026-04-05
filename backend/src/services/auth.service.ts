@@ -1,7 +1,23 @@
 import User, { IUserDocument } from '../models/user.model';
+import Session from '../models/session.model';
 import { AppError } from '../utils/AppError';
 import type { SignupInput, LoginInput } from '../validators/auth.validator';
 import jwt from 'jsonwebtoken';
+import ms from 'ms';
+
+/**
+ * Creates a session in the database
+ */
+const createSession = async (userId: any, token: string) => {
+  const expiresIn = (process.env.JWT_EXPIRES_IN || '7d') as any;
+  const expiresAt = new Date(Date.now() + ms(expiresIn));
+
+  await Session.create({
+    userId,
+    token,
+    expiresAt,
+  });
+};
 
 // ─── POST /api/auth/signup (Permissions: Public) ────────────────────────────────
 export const signupUser = async (
@@ -27,6 +43,9 @@ export const signupUser = async (
       expiresIn: process.env.JWT_EXPIRES_IN || '7d',
     } as jwt.SignOptions,
   );
+
+  // Save session to DB
+  await createSession(user._id, token);
 
   return { user, token };
 };
@@ -54,8 +73,16 @@ export const loginUser = async (
     } as jwt.SignOptions,
   );
 
+  // Save session to DB
+  await createSession(user._id, token);
+
   // Return user without password_hash
   user.password_hash = undefined as any;
 
   return { user, token };
+};
+
+// ─── POST /api/auth/logout (Permissions: Private) ─────────────────────────────────
+export const logoutUser = async (token: string): Promise<void> => {
+  await Session.deleteOne({ token });
 };

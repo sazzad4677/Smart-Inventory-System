@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { signup, login } from '../controllers/auth.controller';
+import { signup, login, logout } from '../controllers/auth.controller';
+import { protect } from '../middlewares/auth.middleware';
 import { validateRequest } from '../middlewares/validateRequest.middleware';
 import { signupSchema, loginSchema } from '../validators/auth.validator';
 
@@ -15,5 +16,8 @@ router.post('/signup', validateRequest(signupSchema), signup);
 
 // ─── POST /api/auth/login (Permissions: Public) ─────────────────────────────────
 router.post('/login', validateRequest(loginSchema), login);
+
+// ─── POST /api/auth/logout (Permissions: Private) ────────────────────────────────
+router.post('/logout', protect, logout);
 
 export default router;
