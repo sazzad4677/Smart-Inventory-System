@@ -3,7 +3,7 @@
 import { apiFetch } from "@/lib/api";
 import { revalidatePath } from "next/cache";
 import { ProductInput, ProductSchema } from "@/lib/validations";
-import { ActionResult } from "@/lib/types";
+import { ActionResult, Product } from "@/lib/types";
 import { tryAction } from "@/lib/error-utils";
 
 export interface GetProductsParams {
@@ -14,7 +14,7 @@ export interface GetProductsParams {
 }
 
 export type ProductsResponse = {
-  data: unknown[];
+  data: Product[];
   meta: { page: number; limit: number; total: number; totalPage: number };
 };
 

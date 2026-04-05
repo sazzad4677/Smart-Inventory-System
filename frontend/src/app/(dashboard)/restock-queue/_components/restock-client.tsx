@@ -8,14 +8,7 @@ import { Button } from "@/components/ui/button";
 import { RestockModal } from "./restock-modal";
 import { cn } from "@/lib/utils";
 import { AlertCircle, ArrowUpCircle, Info } from "lucide-react";
-
-interface Product {
-  _id: string;
-  name: string;
-  stock_quantity: number;
-  min_threshold: number;
-  priority: "High" | "Medium" | "Low";
-}
+import { Product } from "@/lib/types";
 
 interface RestockClientProps {
   initialProducts: Product[];
@@ -97,7 +90,8 @@ export function RestockClient({ initialProducts }: RestockClientProps) {
           },
         };
 
-        const { color, icon } = config[item.priority];
+        const priority = item.priority || "Medium";
+        const { color, icon } = config[priority];
 
         return (
           <div
@@ -107,7 +101,7 @@ export function RestockClient({ initialProducts }: RestockClientProps) {
             )}
           >
             {icon}
-            {item.priority}
+            {priority}
           </div>
         );
       },

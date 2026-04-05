@@ -7,13 +7,7 @@ import { Plus, Trash2, ShoppingCart, AlertCircle } from "lucide-react";
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { FormInputField } from "@/components/shared/form-input-field";
-
-interface Product {
-  _id: string;
-  name: string;
-  price: number;
-  stock_quantity: number;
-}
+import { Product } from "@/lib/types";
 
 interface OrderItemsFieldProps {
   form: UseFormReturn<OrderInput>;

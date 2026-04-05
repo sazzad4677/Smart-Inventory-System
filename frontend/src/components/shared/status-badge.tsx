@@ -6,8 +6,10 @@ export type StatusType =
   | "Out of Stock"
   | "Restock Queue"
   | "Pending"
+  | "Confirmed"
   | "Processing"
   | "Shipped"
+  | "Delivered"
   | "Completed"
   | "Cancelled";
 
@@ -38,6 +40,11 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
         "border-blue-500/20 bg-blue-500/5 text-blue-400 shadow-[0_0_15px_-3px_rgba(59,130,246,0.2)]",
       icon: <CircleAlert className="mr-1.5 h-3.5 w-3.5" />,
     },
+    Confirmed: {
+      color:
+        "border-indigo-500/20 bg-indigo-500/5 text-indigo-400 shadow-[0_0_15px_-3px_rgba(99,102,241,0.2)]",
+      icon: <CircleCheck className="mr-1.5 h-3.5 w-3.5" />,
+    },
     Processing: {
       color:
         "border-indigo-500/20 bg-indigo-500/5 text-indigo-400 shadow-[0_0_15px_-3px_rgba(99,102,241,0.2)]",
@@ -47,6 +54,11 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
       color:
         "border-violet-500/20 bg-violet-500/5 text-violet-400 shadow-[0_0_15px_-3px_rgba(139,92,246,0.2)]",
       icon: <CircleAlert className="mr-1.5 h-3.5 w-3.5" />,
+    },
+    Delivered: {
+      color:
+        "border-emerald-500/20 bg-emerald-500/5 text-emerald-400 shadow-[0_0_15px_-3px_rgba(16,185,129,0.2)]",
+      icon: <CircleCheck className="mr-1.5 h-3.5 w-3.5" />,
     },
     Completed: {
       color:

@@ -24,13 +24,18 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
 
   const { page = "1", limit = "10", status, startDate, endDate } = params;
 
-  const { data, meta } = await getOrdersAction({
+  const result = await getOrdersAction({
     page,
     limit,
     status,
     startDate,
     endDate,
   });
+
+  const data = result.success ? result.data.data : [];
+  const meta = result.success
+    ? result.data.meta
+    : { page: 1, limit: 10, total: 0, totalPage: 0 };
 
   return (
     <div className="flex flex-col gap-8">

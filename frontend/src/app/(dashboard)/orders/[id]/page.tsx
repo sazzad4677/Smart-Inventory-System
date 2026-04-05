@@ -11,24 +11,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { notFound } from "next/navigation";
-
-interface OrderItem {
-  _id: string;
-  product_id?: {
-    _id: string;
-    name: string;
-  };
-  quantity: number;
-  unit_price: number;
-}
-
-interface Order {
-  _id: string;
-  status: string;
-  customer_name: string;
-  total_price: number;
-  created_at: string;
-}
+import { Order, OrderItem } from "@/lib/types";
 
 interface OrderIdPageProps {
   params: Promise<{ id: string }>;
@@ -49,7 +32,10 @@ export default async function OrderIdPage({ params }: OrderIdPageProps) {
     notFound();
   }
 
-  const { order, items } = result.data as { order: Order; items: OrderItem[] };
+  const { order, items } = result.data as {
+    order: Order;
+    items: (OrderItem & { product_id: { _id: string; name: string } })[];
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -137,7 +123,7 @@ export default async function OrderIdPage({ params }: OrderIdPageProps) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {items.map((item: OrderItem) => (
+                    {items.map((item) => (
                       <tr
                         key={item._id}
                         className="text-sm hover:bg-white/[0.04] transition-colors group"

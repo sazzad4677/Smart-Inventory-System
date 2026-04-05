@@ -8,6 +8,7 @@ import { ProductList } from "./_components/product-list";
 import { InventoryFilters } from "./_components/inventory-filters";
 import { Pagination } from "@/components/shared/pagination";
 import { getCurrentUser } from "@/actions/auth.actions";
+import { Category } from "@/lib/types";
 
 interface InventoryPageProps {
   searchParams: Promise<{
@@ -23,13 +24,13 @@ export default async function InventoryPage({
 }: InventoryPageProps) {
   const [params, user] = await Promise.all([searchParams, getCurrentUser()]);
 
-  const categories = await getCategoriesAction();
+  const categoriesResponse = await getCategoriesAction();
+  const categories: Category[] = categoriesResponse.success
+    ? categoriesResponse.data
+    : [];
 
   const categoryName = params.category;
-  const selectedCategory = categories.find(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (cat: any) => cat.name === categoryName,
-  );
+  const selectedCategory = categories.find((cat) => cat.name === categoryName);
 
   const productsResponse = await getProductsAction({
     searchTerm: params.searchTerm,
@@ -38,10 +39,12 @@ export default async function InventoryPage({
     limit: params.limit || "10",
   });
 
-  const { data: products, meta } = productsResponse;
+  const products = productsResponse.success ? productsResponse.data.data : [];
+  const meta = productsResponse.success
+    ? productsResponse.data.meta
+    : { page: 1, limit: 10, total: 0, totalPage: 0 };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const categoryOptions = categories.map((cat: any) => ({
+  const categoryOptions = categories.map((cat: Category) => ({
     label: cat.name,
     value: cat._id,
   }));

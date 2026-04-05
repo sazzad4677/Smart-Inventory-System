@@ -5,15 +5,9 @@ import { OrderSchema, OrderInput } from "@/lib/validations";
 import { DynamicForm, FieldConfig } from "@/components/shared/dynamic-form";
 import { OrderItemsField } from "./order-items-field";
 import { createOrderAction } from "@/actions/order.actions";
+import { Product } from "@/lib/types";
 import { toast } from "sonner";
 import { User } from "lucide-react";
-
-interface Product {
-  _id: string;
-  name: string;
-  price: number;
-  stock_quantity: number;
-}
 
 interface OrderFormProps {
   products: Product[];
@@ -32,8 +26,7 @@ export function OrderForm({ products, onSuccess }: OrderFormProps) {
       icon: User,
     },
     {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      name: "items" as any, // items is an array, DynamicForm handles it via custom render
+      name: "items",
       label: "",
       type: "custom",
       render: (form) => <OrderItemsField form={form} products={products} />,

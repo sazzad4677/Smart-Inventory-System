@@ -3,10 +3,10 @@
 import { apiFetch } from "@/lib/api";
 import { revalidatePath } from "next/cache";
 import { CategorySchema } from "@/lib/validations";
-import { ActionResult } from "@/lib/types";
+import { ActionResult, Category } from "@/lib/types";
 import { tryAction } from "@/lib/error-utils";
 
-export async function getCategoriesAction(): Promise<ActionResult<unknown[]>> {
+export async function getCategoriesAction(): Promise<ActionResult<Category[]>> {
   return tryAction(async () => {
     const response = await apiFetch("/categories", {
       next: { tags: ["categories"] },

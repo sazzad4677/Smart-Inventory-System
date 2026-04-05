@@ -6,23 +6,28 @@ import { Button } from "@/components/ui/button";
 import { ActionModal } from "@/components/shared/action-modal";
 import { OrderForm } from "./order-form";
 import { getProductsAction } from "@/actions/product.actions";
+import { Product } from "@/lib/types";
+import { toast } from "sonner";
 
 export function AddOrderDialog() {
   const [isOpen, setIsOpen] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     async function fetchProducts() {
       setIsLoading(true);
       const result = await getProductsAction({ limit: 100 });
-      // Filter only active products
-      const activeProducts = result.data.filter(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (p: any) => p.status === "Active",
-      );
-      setProducts(activeProducts);
+
+      if (result.success) {
+        // Filter only active products
+        const activeProducts = result.data.data.filter(
+          (p: Product) => p.status === "Active",
+        );
+        setProducts(activeProducts);
+      } else {
+        toast.error(result.error || "Failed to fetch products");
+      }
       setIsLoading(false);
     }
     if (isOpen) {

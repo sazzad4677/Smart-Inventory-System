@@ -9,14 +9,7 @@ import { deleteOrderAction } from "@/actions/order.actions";
 import { toast } from "sonner";
 import { ActionModal } from "@/components/shared/action-modal";
 import { useState, useTransition } from "react";
-
-interface Order {
-  _id: string;
-  customer_name: string;
-  total_price: number;
-  status: string;
-  created_at: string;
-}
+import { Order } from "@/lib/types";
 
 interface OrderTableProps {
   orders: Order[];

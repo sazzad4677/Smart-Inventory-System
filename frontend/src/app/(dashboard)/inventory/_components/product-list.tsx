@@ -3,19 +3,7 @@
 import { DataTable, Column } from "@/components/shared/data-table";
 import { StatusBadge, StatusType } from "@/components/shared/status-badge";
 import { cn } from "@/lib/utils";
-
-interface Product {
-  _id: string;
-  name: string;
-  category_id: {
-    _id: string;
-    name: string;
-  };
-  price: number;
-  stock_quantity: number;
-  min_threshold: number;
-  status: string;
-}
+import { Product } from "@/lib/types";
 
 const getProductStatus = (stock: number, threshold: number): StatusType => {
   if (stock <= 0) return "Out of Stock";
@@ -32,7 +20,10 @@ const columns: Column<Product>[] = [
   {
     header: "Category",
     cell: (product) => {
-      const categoryName = product.category_id?.name || "N/A";
+      const categoryName =
+        typeof product.category_id === "object"
+          ? product.category_id.name
+          : "N/A";
       return <span className="text-slate-400">{categoryName}</span>;
     },
   },

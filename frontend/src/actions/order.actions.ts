@@ -3,7 +3,7 @@
 import { apiFetch } from "@/lib/api";
 import { revalidatePath } from "next/cache";
 import { OrderInput, OrderStatusType } from "@/lib/validations";
-import { ActionResult } from "@/lib/types";
+import { ActionResult, Order } from "@/lib/types";
 import { tryAction } from "@/lib/error-utils";
 
 export interface GetOrdersParams {
@@ -15,7 +15,7 @@ export interface GetOrdersParams {
 }
 
 export type OrdersResponse = {
-  data: unknown[];
+  data: Order[];
   meta: { page: number; limit: number; total: number; totalPage: number };
 };
 

@@ -6,7 +6,8 @@ import { AddCategoryDialog } from "./_components/add-category-dialog";
 import { CategoryList } from "./_components/category-list";
 
 export default async function CategoriesPage() {
-  const categories = await getCategoriesAction();
+  const response = await getCategoriesAction();
+  const categories = response.success ? response.data : [];
 
   return (
     <div className="flex flex-col gap-8">
@@ -26,7 +27,7 @@ export default async function CategoriesPage() {
             description="Start organizing your inventory by creating your first product category today."
           />
         ) : (
-          <CategoryList categories={categories} />
+          <CategoryList categories={categories as any} />
         )}
       </div>
     </div>
