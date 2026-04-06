@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -9,6 +9,7 @@ import { connectRedis } from './config/redis';
 import { apiRateLimiter } from './middlewares/rateLimiter.middleware';
 import { globalErrorHandler } from './middlewares/error.middleware';
 import router from './routes';
+import { AppError } from './utils/AppError';
 
 const app = express();
 
@@ -27,11 +28,23 @@ app.use(cookieParser());
 app.use('/api', apiRateLimiter);
 
 // Routes
+app.get('/', (req: Request, res: Response) => {
+  res.status(200).json({
+    success: true,
+    message: 'Welcome to Smart Inventory System API',
+  });
+});
+
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', message: 'Server is running' });
 });
 
 app.use('/api', router);
+
+// 404 Not Found Handler
+app.use((req: Request, res: Response, next: NextFunction) => {
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+});
 
 // Global Error Handler
 app.use(globalErrorHandler);

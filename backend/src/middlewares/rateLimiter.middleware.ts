@@ -5,19 +5,19 @@ import { redisClient, connectRedis } from '../config/redis';
 /**
  * This prevents ClientClosedError during module-level initialization.
  */
-const robustSendCommand = async (command: { command: string[] }) => {
-  if (!redisClient.isOpen) {
-    await connectRedis();
-  }
-
+const robustSendCommand = async (...args: string[]) => {
   try {
-    return await redisClient.sendCommand(command.command);
-  } catch (error: any) {
-    if (error?.name === 'ClientClosedError') {
+    if (!redisClient.isOpen) {
       await connectRedis();
-      return await redisClient.sendCommand(command.command);
     }
-    throw error;
+    // If still not open after attempting connection, fall back gracefully
+    if (!redisClient.isOpen) {
+      return null;
+    }
+    return await redisClient.sendCommand(args);
+  } catch (error: any) {
+    console.error('❌ Redis Command Failed:', error.message);
+    return null; // Return null to fallback to memory
   }
 };
 
@@ -28,7 +28,7 @@ export const apiRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: new RedisStore({
-    // @ts-ignore
+    // @ts-expect-error
     sendCommand: (...args: string[]) => robustSendCommand(...args),
   }),
   message: {
@@ -46,7 +46,7 @@ export const loginRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: new RedisStore({
-    // @ts-ignore
+    // @ts-expect-error
     sendCommand: (...args: string[]) => robustSendCommand(...args),
   }),
   message: {
