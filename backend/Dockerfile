@@ -1,17 +1,40 @@
-FROM node:20-alpine
+# Stage 1: Build
+FROM node:20-alpine AS builder
 
-# Set working directory
+# Enable pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
 WORKDIR /usr/src/app
 
-# Install dependencies (using npm install for development)
-COPY package*.json ./
-RUN npm install
+# Copy workspace files
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY backend/package.json ./backend/
+
+# Install all dependencies (needed for build)
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
 
+# Build the application
+RUN pnpm --filter backend build
+
+# Deploy the backend to a standalone folder for production
+RUN pnpm --filter backend --prod deploy /usr/src/app/deployed --legacy
+
+# Stage 2: Production
+FROM node:20-alpine
+
+WORKDIR /usr/src/app
+
+# Copy the deployed standalone folder from builder
+COPY --from=builder /usr/src/app/deployed ./
+
 # Expose backend port
 EXPOSE 5000
 
-# Run development server with hot-reloading
-CMD ["npm", "run", "dev"]
+# Set environment variable for production
+ENV NODE_ENV=production
+
+# Run the production server
+CMD ["node", "dist/index.js"]
