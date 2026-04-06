@@ -235,7 +235,7 @@ export const deleteOrderFromDB = async (userId: Types.ObjectId, orderId: string)
     await ActivityLog.create(
       [
         {
-          action_text: `Order ${formatOrderId(order._id)} soft-deleted`,
+          action_text: `Order ${formatOrderId(order._id)} deleted`,
           user_id: userId,
           timestamp: new Date(),
         },
