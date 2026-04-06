@@ -58,6 +58,7 @@ const productSchema = new Schema<IProductDocument, IProductModel>(
 productSchema.pre<IProductDocument>('save', function () {
   if (this.isModified('stock_quantity')) {
     this.status = this.stock_quantity <= 0 ? ProductStatus.OutOfStock : ProductStatus.Active;
+    this.is_restock_required = this.stock_quantity <= this.min_threshold;
   }
 });
 
