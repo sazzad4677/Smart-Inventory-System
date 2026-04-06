@@ -2,9 +2,9 @@ name: Smart Inventory CI Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ v2-advanced-features ]
   pull_request:
-    branches: [ main ]
+    branches: [ v2-advanced-features ]
 
 jobs:
   build-and-verify:
