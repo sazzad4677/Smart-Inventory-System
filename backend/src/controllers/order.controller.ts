@@ -13,16 +13,32 @@ import { redisClient } from '../config/redis';
 // ─── POST /api/order (Permissions: Private) ──────────────────────────────────
 export const createOrder = catchAsync(async (req: Request, res: Response) => {
   const userId = (req as any).user?._id;
-  const result = await createOrderInDB(userId, req.body);
+  const { order, lowStockProducts } = await createOrderInDB(userId, req.body);
 
   // Invalidate dashboard metrics cache
   await redisClient.del('dashboard_metrics');
+
+  // Socket.io: Low stock alerts
+  if (lowStockProducts && lowStockProducts.length > 0) {
+    const io = req.app.get('io');
+    console.log(`📡 Found ${lowStockProducts.length} low stock products. Emitting alerts...`);
+    lowStockProducts.forEach((product: any) => {
+      console.log(`🔔 Emitting low_stock_alert for: ${product.name} (Stock: ${product.stock})`);
+      io.emit('low_stock_alert', {
+        id: Math.random().toString(36).substr(2, 9),
+        productName: product.name,
+        currentStock: product.stock,
+        message: `Critical: ${product.name} stock dropped to ${product.stock}`,
+        timestamp: new Date(),
+      });
+    });
+  }
 
   sendResponse(res, {
     statusCode: 201,
     success: true,
     message: 'Order created successfully.',
-    data: result as any,
+    data: order as any,
   });
 });
 

@@ -1,8 +1,7 @@
 "use client";
 
-import { Search, Bell, User, ChevronDown } from "lucide-react";
+import { User, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { logoutAction } from "@/actions/auth.actions";
 import { useRouter } from "next/navigation";
+import NotificationBell from "./notification-bell";
 
 interface NavbarProps {
   user: {
@@ -36,15 +36,7 @@ export function Navbar({ user }: NavbarProps) {
       <div className="flex flex-1 items-center gap-4"></div>
 
       <div className="flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative hover:bg-white/5 text-slate-400 hover:text-white rounded-xl"
-        >
-          <Bell className="h-5 w-5" />
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-indigo-500 shadow-sm shadow-indigo-500/50" />
-          <span className="sr-only">Notifications</span>
-        </Button>
+        <NotificationBell />
 
         <DropdownMenu>
           <DropdownMenuTrigger

@@ -29,6 +29,7 @@ export const createOrderInDB = async (userId: string, payload: CreateOrderInput)
   try {
     let totalPrice = 0;
     const orderItemsData = [];
+    const lowStockProducts: any[] = [];
 
     for (const item of items) {
       const product = await Product.findById(item.product_id).session(session);
@@ -56,9 +57,14 @@ export const createOrderInDB = async (userId: string, payload: CreateOrderInput)
       // 5. Update stock and handle Trigger B
       product.stock_quantity -= item.quantity;
 
-      // If stock <= min_threshold, flag for Restock Queue
+      // If stock <= min_threshold, flag for Restock Queue and notify
       if (product.stock_quantity <= product.min_threshold) {
         product.is_restock_required = true;
+        lowStockProducts.push({
+          id: product._id,
+          name: product.name,
+          stock: product.stock_quantity,
+        });
       }
 
       // Stock hits 0 -> status update handled by Product model pre-save hook
@@ -115,7 +121,7 @@ export const createOrderInDB = async (userId: string, payload: CreateOrderInput)
     await session.commitTransaction();
     session.endSession();
 
-    return order;
+    return { order, lowStockProducts };
   } catch (error) {
     await session.abortTransaction();
     session.endSession();

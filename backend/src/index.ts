@@ -2,6 +2,8 @@ import express, { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import http from 'http';
+import { Server } from 'socket.io';
 
 import { config } from './config/config';
 import connectDB from './config/db';
@@ -12,6 +14,16 @@ import router from './routes';
 import { AppError } from './utils/AppError';
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: config.cors.clientUrl,
+    credentials: true,
+  },
+});
+
+// Attach Socket.io instance to app for use in controllers
+app.set('io', io);
 
 // Middleware
 app.use(helmet());
@@ -41,6 +53,14 @@ app.get('/health', (req: Request, res: Response) => {
 
 app.use('/api', router);
 
+// Socket.io Connection Event
+io.on('connection', (socket) => {
+  console.log('New client connected');
+  socket.on('disconnect', () => {
+    console.log('Client disconnected');
+  });
+});
+
 // 404 Not Found Handler
 app.use((req: Request, res: Response, next: NextFunction) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
@@ -54,7 +74,7 @@ const startServer = async () => {
   await connectDB();
   await connectRedis();
 
-  app.listen(config.server.port, () => {
+  server.listen(config.server.port, () => {
     console.log(`🚀 Server running in ${config.server.nodeEnv} mode on port ${config.server.port}`);
   });
 };
