@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition, useMemo } from "react";
+import { useTransition, useMemo, useState, useCallback } from "react";
 import { OrderSchema, OrderInput } from "@/lib/validations";
 import { DynamicForm, FieldConfig } from "@/components/shared/dynamic-form";
 import { OrderItemsField } from "./order-items-field";
@@ -10,12 +10,24 @@ import { toast } from "sonner";
 import { User } from "lucide-react";
 
 interface OrderFormProps {
-  products: Product[];
   onSuccess: () => void;
 }
 
-export function OrderForm({ products, onSuccess }: OrderFormProps) {
+export function OrderForm({ onSuccess }: OrderFormProps) {
   const [isPending, startTransition] = useTransition();
+  const [selectedProductsMap, setSelectedProductsMap] = useState<
+    Record<string, Product>
+  >({});
+
+  const handleProductsLoaded = useCallback((products: Product[]) => {
+    setSelectedProductsMap((prev) => {
+      const newMap = { ...prev };
+      products.forEach((p) => {
+        newMap[p._id] = p;
+      });
+      return newMap;
+    });
+  }, []);
 
   const fields: FieldConfig<OrderInput>[] = [
     {
@@ -29,15 +41,21 @@ export function OrderForm({ products, onSuccess }: OrderFormProps) {
       name: "items",
       label: "",
       type: "custom",
-      render: (form) => <OrderItemsField form={form} products={products} />,
+      render: (form) => (
+        <OrderItemsField
+          form={form}
+          onProductsLoaded={handleProductsLoaded}
+          selectedProductsMap={selectedProductsMap}
+        />
+      ),
     },
   ];
 
-  // Create a dynamic schema that knows about the current stock levels
+  // Create a dynamic schema that knows about the current stock levels from our local map
   const dynamicSchema = useMemo(() => {
     return OrderSchema.superRefine((data, ctx) => {
       data.items.forEach((item, index) => {
-        const product = products.find((p) => p._id === item.product_id);
+        const product = selectedProductsMap[item.product_id];
         if (product) {
           if (Number(item.quantity) > product.stock_quantity) {
             ctx.addIssue({
@@ -49,7 +67,7 @@ export function OrderForm({ products, onSuccess }: OrderFormProps) {
         }
       });
     });
-  }, [products]);
+  }, [selectedProductsMap]);
 
   const onSubmit = (data: OrderInput) => {
     startTransition(async () => {

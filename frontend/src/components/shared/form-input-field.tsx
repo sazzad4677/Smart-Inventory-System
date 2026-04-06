@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AppSelect } from "./app-select";
+import { AppCombobox } from "./app-combobox";
 import { cn } from "@/lib/utils";
 
 export type FormInputFieldType =
@@ -21,6 +22,7 @@ export type FormInputFieldType =
   | "password"
   | "number"
   | "select"
+  | "combobox"
   | "textarea";
 
 interface FormInputFieldProps<T extends FieldValues> {
@@ -35,6 +37,8 @@ interface FormInputFieldProps<T extends FieldValues> {
   inputClassName?: string;
   extraContent?: ReactNode;
   showError?: boolean;
+  onSearchValueChange?: (value: string) => void;
+  isLoading?: boolean;
 }
 
 export function FormInputField<T extends FieldValues>({
@@ -49,6 +53,8 @@ export function FormInputField<T extends FieldValues>({
   inputClassName,
   extraContent,
   showError = true,
+  onSearchValueChange,
+  isLoading,
 }: FormInputFieldProps<T>) {
   return (
     <FormField
@@ -83,6 +89,20 @@ export function FormInputField<T extends FieldValues>({
                       onValueChange={field.onChange}
                       placeholder={placeholder}
                       triggerClassName={cn("w-full", inputClassName)}
+                    />
+                  );
+                case "combobox":
+                  return (
+                    <AppCombobox
+                      options={options || []}
+                      value={field.value}
+                      onValueChange={(val: string) => {
+                        field.onChange(val);
+                      }}
+                      onSearchValueChange={onSearchValueChange}
+                      isLoading={isLoading}
+                      placeholder={placeholder}
+                      className={inputClassName}
                     />
                   );
                 default:

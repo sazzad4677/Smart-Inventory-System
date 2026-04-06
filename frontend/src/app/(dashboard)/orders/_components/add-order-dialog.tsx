@@ -1,39 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ActionModal } from "@/components/shared/action-modal";
 import { OrderForm } from "./order-form";
-import { getProductsAction } from "@/actions/product.actions";
-import { Product } from "@/lib/types";
-import { toast } from "sonner";
 
 export function AddOrderDialog() {
   const [isOpen, setIsOpen] = useState(false);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    async function fetchProducts() {
-      setIsLoading(true);
-      const result = await getProductsAction({ limit: 100 });
-
-      if (result.success) {
-        // Filter only active products
-        const activeProducts = result.data.data.filter(
-          (p: Product) => p.status === "Active",
-        );
-        setProducts(activeProducts);
-      } else {
-        toast.error(result.error || "Failed to fetch products");
-      }
-      setIsLoading(false);
-    }
-    if (isOpen) {
-      fetchProducts();
-    }
-  }, [isOpen]);
 
   return (
     <ActionModal
@@ -50,19 +24,7 @@ export function AddOrderDialog() {
       className="sm:max-w-[600px]"
     >
       <div className="mt-4">
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-12 gap-3 text-slate-400">
-            <div className="relative w-12 h-12">
-              <div className="absolute inset-0 border-2 border-indigo-500/20 rounded-full animate-pulse" />
-              <div className="absolute inset-0 border-t-2 border-indigo-500 rounded-full animate-spin" />
-            </div>
-            <p className="text-sm font-medium animate-pulse text-indigo-400/80">
-              Fetching active products...
-            </p>
-          </div>
-        ) : (
-          <OrderForm products={products} onSuccess={() => setIsOpen(false)} />
-        )}
+        <OrderForm onSuccess={() => setIsOpen(false)} />
       </div>
     </ActionModal>
   );

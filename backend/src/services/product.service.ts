@@ -55,10 +55,11 @@ export const updateProductInDB = async (
   id: string,
   payload: UpdateProductInput,
 ) => {
-  const result = await Product.findByIdAndUpdate(id, payload, {
-    new: true,
-    runValidators: true,
-  });
+  const product = await Product.findById(id);
+  if (!product) throw new Error('Product not found');
+
+  Object.assign(product, payload);
+  const result = await product.save();
 
   if (result) {
     let actionText = `Product updated: ${result.name}`;

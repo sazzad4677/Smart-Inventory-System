@@ -4,17 +4,24 @@ import { useFieldArray, UseFormReturn, useWatch } from "react-hook-form";
 import { OrderInput } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, ShoppingCart, AlertCircle } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { FormInputField } from "@/components/shared/form-input-field";
 import { Product } from "@/lib/types";
+import { getProductsAction } from "@/actions/product.actions";
+import { useDebounce } from "@/hooks/use-debounce";
 
 interface OrderItemsFieldProps {
   form: UseFormReturn<OrderInput>;
-  products: Product[];
+  onProductsLoaded?: (products: Product[]) => void;
+  selectedProductsMap: Record<string, Product>;
 }
 
-export function OrderItemsField({ form, products }: OrderItemsFieldProps) {
+export function OrderItemsField({
+  form,
+  onProductsLoaded,
+  selectedProductsMap,
+}: OrderItemsFieldProps) {
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "items",
@@ -26,17 +33,48 @@ export function OrderItemsField({ form, products }: OrderItemsFieldProps) {
     defaultValue: form.getValues("items"),
   });
 
+  // Dynamic search state
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 400);
+  const [fetchedProducts, setFetchedProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch products when search term changes
+  useEffect(() => {
+    const fetchSearchResults = async () => {
+      setIsLoading(true);
+      const result = await getProductsAction({
+        searchTerm: debouncedSearch,
+        limit: 10,
+      });
+
+      if (result.success) {
+        const activeProducts = (result.data.data || []).filter(
+          (p: Product) => p.status === "Active",
+        );
+        setFetchedProducts(activeProducts);
+
+        if (onProductsLoaded) {
+          onProductsLoaded(activeProducts);
+        }
+      }
+      setIsLoading(false);
+    };
+
+    fetchSearchResults();
+  }, [debouncedSearch, onProductsLoaded]);
+
   const totalPrice = useMemo(() => {
     return (watchItems || []).reduce((acc, item) => {
       if (!item.product_id) return acc;
-      const product = products.find((p) => p._id === item.product_id);
+      const product = selectedProductsMap[item.product_id];
       if (product) {
         const qty = Number(item.quantity) || 0;
         return acc + product.price * qty;
       }
       return acc;
     }, 0);
-  }, [watchItems, products]);
+  }, [watchItems, selectedProductsMap]);
 
   const selectedProductIds = (watchItems || []).map((item) => item.product_id);
 
@@ -63,15 +101,33 @@ export function OrderItemsField({ form, products }: OrderItemsFieldProps) {
         {fields.map((field, index) => {
           const itemValue = watchItems?.[index];
           const currentProductId = itemValue?.product_id;
-          const currentProduct = products.find(
-            (p) => p._id === currentProductId,
-          );
+          const currentProduct = currentProductId
+            ? selectedProductsMap[currentProductId]
+            : undefined;
           const currentQuantity = Number(itemValue?.quantity || 0);
 
           const isInvalid =
             currentProduct &&
             (currentQuantity > currentProduct.stock_quantity ||
               currentProduct.stock_quantity === 0);
+
+          const rowOptions = fetchedProducts.map((p: Product) => ({
+            label: `${p.name} ($${p.price})`,
+            value: p._id,
+            disabled:
+              selectedProductIds.includes(p._id) && p._id !== currentProductId,
+          }));
+
+          if (
+            currentProduct &&
+            !rowOptions.find((o) => o.value === currentProductId)
+          ) {
+            rowOptions.unshift({
+              label: `${currentProduct.name} ($${currentProduct.price})`,
+              value: currentProduct._id,
+              disabled: false,
+            });
+          }
 
           return (
             <div
@@ -87,17 +143,13 @@ export function OrderItemsField({ form, products }: OrderItemsFieldProps) {
                 <FormInputField
                   control={form.control}
                   name={`items.${index}.product_id`}
-                  type="select"
-                  placeholder="Select Product"
+                  type="combobox"
+                  placeholder="Search and select product..."
                   className="space-y-0"
                   inputClassName="bg-transparent border-none p-0 h-9"
-                  options={products.map((p) => ({
-                    label: `${p.name} ($${p.price})`,
-                    value: p._id,
-                    disabled:
-                      selectedProductIds.includes(p._id) &&
-                      p._id !== form.getValues(`items.${index}.product_id`),
-                  }))}
+                  isLoading={isLoading}
+                  onSearchValueChange={setSearchTerm}
+                  options={rowOptions}
                   extraContent={
                     currentProduct && (
                       <div
