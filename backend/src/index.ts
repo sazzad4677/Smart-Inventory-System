@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import { config } from './config/config';
 import connectDB from './config/db';
 import { connectRedis } from './config/redis';
+import { apiRateLimiter } from './middlewares/rateLimiter.middleware';
 import { globalErrorHandler } from './middlewares/error.middleware';
 import router from './routes';
 
@@ -21,6 +22,9 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
+
+// Global Rate Limiter
+app.use('/api', apiRateLimiter);
 
 // Routes
 app.get('/health', (req: Request, res: Response) => {
