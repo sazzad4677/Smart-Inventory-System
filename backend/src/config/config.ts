@@ -25,4 +25,7 @@ export const config = {
   cors: {
     clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
   },
+  redis: {
+    uri: process.env.REDIS_URI || 'redis://localhost:6379',
+  },
 } as const;

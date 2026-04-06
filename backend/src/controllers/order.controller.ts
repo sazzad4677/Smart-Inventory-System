@@ -8,11 +8,15 @@ import {
   updateOrderStatusInDB,
   deleteOrderFromDB,
 } from '../services/order.service';
+import { redisClient } from '../config/redis';
 
 // ─── POST /api/order (Permissions: Private) ──────────────────────────────────
 export const createOrder = catchAsync(async (req: Request, res: Response) => {
   const userId = (req as any).user?._id;
   const result = await createOrderInDB(userId, req.body);
+
+  // Invalidate dashboard metrics cache
+  await redisClient.del('dashboard_metrics');
 
   sendResponse(res, {
     statusCode: 201,
