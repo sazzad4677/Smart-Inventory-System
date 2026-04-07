@@ -16,7 +16,7 @@ async function setAuthCookies(accessToken: string, refreshToken: string) {
   store.set("accessToken", accessToken, {
     httpOnly: true,
     secure: isProduction,
-    sameSite: "lax",
+    sameSite: "strict",
     maxAge: 15 * 60,
     path: "/",
   });
@@ -24,7 +24,7 @@ async function setAuthCookies(accessToken: string, refreshToken: string) {
   store.set("refreshToken", refreshToken, {
     httpOnly: true,
     secure: isProduction,
-    sameSite: "lax",
+    sameSite: "strict",
     maxAge: 7 * 24 * 60 * 60,
     path: "/",
   });

@@ -36,12 +36,12 @@ export const apiRateLimiter = rateLimit({
     success: false,
     message: 'Too many requests, please try again later.',
   },
-  skip: (req) => req.path.includes('/auth/login'),
+  skip: (req) => req.path.includes('/auth/login') || req.path.includes('/auth/signup'),
   validate: { default: true },
 });
 
-// Login-specific rate limiter (5 requests per 15 minutes)
-export const loginRateLimiter = rateLimit({
+// Auth-specific rate limiter (5 requests per 2 minutes)
+export const authRateLimiter = rateLimit({
   windowMs: 2 * 60 * 1000,
   max: 5,
   standardHeaders: true,
@@ -49,11 +49,11 @@ export const loginRateLimiter = rateLimit({
   store: new RedisStore({
     // @ts-expect-error
     sendCommand: (...args: string[]) => robustSendCommand(...args),
-    prefix: 'rl:login:',
+    prefix: 'rl:auth:',
   }),
   message: {
     success: false,
-    message: 'Too many login attempts, please try again after 2 minutes',
+    message: 'Too many auth attempts, please try again after 2 minutes',
   },
   validate: { default: true },
 });

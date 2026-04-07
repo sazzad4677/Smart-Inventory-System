@@ -65,7 +65,7 @@ export const logout = catchAsync(async (req: Request, res: Response) => {
 
 // ─── GET /api/auth/me (Private) ───────────────────────────────────────────────
 export const me = catchAsync(async (req: Request, res: Response) => {
-  const user = (req as any).user;
+  const user = req.user;
   sendResponse(res, {
     statusCode: 200,
     success: true,

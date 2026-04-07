@@ -6,7 +6,7 @@ import type { NextRequest } from "next/server";
 const ACCESS_TOKEN_COOKIE = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "lax" as const,
+  sameSite: "strict" as const,
   maxAge: 15 * 60,
   path: "/",
 };

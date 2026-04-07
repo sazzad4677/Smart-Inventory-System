@@ -6,6 +6,7 @@ import type { SignupInput, LoginInput } from '../validators/auth.validator';
 import jwt from 'jsonwebtoken';
 import ms from 'ms';
 import { config } from '../config/config';
+import { Types } from 'mongoose';
 
 // ─── Token Generation ──────────────────────────────────────────────────────────
 
@@ -14,8 +15,12 @@ interface TokenPair {
   refreshToken: string;
 }
 
-const generateTokens = (userId: any, role: string): TokenPair => {
-  const accessToken = jwt.sign({ id: userId, role }, config.jwt.accessSecret, {
+const generateTokens = (
+  userId: Types.ObjectId,
+  role: string,
+  sessionId: Types.ObjectId,
+): TokenPair => {
+  const accessToken = jwt.sign({ id: userId, role, sessionId }, config.jwt.accessSecret, {
     expiresIn: config.jwt.accessExpiresIn,
   } as jwt.SignOptions);
 
@@ -29,9 +34,20 @@ const generateTokens = (userId: any, role: string): TokenPair => {
 /**
  * Creates a session storing the refresh token in the database.
  */
-const createSession = async (userId: any, refreshToken: string): Promise<void> => {
+const createSession = async (
+  sessionId: Types.ObjectId,
+  userId: Types.ObjectId,
+  refreshToken: string,
+): Promise<void> => {
   const expiresAt = new Date(Date.now() + ms(config.jwt.refreshExpiresIn as any));
-  await Session.create({ userId, refreshToken, expiresAt });
+  await Session.create({ _id: sessionId, userId, refreshToken, expiresAt });
+};
+
+const setupUserSession = async (user: IUserDocument): Promise<TokenPair> => {
+  const sessionId = new Types.ObjectId();
+  const tokens = generateTokens(user._id as Types.ObjectId, user.role, sessionId);
+  await createSession(sessionId, user._id as Types.ObjectId, tokens.refreshToken);
+  return tokens;
 };
 
 // ─── POST /api/auth/signup ─────────────────────────────────────────────────────
@@ -50,8 +66,7 @@ export const signupUser = async (
     role: data.role,
   });
 
-  const { accessToken, refreshToken } = generateTokens(user._id, user.role);
-  await createSession(user._id, refreshToken);
+  const { accessToken, refreshToken } = await setupUserSession(user);
 
   return { user, accessToken, refreshToken };
 };
@@ -71,8 +86,7 @@ export const loginUser = async (
     throw new AppError('Invalid email or password', 401);
   }
 
-  const { accessToken, refreshToken } = generateTokens(user._id, user.role);
-  await createSession(user._id, refreshToken);
+  const { accessToken, refreshToken } = await setupUserSession(user);
 
   user.password_hash = undefined as any;
   return { user, accessToken, refreshToken };
@@ -104,9 +118,13 @@ export const refreshAccessToken = async (
   }
 
   // 4) Issue a new short-lived access token
-  const accessToken = jwt.sign({ id: user._id, role: user.role }, config.jwt.accessSecret, {
-    expiresIn: config.jwt.accessExpiresIn,
-  } as jwt.SignOptions);
+  const accessToken = jwt.sign(
+    { id: user._id, role: user.role, sessionId: session._id },
+    config.jwt.accessSecret,
+    {
+      expiresIn: config.jwt.accessExpiresIn,
+    } as jwt.SignOptions,
+  );
 
   return { accessToken };
 };
