@@ -17,6 +17,13 @@ export interface PaginatedResponse<T> {
   meta: PaginationMeta;
 }
 
+export interface User {
+  _id: string;
+  name: string;
+  email: string;
+  role: "Admin" | "Manager" | "User";
+}
+
 export interface Product {
   _id: string;
   product_id: string;
@@ -46,6 +53,8 @@ export interface Activity {
     role: string;
   } | null;
   timestamp: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface DashboardData {

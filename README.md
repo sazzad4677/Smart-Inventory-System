@@ -145,6 +145,55 @@ pnpm dev
 
 ---
 
+## 🐳 Docker Setup (Recommended)
+
+The easiest way to run the entire stack (Frontend, Backend, Redis, and MongoDB) is using Docker Compose.
+
+### 🐳 Prerequisites (Docker)
+
+- **Docker** and **Docker Compose** installed on your machine.
+
+### 1. Environment Configuration
+
+The Docker setup uses the same `.env` files as the local setup. Ensure you have them created:
+
+```bash
+cp backend/.env.example backend/.env.local
+cp frontend/.env.example frontend/.env.local
+```
+
+> [!NOTE]
+> By default, the `docker-compose.yml` is configured to use the internal MongoDB container. If you wish to use an external MongoDB (like Atlas), update the `MONGODB_URI` in `backend/.env.local`.
+
+### 2. Run with Docker Compose
+
+From the root directory, run:
+
+```bash
+docker compose up --build
+```
+
+- Build the Frontend and Backend images.
+- Start **MongoDB**, **Redis**, **Backend**, and **Frontend** services.
+- Set up hot-reloading for both Frontend and Backend (changes to source code will reflect immediately).
+
+### 3. Database Seeding (Docker)
+
+To populate the database with sample data while the containers are running:
+
+```bash
+docker compose exec backend pnpm --filter backend run seed
+```
+
+### 4. Access the Application
+
+- **Frontend**: [http://localhost:3000](http://localhost:3000)
+- **Backend API**: [http://localhost:5000/api](http://localhost:5000/api)
+- **Redis**: `localhost:6379`
+- **MongoDB**: `localhost:27017`
+
+---
+
 ## 🧪 Testing
 
 - Standardized Git commits using **Commitlint** and **Husky**.

@@ -16,9 +16,10 @@ export interface PaginationMeta {
 
 interface PaginationProps {
   meta: PaginationMeta;
+  itemLabel?: string;
 }
 
-export function Pagination({ meta }: PaginationProps) {
+export function Pagination({ meta, itemLabel = "products" }: PaginationProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -53,7 +54,7 @@ export function Pagination({ meta }: PaginationProps) {
             {Math.min(meta.page * meta.limit, meta.total)}
           </span>{" "}
           of <span className="font-medium text-slate-200">{meta.total}</span>{" "}
-          products
+          {itemLabel}
         </span>
       </div>
       <div className="flex items-center gap-2">

@@ -5,6 +5,7 @@ import productRouter from './product.route';
 import orderRouter from './order.route';
 import dashboardRouter from './dashboard.route';
 import restockRouter from './restock.route';
+import activityLogRouter from './activity-log.route';
 
 const router: Router = Router();
 
@@ -14,6 +15,7 @@ const moduleRoutes = [
   { path: '/products', route: productRouter },
   { path: '/orders', route: orderRouter },
   { path: '/restock-queue', route: restockRouter },
+  { path: '/activity-logs', route: activityLogRouter },
   { path: '/', route: dashboardRouter },
 ];
 

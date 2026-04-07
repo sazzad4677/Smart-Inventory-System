@@ -7,6 +7,7 @@ import { CategoryList } from "./_components/category-list";
 
 import { FilterBar, FilterField } from "@/components/shared/filter-bar";
 import { Pagination } from "@/components/shared/pagination";
+import { ErrorAlert } from "@/components/shared/error-alert";
 
 interface CategoriesPageProps {
   searchParams: Promise<{
@@ -62,7 +63,14 @@ export default async function CategoriesPage({
       <FilterBar filters={filters} />
 
       <div className="relative group">
-        {categories.length === 0 ? (
+        {!response.success ? (
+          <ErrorAlert
+            error={
+              response.error ||
+              "Failed to load categories. Please try again later."
+            }
+          />
+        ) : categories.length === 0 ? (
           <EmptyState
             className="py-12 bg-slate-900/10 border-white/5 rounded-2xl"
             icon={<Tags className="h-12 w-12 text-indigo-500/40" />}
@@ -78,7 +86,7 @@ export default async function CategoriesPage({
         ) : (
           <div className="flex flex-col gap-6">
             <CategoryList categories={categories} />
-            <Pagination meta={meta} />
+            <Pagination meta={meta} itemLabel="categories" />
           </div>
         )}
       </div>
