@@ -3,11 +3,12 @@ import jwt from 'jsonwebtoken';
 import { AppError } from '../utils/AppError';
 import { catchAsync } from '../utils/catchAsync';
 import User from '../models/user.model';
+import { config } from '../config/config';
 
 export const protect = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  // 1) Getting token and check if it's there
-  let token;
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+  // Get token from Authorization header
+  let token: string | undefined;
+  if (req.headers.authorization?.startsWith('Bearer ')) {
     token = req.headers.authorization.split(' ')[1];
   }
 
@@ -15,33 +16,33 @@ export const protect = catchAsync(async (req: Request, res: Response, next: Next
     return next(new AppError('You are not logged in! Please log in to get access.', 401));
   }
 
-  // 2) Verification of token
-  const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as jwt.JwtPayload;
+  // Verify token
+  let decoded: jwt.JwtPayload;
+  try {
+    decoded = jwt.verify(token, config.jwt.accessSecret) as jwt.JwtPayload;
+  } catch {
+    return next(new AppError('Access token is invalid or expired.', 401));
+  }
 
-  // 3) Check if user still exists
+  // Check user exists
   const currentUser = await User.findById(decoded.id);
   if (!currentUser) {
     return next(new AppError('The user belonging to this token no longer exists.', 401));
   }
 
-  // decoded payload to req.user for use in middleware and controllers
   (req as any).user = currentUser;
-
   next();
 });
 
-// Middleware to restrict access based on roles
 export const restrictTo = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = (req as any).user;
-    if (!user || !user.role) {
+    if (!user?.role) {
       return next(new AppError('You are not logged in or your role is undefined.', 401));
     }
-
     if (!roles.includes(user.role)) {
-      return next(new AppError('You do not have permission to perform this action', 403));
+      return next(new AppError('You do not have permission to perform this action.', 403));
     }
-
     next();
   };
 };

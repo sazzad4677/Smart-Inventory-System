@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { Navbar } from "@/components/layout/navbar";
+import { AuthInitializer } from "@/components/auth-initializer";
 import { getCurrentUser } from "@/actions/auth.actions";
 
 export async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -7,6 +8,7 @@ export async function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-full min-h-full font-sans text-slate-100">
+      <AuthInitializer user={user} />
       <Sidebar aria-label="Sidebar navigation" user={user} />
       <div className="flex flex-1 flex-col md:pl-64 min-w-0">
         <Navbar aria-label="Top navigation" user={user} />

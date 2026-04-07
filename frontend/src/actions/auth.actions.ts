@@ -1,95 +1,94 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { UserLoginInput, UserSignupInput } from "@/lib/validations";
 import { apiFetch } from "@/lib/api";
 import { ActionResult } from "@/lib/types";
 import { tryAction } from "@/lib/error-utils";
+import { UserLoginInput, UserSignupInput } from "@/lib/validations";
+import { User } from "@/lib/types";
 
-export async function loginAction(data: UserLoginInput): Promise<ActionResult> {
+// ─── Cookie helpers ────────────────────────────────────────────────────────────
+
+const isProduction = process.env.NODE_ENV === "production";
+
+async function setAuthCookies(accessToken: string, refreshToken: string) {
+  const store = await cookies();
+  store.set("accessToken", accessToken, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: "lax",
+    maxAge: 15 * 60,
+    path: "/",
+  });
+
+  store.set("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: "lax",
+    maxAge: 7 * 24 * 60 * 60,
+    path: "/",
+  });
+}
+
+// ─── Login ────────────────────────────────────────────────────────────────────
+
+export async function loginAction(
+  data: UserLoginInput,
+): Promise<ActionResult<{ user: User }>> {
   return tryAction(async () => {
     const response = await apiFetch("/auth/login", {
       method: "POST",
       body: JSON.stringify(data),
     });
-
-    const result = await response.json();
-
-    if (result.data?.token) {
-      const cookieStore = await cookies();
-      cookieStore.set("token", result.data.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-      });
-    }
-
-    if (result.data?.user) {
-      const cookieStore = await cookies();
-      cookieStore.set("user", JSON.stringify(result.data.user), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-      });
-    }
+    const { data: result } = await response.json();
+    await setAuthCookies(result.accessToken, result.refreshToken);
+    return { user: result.user as User };
   }, "Login failed");
 }
 
+// ─── Signup ───────────────────────────────────────────────────────────────────
+
 export async function signupAction(
   data: UserSignupInput,
-): Promise<ActionResult> {
+): Promise<ActionResult<{ user: User }>> {
   return tryAction(async () => {
     const response = await apiFetch("/auth/signup", {
       method: "POST",
       body: JSON.stringify(data),
     });
-
-    const result = await response.json();
-
-    if (result.data?.token) {
-      const cookieStore = await cookies();
-      cookieStore.set("token", result.data.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-      });
-    }
-
-    if (result.data?.user) {
-      const cookieStore = await cookies();
-      cookieStore.set("user", JSON.stringify(result.data.user), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-      });
-    }
+    const { data: result } = await response.json();
+    await setAuthCookies(result.accessToken, result.refreshToken);
+    return { user: result.user as User };
   }, "Signup failed");
 }
 
-export async function logoutAction() {
-  const cookieStore = await cookies();
-  cookieStore.delete("token");
-  cookieStore.delete("user");
+// ─── Logout ───────────────────────────────────────────────────────────────────
+
+export async function logoutAction(): Promise<ActionResult> {
+  return tryAction(async () => {
+    const store = await cookies();
+    const refreshToken = store.get("refreshToken")?.value;
+
+    await apiFetch("/auth/logout", {
+      method: "POST",
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    // Clear both cookies
+    store.delete("accessToken");
+    store.delete("refreshToken");
+  }, "Logout failed");
 }
 
-export async function getCurrentUser() {
-  const cookieStore = await cookies();
-  const userData = cookieStore.get("user")?.value;
+// ─── Current User ─────────────────────────────────────────────────────────────
 
-  if (!userData) return null;
-
+export async function getCurrentUser(): Promise<User | null> {
   try {
-    return JSON.parse(userData);
+    const response = await apiFetch("/auth/me");
+    const { data } = await response.json();
+    return (data?.user as User) ?? null;
   } catch (error) {
-    console.error("Error parsing user cookie:", error);
+    console.error("Error fetching current user:", error);
     return null;
   }
 }

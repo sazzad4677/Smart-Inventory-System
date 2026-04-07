@@ -1,10 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-const isServer = typeof window === "undefined";
-const API_URL = isServer
-  ? process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL
-  : process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL;
 
 export class ApiError extends Error {
   constructor(
@@ -18,68 +15,90 @@ export class ApiError extends Error {
 }
 
 export function isRedirectError(error: unknown): boolean {
-  if (typeof error !== "object" || error === null) return false;
   const err = error as { digest?: string };
   return (
-    typeof err.digest === "string" && err.digest.startsWith("NEXT_REDIRECT")
+    typeof err?.digest === "string" && err.digest.startsWith("NEXT_REDIRECT")
   );
 }
 
-export async function apiFetch(endpoint: string, options: RequestInit = {}) {
-  // Get the token from cookies
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
+// ─── token refresh ──────────────────────────────────────────────────────
 
-  // Clone and augment headers
-  const headers = new Headers(options.headers);
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
+async function tryRefreshToken(): Promise<boolean> {
+  const store = await cookies();
+  const refreshToken = store.get("refreshToken")?.value;
+  if (!refreshToken) return false;
+
+  try {
+    const res = await fetch(`${API_URL}/auth/refresh-token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!res.ok) return false;
+
+    const { data } = await res.json();
+    if (!data?.accessToken) return false;
+
+    store.set("accessToken", data.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 15 * 60, // 15 minutes
+      path: "/",
+    });
+
+    return true;
+  } catch {
+    return false;
   }
+}
 
-  // Set default Content-Type for POST/PUT if body exists
+// ─── Main fetch ────────────────────────────────────────────────────────────────
+
+export async function apiFetch(endpoint: string, options: RequestInit = {}) {
+  const store = await cookies();
+  const token = store.get("accessToken")?.value;
+
+  const headers = new Headers(options.headers);
+  if (token) headers.set("Authorization", `Bearer ${token}`);
   if (options.body && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 
-  // Build the full URL
   const url = endpoint.startsWith("/")
     ? `${API_URL}${endpoint}`
     : `${API_URL}/${endpoint}`;
 
   try {
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+    const response = await fetch(url, { ...options, headers });
 
-    // Handle 401 Unauthorized globally
-    if (response.status === 401 && !endpoint.includes("/auth/login")) {
-      redirect("/login");
+    // 401 → try a silent refresh, then retry once
+    if (response.status === 401 && !endpoint.includes("/auth/")) {
+      const refreshed = await tryRefreshToken();
+      if (!refreshed) redirect("/login");
+
+      const newToken = (await cookies()).get("accessToken")?.value;
+      const retryHeaders = new Headers(options.headers);
+      if (newToken) retryHeaders.set("Authorization", `Bearer ${newToken}`);
+      if (options.body && !retryHeaders.has("Content-Type")) {
+        retryHeaders.set("Content-Type", "application/json");
+      }
+      return fetch(url, { ...options, headers: retryHeaders });
     }
 
-    // If response is not OK, try to parse error message from body
     if (!response.ok) {
-      let errorMessage = "Something went wrong";
-      let errorData;
-
-      try {
-        const result = await response.json();
-        errorMessage = result.message || errorMessage;
-        errorData = result.data;
-      } catch {
-        // Fallback to status text if JSON parsing fails
-        errorMessage = response.statusText || errorMessage;
-      }
-
-      throw new ApiError(errorMessage, response.status, errorData);
+      const result = await response.json().catch(() => ({}));
+      throw new ApiError(
+        result.message ?? "Something went wrong",
+        response.status,
+        result.data,
+      );
     }
 
     return response;
   } catch (error) {
-    if (isRedirectError(error) || error instanceof ApiError) {
-      throw error;
-    }
-    console.error(`Fetch API Error [${endpoint}]:`, error);
+    if (isRedirectError(error) || error instanceof ApiError) throw error;
     throw error;
   }
 }
