@@ -3,6 +3,16 @@ import { redirect } from "next/navigation";
 
 const API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL;
 
+const ACCESS_TOKEN_COOKIE = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  maxAge: 15 * 60,
+  path: "/",
+};
+
+// ─── Errors ───────────────────────────────────────────────────────────────────
+
 export class ApiError extends Error {
   constructor(
     public message: string,
@@ -21,12 +31,40 @@ export function isRedirectError(error: unknown): boolean {
   );
 }
 
-// ─── token refresh ──────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-async function tryRefreshToken(): Promise<boolean> {
+function buildUrl(endpoint: string): string {
+  return endpoint.startsWith("/")
+    ? `${API_URL}${endpoint}`
+    : `${API_URL}/${endpoint}`;
+}
+
+function buildHeaders(options: RequestInit, token?: string): Headers {
+  const headers = new Headers(options.headers);
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  if (options.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+  return headers;
+}
+
+async function throwIfNotOk(response: Response): Promise<void> {
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    throw new ApiError(
+      result.message ?? "Something went wrong",
+      response.status,
+      result.data,
+    );
+  }
+}
+
+// ─── Token refresh ────────────────────────────────────────────────────────────
+
+async function tryRefreshToken(): Promise<string | null> {
   const store = await cookies();
   const refreshToken = store.get("refreshToken")?.value;
-  if (!refreshToken) return false;
+  if (!refreshToken) return null;
 
   try {
     const res = await fetch(`${API_URL}/auth/refresh-token`, {
@@ -35,67 +73,57 @@ async function tryRefreshToken(): Promise<boolean> {
       body: JSON.stringify({ refreshToken }),
     });
 
-    if (!res.ok) return false;
+    if (!res.ok) return null;
 
     const { data } = await res.json();
-    if (!data?.accessToken) return false;
+    if (!data?.accessToken) return null;
 
-    store.set("accessToken", data.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 15 * 60, // 15 minutes
-      path: "/",
-    });
-
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// ─── Main fetch ────────────────────────────────────────────────────────────────
-
-export async function apiFetch(endpoint: string, options: RequestInit = {}) {
-  const store = await cookies();
-  const token = store.get("accessToken")?.value;
-
-  const headers = new Headers(options.headers);
-  if (token) headers.set("Authorization", `Bearer ${token}`);
-  if (options.body && !headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json");
-  }
-
-  const url = endpoint.startsWith("/")
-    ? `${API_URL}${endpoint}`
-    : `${API_URL}/${endpoint}`;
-
-  try {
-    const response = await fetch(url, { ...options, headers });
-
-    // 401 → try a silent refresh, then retry once
-    if (response.status === 401 && !endpoint.includes("/auth/")) {
-      const refreshed = await tryRefreshToken();
-      if (!refreshed) redirect("/login");
-
-      const newToken = (await cookies()).get("accessToken")?.value;
-      const retryHeaders = new Headers(options.headers);
-      if (newToken) retryHeaders.set("Authorization", `Bearer ${newToken}`);
-      if (options.body && !retryHeaders.has("Content-Type")) {
-        retryHeaders.set("Content-Type", "application/json");
-      }
-      return fetch(url, { ...options, headers: retryHeaders });
-    }
-
-    if (!response.ok) {
-      const result = await response.json().catch(() => ({}));
-      throw new ApiError(
-        result.message ?? "Something went wrong",
-        response.status,
-        result.data,
+    try {
+      store.set("accessToken", data.accessToken, ACCESS_TOKEN_COOKIE);
+    } catch {
+      // Setting cookies is not allowed in Server Components; use the in-memory token instead.
+      console.warn(
+        "Could not persist refreshed access token (likely a Server Component context)",
       );
     }
 
+    return data.accessToken;
+  } catch (error) {
+    console.error("Token refresh error:", error);
+    return null;
+  }
+}
+
+// ─── Main fetch ───────────────────────────────────────────────────────────────
+
+export async function apiFetch(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<Response> {
+  const store = await cookies();
+  const token = store.get("accessToken")?.value;
+  const url = buildUrl(endpoint);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: buildHeaders(options, token),
+    });
+
+    // 401 on a non-auth endpoint → attempt a silent token refresh and retry once
+    if (response.status === 401 && !endpoint.includes("/auth/")) {
+      const newToken = await tryRefreshToken();
+      if (!newToken) redirect("/login");
+
+      const retried = await fetch(url, {
+        ...options,
+        headers: buildHeaders(options, newToken),
+      });
+      await throwIfNotOk(retried);
+      return retried;
+    }
+
+    await throwIfNotOk(response);
     return response;
   } catch (error) {
     if (isRedirectError(error) || error instanceof ApiError) throw error;

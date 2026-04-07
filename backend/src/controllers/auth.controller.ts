@@ -39,13 +39,11 @@ export const login = catchAsync(async (req: Request, res: Response) => {
 // ─── POST /api/auth/refresh-token  ────────────────────────────────────
 export const refreshToken = catchAsync(async (req: Request, res: Response) => {
   const { refreshToken: token } = req.body as { refreshToken?: string };
-
   if (!token) {
     return res.status(401).json({ success: false, message: 'No refresh token provided.' });
   }
 
   const { accessToken } = await refreshAccessToken(token);
-
   sendResponse(res, {
     statusCode: 200,
     success: true,
