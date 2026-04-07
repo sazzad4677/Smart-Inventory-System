@@ -30,6 +30,7 @@ export const apiRateLimiter = rateLimit({
   store: new RedisStore({
     // @ts-expect-error
     sendCommand: (...args: string[]) => robustSendCommand(...args),
+    prefix: 'rl:api:',
   }),
   message: {
     success: false,
@@ -48,6 +49,7 @@ export const loginRateLimiter = rateLimit({
   store: new RedisStore({
     // @ts-expect-error
     sendCommand: (...args: string[]) => robustSendCommand(...args),
+    prefix: 'rl:login:',
   }),
   message: {
     success: false,
