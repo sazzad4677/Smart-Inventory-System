@@ -3,6 +3,7 @@ import { catchAsync } from '../utils/catchAsync';
 import { sendResponse } from '../utils/sendResponse';
 import { signupUser, loginUser, logoutUser, refreshAccessToken } from '../services/auth.service';
 import type { SignupInput, LoginInput } from '../validators/auth.validator';
+import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 
 // ─── POST /api/auth/signup (Public) ───────────────────────────────────────────
 export const signup = catchAsync(async (req: Request, res: Response) => {
@@ -64,12 +65,12 @@ export const logout = catchAsync(async (req: Request, res: Response) => {
 });
 
 // ─── GET /api/auth/me (Private) ───────────────────────────────────────────────
-export const me = catchAsync(async (req: Request, res: Response) => {
+export const me = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
   const user = req.user;
   sendResponse(res, {
     statusCode: 200,
     success: true,
     message: 'User retrieved successfully.',
-    data: { user: { id: user._id, email: user.email, role: user.role } },
+    data: { user: { id: user!._id, email: user!.email, role: user!.role } },
   });
 });
