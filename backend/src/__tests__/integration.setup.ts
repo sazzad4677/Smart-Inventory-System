@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import { app } from '../index';
 
 // Increase timeout for integration tests (especially for MongoMemoryServer startup)
@@ -20,13 +20,16 @@ jest.mock('../config/redis', () => ({
   connectRedis: jest.fn().mockResolvedValue(null),
 }));
 
-let mongoServer: MongoMemoryServer;
+let mongoServer: MongoMemoryReplSet;
 
 beforeAll(async () => {
   try {
-    mongoServer = await MongoMemoryServer.create({
-      instance: {
+    mongoServer = await MongoMemoryReplSet.create({
+      replSet: {
+        name: 'rs0',
+        count: 1,
         dbName: 'test_db',
+        storageEngine: 'wiredTiger',
       },
     });
     const uri = mongoServer.getUri();
