@@ -7,6 +7,9 @@ on:
     branches: [ main ]
 
 jobs:
+  # -------------------------------------------
+  # BUILD & TESTS
+  # -------------------------------------------
   build-and-verify:
     runs-on: ubuntu-latest
 
@@ -27,9 +30,6 @@ jobs:
       - name: Install Dependencies
         run: pnpm install
 
-      - name: Verify Backend Compilation
-        run: pnpm --filter backend build
-
       - name: Run Backend Tests
         env:
           # dummy variables to satisfy config.ts during tests
@@ -42,8 +42,27 @@ jobs:
           JWT_REFRESH_EXPIRES_IN: "7d"
         run: pnpm --filter backend run test:coverage
 
+      - name: Verify Backend Compilation
+        run: pnpm --filter backend build
+
       - name: Verify Frontend Compilation
         run: pnpm --filter frontend build
 
       - name: Verify Docker Build
         run: docker compose build
+
+  # -------------------------------------------
+  # DEPLOY
+  # -------------------------------------------
+  deploy:
+    needs: build-and-verify
+    runs-on: ubuntu-latest
+    # This ensures it ONLY deploys when code is pushed to main (not on PRs)
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Trigger Vercel Deployment (Frontend)
+        run: curl -X POST ${{ secrets.VERCEL_DEPLOY_HOOK }}
+
+      - name: Trigger Render Deployment (Backend)
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
