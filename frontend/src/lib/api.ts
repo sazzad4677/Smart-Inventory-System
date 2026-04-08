@@ -69,8 +69,10 @@ async function tryRefreshToken(): Promise<string | null> {
   try {
     const res = await fetch(`${API_URL}/auth/refresh-token`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: `refreshToken=${refreshToken}`,
+      },
     });
 
     if (!res.ok) return null;

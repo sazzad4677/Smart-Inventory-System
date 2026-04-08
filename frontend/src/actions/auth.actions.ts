@@ -11,7 +11,7 @@ import { User } from "@/lib/types";
 
 const isProduction = process.env.NODE_ENV === "production";
 
-async function setAuthCookies(accessToken: string, refreshToken: string) {
+async function setAuthCookies(accessToken: string, response: Response) {
   const store = await cookies();
   store.set("accessToken", accessToken, {
     httpOnly: true,
@@ -21,13 +21,21 @@ async function setAuthCookies(accessToken: string, refreshToken: string) {
     path: "/",
   });
 
-  store.set("refreshToken", refreshToken, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: "strict",
-    maxAge: 7 * 24 * 60 * 60,
-    path: "/",
-  });
+  // Extract refreshToken from api Set-Cookie header
+  const setCookie = response.headers.get("set-cookie");
+  if (setCookie) {
+    // Simple parser for the refreshToken cookie
+    const match = setCookie.match(/refreshToken=([^;]+)/);
+    if (match && match[1]) {
+      store.set("refreshToken", match[1], {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60,
+        path: "/",
+      });
+    }
+  }
 }
 
 // ─── Login ────────────────────────────────────────────────────────────────────
@@ -41,7 +49,7 @@ export async function loginAction(
       body: JSON.stringify(data),
     });
     const { data: result } = await response.json();
-    await setAuthCookies(result.accessToken, result.refreshToken);
+    await setAuthCookies(result.accessToken, response);
     return { user: result.user as User };
   }, "Login failed");
 }
@@ -57,7 +65,7 @@ export async function signupAction(
       body: JSON.stringify(data),
     });
     const { data: result } = await response.json();
-    await setAuthCookies(result.accessToken, result.refreshToken);
+    await setAuthCookies(result.accessToken, response);
     return { user: result.user as User };
   }, "Signup failed");
 }
@@ -71,7 +79,9 @@ export async function logoutAction(): Promise<ActionResult> {
 
     await apiFetch("/auth/logout", {
       method: "POST",
-      body: JSON.stringify({ refreshToken }),
+      headers: {
+        Cookie: `refreshToken=${refreshToken}`,
+      },
     });
 
     // Clear both cookies

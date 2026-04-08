@@ -51,7 +51,8 @@ export const login = catchAsync(async (req: Request, res: Response) => {
 
 // ─── POST /api/auth/refresh-token  ────────────────────────────────────
 export const refreshToken = catchAsync(async (req: Request, res: Response) => {
-  const { refreshToken: token } = req.body as { refreshToken?: string };
+  const token = (req.body as { refreshToken?: string })?.refreshToken || req.cookies?.refreshToken;
+
   if (!token) {
     return res.status(401).json({ success: false, message: 'No refresh token provided.' });
   }
@@ -67,7 +68,7 @@ export const refreshToken = catchAsync(async (req: Request, res: Response) => {
 
 // ─── POST /api/auth/logout (Public — no protect needed) ───────────────────────
 export const logout = catchAsync(async (req: Request, res: Response) => {
-  const { refreshToken: token } = req.body as { refreshToken?: string };
+  const token = (req.body as { refreshToken?: string })?.refreshToken || req.cookies?.refreshToken;
 
   if (token) {
     await logoutUser(token);
