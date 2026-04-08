@@ -6,14 +6,13 @@ import { UserRole } from '../types';
 
 const router: Router = Router();
 
-// Apply protection to all dashboard routes
 router.use(protect);
 router.use(restrictTo(UserRole.Admin, UserRole.Manager));
 
-// ─── GET /api/dashboard/dashboard (Permissions: Admin, Manager) ──────────────
+// ─── GET /api/dashboard (Admin, Manager) ────────────────────────
 router.get('/dashboard', checkCache('dashboard_metrics'), getDashboardMetrics);
 
-// ─── GET /api/dashboard/activities (Permissions: Admin, Manager) ─────────────
+// ─── GET /api/activities (Admin, Manager) ───────────────────────
 router.get('/activities', getLatestActivities);
 
 export default router;
