@@ -24,8 +24,8 @@ const ApiMetricSchema: Schema = new Schema(
   },
 );
 
-// TTL Index: automatically delete documents older than 30 days (2592000 seconds)
 ApiMetricSchema.index({ createdAt: 1 }, { expireAfterSeconds: 2592000 });
+ApiMetricSchema.index({ endpoint: 1, createdAt: -1 });
 
 const ApiMetric = mongoose.model<IApiMetric>('ApiMetric', ApiMetricSchema);
 

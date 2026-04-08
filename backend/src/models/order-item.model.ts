@@ -34,5 +34,9 @@ const orderItemSchema = new Schema<IOrderItemDocument, IOrderItemModel>(
   { timestamps: true, versionKey: false },
 );
 
+orderItemSchema.index({ order_id: 1 });
+orderItemSchema.index({ product_id: 1 });
+
 const OrderItem = model<IOrderItemDocument, IOrderItemModel>('OrderItem', orderItemSchema);
+
 export default OrderItem;

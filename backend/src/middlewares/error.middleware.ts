@@ -23,6 +23,9 @@ const handleValidationErrorDB = (err: any) => {
   return new AppError(message, 400);
 };
 
+const handleVersionErrorDB = () =>
+  new AppError('This record has been updated by another user. Please refresh and try again.', 409);
+
 const handleZodError = (err: ZodError) => {
   const errors = err.issues.map((el) => el.message);
   const message = errors.join('. ');
@@ -80,6 +83,7 @@ export const globalErrorHandler = (err: any, req: Request, res: Response, next: 
     if (error.name === 'CastError') error = handleCastErrorDB(error);
     if (error.code === 11000) error = handleDuplicateFieldsDB(error);
     if (error.name === 'ValidationError') error = handleValidationErrorDB(error);
+    if (error.name === 'VersionError') error = handleVersionErrorDB();
     if (error.name === 'ZodError' || error instanceof ZodError) error = handleZodError(error);
     sendErrorProd(error, res);
   }
