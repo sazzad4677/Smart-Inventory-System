@@ -3,7 +3,7 @@ import { trackClientEvents, getMetrics } from '../controllers/analytics.controll
 import { protect, restrictTo } from '../middlewares/auth.middleware';
 import { UserRole } from '../types';
 
-const router = Router();
+const router: Router = Router();
 
 // ─── POST /api/analytics/events (Permissions: Public) ────────────────────────
 router.post('/events', trackClientEvents);

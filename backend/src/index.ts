@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response, NextFunction, Application } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -19,8 +19,8 @@ import { swaggerDocument } from './docs/swagger';
 import { logger } from './utils/logger';
 import { morganMiddleware } from './middlewares/morgan.middleware';
 
-const app = express();
-const server = http.createServer(app);
+export const app: Application = express();
+export const server: http.Server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: config.cors.clientUrl,
@@ -94,7 +94,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // Global Error Handler
 app.use(globalErrorHandler);
 
-// Start server after DB and Redis connection
+// Start server only when run directly (not when imported by tests)
 const startServer = async () => {
   await connectDB();
   await connectRedis();
@@ -104,4 +104,6 @@ const startServer = async () => {
   });
 };
 
-startServer();
+if (require.main === module) {
+  startServer();
+}
