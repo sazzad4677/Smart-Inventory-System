@@ -30,6 +30,9 @@ jobs:
       - name: Verify Backend Compilation
         run: pnpm --filter backend build
 
+      - name: Run Backend Tests
+        run: pnpm --filter backend run test:coverage
+
       - name: Verify Frontend Compilation
         run: pnpm --filter frontend build
 
