@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { config } from './config';
+import { logger } from '../utils/logger';
 
 const connectDB = async (): Promise<void> => {
   try {
@@ -7,26 +8,26 @@ const connectDB = async (): Promise<void> => {
       dbName: 'smart_inventory',
     });
 
-    console.log(`✅ MongoDB connected: ${conn.connection.host}`);
+    logger.info(`✅ MongoDB connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error('❌ MongoDB connection failed:', error);
+    logger.error('❌ MongoDB connection failed:', error);
     process.exit(1);
   }
 };
 
 // Handle connection events
 mongoose.connection.on('disconnected', () => {
-  console.warn('⚠️  MongoDB disconnected');
+  logger.warn('⚠️  MongoDB disconnected');
 });
 
 mongoose.connection.on('reconnected', () => {
-  console.log('🔄 MongoDB reconnected');
+  logger.info('🔄 MongoDB reconnected');
 });
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
   await mongoose.connection.close();
-  console.log('🛑 MongoDB connection closed due to app termination');
+  logger.info('🛑 MongoDB connection closed due to app termination');
   process.exit(0);
 });
 

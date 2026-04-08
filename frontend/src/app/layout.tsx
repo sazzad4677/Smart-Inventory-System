@@ -28,8 +28,12 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="h-full min-h-full bg-slate-950 font-sans text-slate-100 antialiased dark overflow-x-hidden">
+      <body
+        className="h-full min-h-full bg-slate-950 font-sans text-slate-100 antialiased dark overflow-x-hidden"
+        suppressHydrationWarning
+      >
         <NextTopLoader
           color="#6366f1"
           initialPosition={0.08}

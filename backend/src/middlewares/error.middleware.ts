@@ -4,6 +4,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { AppError } from '../utils/AppError';
 import { config } from '../config/config';
+import { logger } from '../utils/logger';
 
 const handleCastErrorDB = (err: any) => {
   const message = `Invalid ${err.path}: ${err.value}.`;
@@ -53,7 +54,7 @@ const sendErrorProd = (err: any, res: Response) => {
     });
   } else {
     // Programming or other unknown error: don't leak error details
-    console.error('ERROR 💥', err);
+    logger.error('ERROR 💥', err);
     res.status(500).json({
       success: false,
       status: 'error',

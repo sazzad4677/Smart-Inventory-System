@@ -14,6 +14,8 @@ import router from './routes';
 import { AppError } from './utils/AppError';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerDocument } from './docs/swagger';
+import { logger } from './utils/logger';
+import { morganMiddleware } from './middlewares/morgan.middleware';
 
 const app = express();
 const server = http.createServer(app);
@@ -28,6 +30,7 @@ const io = new Server(server, {
 app.set('io', io);
 
 // Middleware
+app.use(morganMiddleware);
 app.use(helmet());
 app.use(
   cors({
@@ -59,9 +62,9 @@ app.use('/api', router);
 
 // Socket.io Connection Event
 io.on('connection', (socket) => {
-  console.log('New client connected');
+  logger.info(`New client connected: ${socket.id}`);
   socket.on('disconnect', () => {
-    console.log('Client disconnected');
+    logger.info(`Client disconnected: ${socket.id}`);
   });
 });
 
@@ -79,7 +82,7 @@ const startServer = async () => {
   await connectRedis();
 
   server.listen(config.server.port, () => {
-    console.log(`🚀 Server running in ${config.server.nodeEnv} mode on port ${config.server.port}`);
+    logger.info(`🚀 Server running in ${config.server.nodeEnv} mode on port ${config.server.port}`);
   });
 };
 

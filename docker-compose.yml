@@ -27,6 +27,7 @@ services:
       - ./backend/src:/usr/src/app/backend/src
       - ./backend/package.json:/usr/src/app/backend/package.json
       - ./backend/tsconfig.json:/usr/src/app/backend/tsconfig.json
+      - ./backend/logs:/usr/src/app/backend/logs
 
   redis:
     image: redis:alpine
