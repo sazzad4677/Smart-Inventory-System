@@ -88,6 +88,84 @@ export const swaggerDocument = {
           status: { type: 'string' },
         },
       },
+      HealthStatus: {
+        type: 'object',
+        properties: {
+          status: { type: 'string', example: 'ok' },
+          message: { type: 'string', example: 'Server is running' },
+          uptime: { type: 'number', example: 412.5, description: 'Process uptime in seconds' },
+          memory: {
+            type: 'object',
+            properties: {
+              rss: { type: 'number', example: 87326720 },
+              heapTotal: { type: 'number', example: 45875200 },
+              heapUsed: { type: 'number', example: 38123456 },
+              external: { type: 'number', example: 2345678 },
+            },
+          },
+          dbState: {
+            type: 'string',
+            enum: ['connected', 'disconnected', 'connecting', 'disconnecting'],
+            example: 'connected',
+          },
+          redisState: { type: 'string', enum: ['connected', 'disconnected'], example: 'connected' },
+        },
+      },
+      ClientEvent: {
+        type: 'object',
+        required: ['eventName', 'url', 'createdAt'],
+        properties: {
+          eventName: { type: 'string', example: 'PAGE_VIEW' },
+          url: { type: 'string', example: 'http://localhost:3000/dashboard' },
+          properties: {
+            type: 'object',
+            additionalProperties: true,
+            example: { pathname: '/dashboard' },
+          },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      AnalyticsMetrics: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean', example: true },
+          data: {
+            type: 'object',
+            properties: {
+              api: {
+                type: 'object',
+                properties: {
+                  totalRequestsLog: {
+                    type: 'integer',
+                    example: 120,
+                    description: 'Total API requests logged in last 30 days',
+                  },
+                  slowRequests: {
+                    type: 'integer',
+                    example: 3,
+                    description: 'Requests that took longer than 500ms',
+                  },
+                  averageResponseTimeMs: {
+                    type: 'integer',
+                    example: 43,
+                    description: 'Average response time across all logged requests',
+                  },
+                },
+              },
+              client: {
+                type: 'object',
+                properties: {
+                  totalEventsLog: {
+                    type: 'integer',
+                    example: 87,
+                    description: 'Total client-side events tracked',
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     },
   },
   tags: [
@@ -98,6 +176,11 @@ export const swaggerDocument = {
     { name: 'Dashboard', description: 'Dashboard stats and information' },
     { name: 'Restock Queue', description: 'Restock queue endpoints' },
     { name: 'Activity Logs', description: 'Activity logging endpoints' },
+    {
+      name: 'Health',
+      description: 'System health and uptime monitoring — PUBLIC, no auth required',
+    },
+    { name: 'Analytics', description: 'Server-side metrics and client-side event tracking' },
   ],
   paths: {
     '/auth/signup': {
@@ -505,6 +588,114 @@ export const swaggerDocument = {
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'limit', in: 'query', schema: { type: 'integer' } }],
         responses: { 200: { description: 'Success' } },
+      },
+    },
+
+    // ── Health Check ──────────────────────────────────────────────────────────
+    // Note: /health is on the root server, NOT under /api, but we document it
+    // here so it appears in the same Swagger UI alongside other routes.
+    '/health': {
+      get: {
+        tags: ['Health'],
+        summary: 'System health check',
+        description:
+          '**PUBLIC — no authentication required.**\n\n' +
+          'Returns current server uptime, memory usage, and live connection state for MongoDB and Redis.\n\n' +
+          '> ℹ️ This endpoint sits at the root (`GET /health`), **not** under `/api`. ' +
+          'Call it directly: `http://localhost:5000/health`',
+        servers: [{ url: '/', description: 'Root server (not /api)' }],
+        responses: {
+          200: {
+            description: 'All systems operational',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/HealthStatus' },
+              },
+            },
+          },
+        },
+      },
+    },
+
+    // ── Analytics ─────────────────────────────────────────────────────────────
+    '/analytics/events': {
+      post: {
+        tags: ['Analytics'],
+        summary: 'Track client-side events (batch)',
+        description:
+          '**PUBLIC — no authentication required.**\n\n' +
+          'Accepts a batch of client-side analytics events (page views, feature usage, etc.) ' +
+          'and persists them to the `clientevents` MongoDB collection.\n\n' +
+          'The frontend `AnalyticsProvider` calls this automatically every 10 seconds ' +
+          'or on page unload via `navigator.sendBeacon`.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['events'],
+                properties: {
+                  events: {
+                    type: 'array',
+                    items: { $ref: '#/components/schemas/ClientEvent' },
+                    example: [
+                      {
+                        eventName: 'PAGE_VIEW',
+                        url: 'http://localhost:3000/dashboard',
+                        properties: { pathname: '/dashboard' },
+                        createdAt: '2026-04-08T10:00:00.000Z',
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Events tracked successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean', example: true },
+                    message: { type: 'string', example: 'Events tracked successfully' },
+                  },
+                },
+              },
+            },
+          },
+          400: { description: 'Bad Request — malformed event payload' },
+        },
+      },
+    },
+
+    '/analytics/metrics': {
+      get: {
+        tags: ['Analytics'],
+        summary: 'Get aggregated server & client analytics',
+        description:
+          '**PROTECTED — admin or manager only.**\n\n' +
+          'Returns aggregated analytics data:\n' +
+          '- **API metrics:** total requests logged, slow request count (>500ms), average response time\n' +
+          '- **Client metrics:** total client-side events tracked\n\n' +
+          'Data is sourced from the `apimetrics` collection (30-day TTL) and the `clientevents` collection.',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Aggregated analytics data',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/AnalyticsMetrics' },
+              },
+            },
+          },
+          401: { description: 'Unauthorized — not logged in or invalid token' },
+          403: { description: 'Forbidden — insufficient role (admin or manager required)' },
+        },
       },
     },
   },

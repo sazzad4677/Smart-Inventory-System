@@ -7,8 +7,10 @@ import { Server } from 'socket.io';
 
 import { config } from './config/config';
 import connectDB from './config/db';
-import { connectRedis } from './config/redis';
+import { connectRedis, redisClient } from './config/redis';
 import { apiRateLimiter } from './middlewares/rateLimiter.middleware';
+import { performanceMiddleware } from './middlewares/performance.middleware';
+import mongoose from 'mongoose';
 import { globalErrorHandler } from './middlewares/error.middleware';
 import router from './routes';
 import { AppError } from './utils/AppError';
@@ -31,6 +33,7 @@ app.set('io', io);
 
 // Middleware
 app.use(morganMiddleware);
+app.use(performanceMiddleware);
 app.use(helmet());
 app.use(
   cors({
@@ -54,8 +57,23 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
+const dbStateMaps = {
+  0: 'disconnected',
+  1: 'connected',
+  2: 'connecting',
+  3: 'disconnecting',
+};
+
 app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'ok', message: 'Server is running' });
+  const dbStatus = mongoose.connection.readyState;
+  res.status(200).json({
+    status: 'ok',
+    message: 'Server is running',
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    dbState: dbStateMaps[dbStatus as keyof typeof dbStateMaps] || 'unknown',
+    redisState: redisClient.isOpen ? 'connected' : 'disconnected',
+  });
 });
 
 app.use('/api', router);

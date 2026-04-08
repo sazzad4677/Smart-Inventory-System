@@ -1,9 +1,11 @@
 import mongoose from 'mongoose';
 import { config } from './config';
 import { logger } from '../utils/logger';
+import { applyMongoosePerformancePlugin } from './mongoosePerformancePlugin';
 
 const connectDB = async (): Promise<void> => {
   try {
+    applyMongoosePerformancePlugin();
     const conn = await mongoose.connect(config.db.uri, {
       dbName: 'smart_inventory',
     });
