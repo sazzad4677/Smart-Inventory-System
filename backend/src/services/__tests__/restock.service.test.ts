@@ -41,9 +41,9 @@ describe('Restock Service', () => {
 
       expect(Product.find).toHaveBeenCalled();
       expect(result.result.length).toBe(3);
-      expect(result.result[0].priority).toBe('High'); // 0 stock
-      expect(result.result[1].priority).toBe('Medium'); // 4 stocks (<= 10/2)
-      expect(result.result[2].priority).toBe('Low'); // 8 stocks (> 10/2)
+      expect(result.result?.[0]?.priority).toBe('High'); // 0 stock
+      expect(result.result?.[1]?.priority).toBe('Medium'); // 4 stocks (<= 10/2)
+      expect(result.result?.[2]?.priority).toBe('Low'); // 8 stocks (> 10/2)
     });
   });
 });
