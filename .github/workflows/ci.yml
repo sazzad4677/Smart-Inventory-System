@@ -31,6 +31,15 @@ jobs:
         run: pnpm --filter backend build
 
       - name: Run Backend Tests
+        env:
+          # dummy variables to satisfy config.ts during tests
+          NODE_ENV: "test"
+          PORT: 5000
+          MONGODB_URI: "mongodb://localhost:27017/test-db"
+          JWT_SECRET: "super-secret-test-key"
+          JWT_ACCESS_EXPIRES_IN: "1h"
+          JWT_REFRESH_SECRET: "super-secret-test-key"
+          JWT_REFRESH_EXPIRES_IN: "7d"
         run: pnpm --filter backend run test:coverage
 
       - name: Verify Frontend Compilation
