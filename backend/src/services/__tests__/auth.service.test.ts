@@ -1,14 +1,15 @@
-import { signupUser, loginUser, logoutUser } from '../services/auth.service';
-import User from '../models/user.model';
-import Session from '../models/session.model';
-import ActivityLog from '../models/activity-log.model';
+import mongoose from 'mongoose';
+import { signupUser, loginUser, logoutUser, refreshAccessToken } from '../auth.service';
+import User from '../../models/user.model';
+import Session from '../../models/session.model';
+import ActivityLog from '../../models/activity-log.model';
 import jwt from 'jsonwebtoken';
-import { AppError } from '../utils/AppError';
+import { AppError } from '../../utils/AppError';
 
 // Mock dependencies
-jest.mock('../models/user.model');
-jest.mock('../models/session.model');
-jest.mock('../models/activity-log.model');
+jest.mock('../../models/user.model');
+jest.mock('../../models/session.model');
+jest.mock('../../models/activity-log.model');
 jest.mock('jsonwebtoken');
 jest.mock('bcryptjs', () => ({
   genSalt: jest.fn().mockResolvedValue('salt'),
@@ -109,9 +110,10 @@ describe('Auth Service', () => {
 
   describe('logoutUser', () => {
     it('should successfully delete the session by refresh token', async () => {
+      const userId = new mongoose.Types.ObjectId();
       const mockSession = {
         _id: 'session123',
-        userId: 'user123',
+        userId,
         deleteOne: jest.fn().mockResolvedValue({}),
       };
       (Session.findOne as jest.Mock).mockResolvedValue(mockSession);
@@ -122,6 +124,56 @@ describe('Auth Service', () => {
 
       expect(Session.findOne).toHaveBeenCalledWith({ refreshToken: 'mock-refresh-token' });
       expect(mockSession.deleteOne).toHaveBeenCalled();
+    });
+  });
+
+  describe('refreshAccessToken', () => {
+    it('should successfully return a new access token for a valid refresh token', async () => {
+      const refreshToken = 'valid-token';
+      const mockDecoded = { id: 'user123' };
+      const userId = new mongoose.Types.ObjectId();
+      const mockSession = { _id: 'session123', userId };
+      const mockUser = { _id: 'user123', role: 'manager' };
+
+      (jwt.verify as jest.Mock).mockReturnValue(mockDecoded);
+      (Session.findOne as jest.Mock).mockResolvedValue(mockSession);
+      (User.findById as jest.Mock).mockResolvedValue(mockUser);
+      (jwt.sign as jest.Mock).mockReturnValue('new-access-token');
+
+      const result = await refreshAccessToken(refreshToken);
+
+      expect(jwt.verify).toHaveBeenCalledWith(refreshToken, expect.any(String));
+      expect(Session.findOne).toHaveBeenCalledWith({ refreshToken });
+      expect(result.accessToken).toBe('new-access-token');
+    });
+
+    it('should throw 401 if refresh token verification fails', async () => {
+      (jwt.verify as jest.Mock).mockImplementation(() => {
+        throw new Error('invalid token');
+      });
+
+      await expect(refreshAccessToken('invalid')).rejects.toThrow(
+        new AppError('Invalid or expired refresh token. Please log in again.', 401),
+      );
+    });
+
+    it('should throw 401 if session is not found in DB', async () => {
+      (jwt.verify as jest.Mock).mockReturnValue({ id: 'user123' });
+      (Session.findOne as jest.Mock).mockResolvedValue(null);
+
+      await expect(refreshAccessToken('valid-but-no-session')).rejects.toThrow(
+        new AppError('Session has been revoked. Please log in again.', 401),
+      );
+    });
+
+    it('should throw 401 if user is not found', async () => {
+      (jwt.verify as jest.Mock).mockReturnValue({ id: 'missing' });
+      (Session.findOne as jest.Mock).mockResolvedValue({ _id: 's1' });
+      (User.findById as jest.Mock).mockResolvedValue(null);
+
+      await expect(refreshAccessToken('token')).rejects.toThrow(
+        new AppError('The user belonging to this session no longer exists.', 401),
+      );
     });
   });
 });

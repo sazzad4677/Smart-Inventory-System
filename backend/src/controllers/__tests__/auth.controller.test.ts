@@ -1,9 +1,9 @@
-import { signup, login, logout } from '../controllers/auth.controller';
-import * as authService from '../services/auth.service';
+import { signup, login, logout, refreshToken } from '../auth.controller';
+import * as authService from '../../services/auth.service';
 import { Request, Response } from 'express';
 
 // Mock auth service
-jest.mock('../services/auth.service');
+jest.mock('../../services/auth.service');
 
 describe('Auth Controller', () => {
   let req: any;
@@ -110,6 +110,34 @@ describe('Auth Controller', () => {
       expect(authService.logoutUser).not.toHaveBeenCalled();
       expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', expect.any(Object));
       expect(res.status).toHaveBeenCalledWith(200);
+    });
+  });
+
+  describe('refreshToken', () => {
+    it('should call authService.refreshAccessToken and return 200 with new access token', async () => {
+      req.body = { refreshToken: 'valid-refresh-token' };
+      (authService.refreshAccessToken as jest.Mock).mockResolvedValue({
+        accessToken: 'new-access-token',
+      });
+
+      await refreshToken(req as Request, res as Response, next);
+
+      expect(authService.refreshAccessToken).toHaveBeenCalledWith('valid-refresh-token');
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { accessToken: 'new-access-token' },
+        }),
+      );
+    });
+
+    it('should return 401 if no refresh token is provided', async () => {
+      req.body = {};
+
+      await refreshToken(req as Request, res as Response, next);
+
+      expect(authService.refreshAccessToken).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(401);
     });
   });
 });

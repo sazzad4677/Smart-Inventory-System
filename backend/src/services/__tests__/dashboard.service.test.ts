@@ -1,12 +1,12 @@
-import { getDashboardStatsFromDB, getLatestActivitiesFromDB } from '../services/dashboard.service';
-import Order from '../models/order.model';
-import Product from '../models/product.model';
-import ActivityLog from '../models/activity-log.model';
+import { getDashboardStatsFromDB, getLatestActivitiesFromDB } from '../dashboard.service';
+import Order from '../../models/order.model';
+import Product from '../../models/product.model';
+import ActivityLog from '../../models/activity-log.model';
 
 // Mock dependencies
-jest.mock('../models/order.model');
-jest.mock('../models/product.model');
-jest.mock('../models/activity-log.model');
+jest.mock('../../models/order.model');
+jest.mock('../../models/product.model');
+jest.mock('../../models/activity-log.model');
 
 describe('Dashboard Service', () => {
   beforeEach(() => {

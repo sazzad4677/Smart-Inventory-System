@@ -1,13 +1,13 @@
-import { getDashboardMetrics, getLatestActivities } from '../controllers/dashboard.controller';
-import * as dashboardService from '../services/dashboard.service';
-import { redisClient } from '../config/redis';
+import { getDashboardMetrics, getLatestActivities } from '../dashboard.controller';
+import * as dashboardService from '../../services/dashboard.service';
+import { redisClient } from '../../config/redis';
 import { Request, Response } from 'express';
 
 // Mock dashboard service
-jest.mock('../services/dashboard.service');
+jest.mock('../../services/dashboard.service');
 
 // Mock redis client
-jest.mock('../config/redis', () => ({
+jest.mock('../../config/redis', () => ({
   redisClient: {
     setEx: jest.fn(),
   },

@@ -82,4 +82,51 @@ describe('Error Middleware - globalErrorHandler', () => {
       }),
     );
   });
+
+  it('should handle Mongoose CastError with 400 status', () => {
+    const error: any = new Error();
+    error.name = 'CastError';
+    error.path = '_id';
+    error.value = 'invalid-id';
+
+    globalErrorHandler(error, req as Request, res as Response, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'Invalid _id: invalid-id.',
+      }),
+    );
+  });
+
+  it('should handle Mongoose ValidationError with 400 status', () => {
+    const error: any = new Error();
+    error.name = 'ValidationError';
+    error.errors = {
+      name: { message: 'Path `name` is required.' },
+    };
+
+    globalErrorHandler(error, req as Request, res as Response, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining('Invalid input data'),
+      }),
+    );
+  });
+
+  it('should handle JsonWebTokenError with 401 status', () => {
+    const error: any = new Error();
+    error.name = 'JsonWebTokenError';
+
+    globalErrorHandler(error, req as Request, res as Response, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'Invalid token. Please log in again!',
+      }),
+    );
+  });
 });

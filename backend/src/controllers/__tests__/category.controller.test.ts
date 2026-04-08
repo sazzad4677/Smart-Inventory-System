@@ -1,9 +1,9 @@
-import { createCategory, getCategories } from '../controllers/category.controller';
-import * as categoryService from '../services/category.service';
+import { createCategory, getCategories } from '../category.controller';
+import * as categoryService from '../../services/category.service';
 import { Request, Response } from 'express';
 
 // Mock category service
-jest.mock('../services/category.service');
+jest.mock('../../services/category.service');
 
 describe('Category Controller', () => {
   let req: any;

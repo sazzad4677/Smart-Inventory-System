@@ -1,14 +1,9 @@
-import {
-  createProduct,
-  getProducts,
-  getProductById,
-  updateProduct,
-} from '../controllers/product.controller';
-import * as productService from '../services/product.service';
+import { createProduct, getProducts, getProductById, updateProduct } from '../product.controller';
+import * as productService from '../../services/product.service';
 import { Request, Response } from 'express';
 
 // Mock product service
-jest.mock('../services/product.service');
+jest.mock('../../services/product.service');
 
 describe('Product Controller', () => {
   let req: any;

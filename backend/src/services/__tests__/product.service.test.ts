@@ -1,19 +1,15 @@
-import {
-  createProductIntoDB,
-  getAllProductsFromDB,
-  updateProductInDB,
-} from '../services/product.service';
-import Product from '../models/product.model';
-import ActivityLog from '../models/activity-log.model';
-import { generateNextId } from '../utils/id.utils';
+import { createProductIntoDB, getAllProductsFromDB, updateProductInDB } from '../product.service';
+import Product from '../../models/product.model';
+import ActivityLog from '../../models/activity-log.model';
+import { generateNextId } from '../../utils/id.utils';
 import { Types } from 'mongoose';
-import QueryBuilder from '../builders/QueryBuilder';
+import QueryBuilder from '../../builders/QueryBuilder';
 
 // Mock dependencies
-jest.mock('../models/product.model');
-jest.mock('../models/activity-log.model');
-jest.mock('../utils/id.utils');
-jest.mock('../builders/QueryBuilder');
+jest.mock('../../models/product.model');
+jest.mock('../../models/activity-log.model');
+jest.mock('../../utils/id.utils');
+jest.mock('../../builders/QueryBuilder');
 
 describe('Product Service', () => {
   beforeEach(() => {

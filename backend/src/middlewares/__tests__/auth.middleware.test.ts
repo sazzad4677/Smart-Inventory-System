@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { protect } from '../auth.middleware';
+import { protect, restrictTo } from '../auth.middleware';
 import User from '../../models/user.model';
 import Session from '../../models/session.model';
 import { AppError } from '../../utils/AppError';
@@ -78,5 +78,50 @@ describe('Auth Middleware - protect', () => {
 
     expect(req.user).toEqual(mockUser);
     expect(next).toHaveBeenCalledWith();
+  });
+
+  it('should call next with error if user no longer exists', async () => {
+    req.headers.authorization = 'Bearer valid-token';
+    const decoded = { id: 'missing-user', sessionId: 's1' };
+    (jwt.verify as jest.Mock).mockReturnValue(decoded);
+    (Session.findById as jest.Mock).mockResolvedValue({ _id: 's1' });
+    (User.findById as jest.Mock).mockResolvedValue(null);
+
+    await protect(req as any, res as Response, next);
+    expect(next).toHaveBeenCalledWith(expect.any(AppError));
+    const error = (next as jest.Mock).mock.calls[0][0];
+    expect(error.statusCode).toBe(401);
+    expect(error.message).toContain('no longer exists');
+  });
+});
+
+describe('Auth Middleware - restrictTo', () => {
+  let req: any, res: any, next: NextFunction;
+
+  beforeEach(() => {
+    req = { user: { role: 'Manager' } };
+    res = {};
+    next = jest.fn() as any;
+  });
+
+  it('should call next if role is allowed', () => {
+    const middleware = restrictTo('Admin', 'Manager');
+    middleware(req, res, next);
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it('should throw 403 error if role is not allowed', () => {
+    const middleware = restrictTo('Admin');
+    middleware(req, res, next);
+    expect(next).toHaveBeenCalledWith(expect.any(AppError));
+    const error = (next as jest.Mock).mock.calls[0][0];
+    expect(error.statusCode).toBe(403);
+  });
+
+  it('should throw 401 if user or role is missing', () => {
+    req.user = null;
+    const middleware = restrictTo('Admin');
+    middleware(req, res, next);
+    expect(next).toHaveBeenCalledWith(expect.any(AppError));
   });
 });

@@ -36,6 +36,11 @@ jest.mock('../models/ApiMetric.model', () => ({
   default: {
     create: jest.fn().mockResolvedValue(true),
     insertOne: jest.fn().mockResolvedValue(true),
+    countDocuments: jest.fn(),
+    find: jest.fn().mockReturnThis(),
+    sort: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
+    aggregate: jest.fn(),
   },
 }));
 
