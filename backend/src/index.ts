@@ -12,6 +12,8 @@ import { apiRateLimiter } from './middlewares/rateLimiter.middleware';
 import { globalErrorHandler } from './middlewares/error.middleware';
 import router from './routes';
 import { AppError } from './utils/AppError';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerDocument } from './docs/swagger';
 
 const app = express();
 const server = http.createServer(app);
@@ -40,6 +42,8 @@ app.use(cookieParser());
 app.use('/api', apiRateLimiter);
 
 // Routes
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 app.get('/', (req: Request, res: Response) => {
   res.status(200).json({
     success: true,
