@@ -3,7 +3,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import { app } from '../index';
 
 // Increase timeout for integration tests (especially for MongoMemoryServer startup)
-jest.setTimeout(60000);
+jest.setTimeout(120000);
 
 // Mock Redis to prevent integration tests from needing a real Redis server
 jest.mock('../config/redis', () => ({
@@ -23,17 +23,34 @@ jest.mock('../config/redis', () => ({
 let mongoServer: MongoMemoryServer;
 
 beforeAll(async () => {
-  mongoServer = await MongoMemoryServer.create();
-  const uri = mongoServer.getUri();
-  await mongoose.connect(uri);
+  try {
+    mongoServer = await MongoMemoryServer.create({
+      instance: {
+        dbName: 'test_db',
+      },
+    });
+    const uri = mongoServer.getUri();
+
+    // Disconnect if already connected (to be safe)
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
+    }
+
+    await mongoose.connect(uri);
+  } catch (error) {
+    console.error('Failed to start/connect to MongoMemoryServer:', error);
+    throw error;
+  }
 });
 
 afterEach(async () => {
-  const collections = mongoose.connection.collections;
-  for (const key in collections) {
-    const collection = collections[key];
-    if (collection) {
-      await collection.deleteMany({});
+  if (mongoose.connection.readyState === 1) {
+    const collections = mongoose.connection.collections;
+    for (const key in collections) {
+      const collection = collections[key];
+      if (collection) {
+        await collection.deleteMany({});
+      }
     }
   }
 });
