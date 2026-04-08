@@ -30,6 +30,8 @@ const activityLogSchema = new Schema<IActivityLogDocument, IActivityLogModel>(
   { timestamps: true, versionKey: false },
 );
 
+activityLogSchema.index({ user_id: 1, timestamp: -1 });
+
 const ActivityLog = model<IActivityLogDocument, IActivityLogModel>(
   'ActivityLog',
   activityLogSchema,

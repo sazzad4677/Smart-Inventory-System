@@ -54,6 +54,10 @@ const productSchema = new Schema<IProductDocument, IProductModel>(
   { timestamps: true, optimisticConcurrency: true },
 );
 
+productSchema.index({ category_id: 1, status: 1, createdAt: -1 });
+productSchema.index({ name: 'text' });
+productSchema.index({ stock_quantity: 1 });
+
 // Pre-save: auto-set status based on stock_quantity
 productSchema.pre<IProductDocument>('save', function () {
   if (this.isModified('stock_quantity')) {

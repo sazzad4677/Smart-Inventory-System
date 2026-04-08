@@ -18,13 +18,10 @@ const ClientEventSchema: Schema = new Schema(
     properties: { type: Schema.Types.Mixed },
   },
   {
-    timestamps: { createdAt: true, updatedAt: false }, // Only need when it happened
+    timestamps: { createdAt: true, updatedAt: false },
   },
 );
-
-// Optional TTL index if we want events to expire after 90 days.
-// For now, no TTL specified for client events by default, but we can add one if data grows too large.
-// ClientEventSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7776000 }); // 90 days
+ClientEventSchema.index({ userId: 1, eventName: 1, createdAt: -1 });
 
 const ClientEvent = mongoose.model<IClientEvent>('ClientEvent', ClientEventSchema);
 

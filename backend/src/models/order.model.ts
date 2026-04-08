@@ -36,10 +36,12 @@ const orderSchema = new Schema<IOrderDocument, IOrderModel>(
       default: false,
     },
   },
-  { timestamps: true, versionKey: false },
+  { timestamps: true, versionKey: '__v', optimisticConcurrency: true },
 );
 
-// Query middleware to exclude deleted records
+orderSchema.index({ status: 1, createdAt: -1, is_deleted: 1 });
+orderSchema.index({ customer_name: 1 });
+
 orderSchema.pre(/^find/, function (this: any) {
   this.where({ is_deleted: { $ne: true } });
 });
