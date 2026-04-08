@@ -4,10 +4,22 @@ import { sendResponse } from '../utils/sendResponse';
 import { signupUser, loginUser, logoutUser, refreshAccessToken } from '../services/auth.service';
 import type { SignupInput, LoginInput } from '../validators/auth.validator';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
+import { config } from '../config/config';
+import ms from 'ms';
+
+const refreshExpiresIn = ms(config.jwt.refreshExpiresIn as any);
+const cookieOptions = {
+  httpOnly: true,
+  secure: config.server.nodeEnv === 'production',
+  sameSite: 'lax' as const,
+  maxAge: typeof refreshExpiresIn === 'number' ? refreshExpiresIn : undefined,
+};
 
 // ─── POST /api/auth/signup (Public) ───────────────────────────────────────────
 export const signup = catchAsync(async (req: Request, res: Response) => {
   const { user, accessToken, refreshToken } = await signupUser(req.body as SignupInput);
+
+  res.cookie('refreshToken', refreshToken, cookieOptions);
 
   sendResponse(res, {
     statusCode: 201,
@@ -15,7 +27,6 @@ export const signup = catchAsync(async (req: Request, res: Response) => {
     message: 'Account created successfully.',
     data: {
       accessToken,
-      refreshToken,
       user: { id: user._id, email: user.email, role: user.role },
     },
   });
@@ -25,13 +36,14 @@ export const signup = catchAsync(async (req: Request, res: Response) => {
 export const login = catchAsync(async (req: Request, res: Response) => {
   const { user, accessToken, refreshToken } = await loginUser(req.body as LoginInput);
 
+  res.cookie('refreshToken', refreshToken, cookieOptions);
+
   sendResponse(res, {
     statusCode: 200,
     success: true,
     message: 'User logged in successfully.',
     data: {
       accessToken,
-      refreshToken,
       user: { id: user._id, email: user.email, role: user.role },
     },
   });
@@ -60,6 +72,12 @@ export const logout = catchAsync(async (req: Request, res: Response) => {
   if (token) {
     await logoutUser(token);
   }
+
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: config.server.nodeEnv === 'production',
+    sameSite: 'lax' as const,
+  });
 
   sendResponse(res, { statusCode: 200, success: true, message: 'Logged out successfully.' });
 });

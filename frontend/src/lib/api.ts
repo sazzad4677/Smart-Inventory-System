@@ -110,7 +110,6 @@ export async function apiFetch(
       headers: buildHeaders(options, token),
     });
 
-    // 401 on a non-auth endpoint → attempt a silent token refresh and retry once
     if (response.status === 401 && !endpoint.includes("/auth/")) {
       const newToken = await tryRefreshToken();
       if (!newToken) redirect("/login");
