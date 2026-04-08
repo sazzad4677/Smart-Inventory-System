@@ -12,19 +12,18 @@ import { UserRole } from '../types';
 
 const router: Router = Router();
 
-// Apply auth protection to all product routes
 router.use(protect);
 
-// ─── GET /api/product (Permissions: Admin, Manager) ──────────────────────────
+// ─── GET /api/products (Admin, Manager, Staff) ──────────────────
 router.get('/', getProducts);
 
-// ─── GET /api/product/:id (Permissions: Admin, Manager) ──────────────────────
+// ─── GET /api/products/:id (Admin, Manager, Staff) ──────────────
 router.get('/:id', getProductById);
 
-// ─── POST /api/product (Permissions: Admin Only) ─────────────────────────────
+// ─── POST /api/products (Admin) ─────────────────────────────────
 router.post('/', restrictTo(UserRole.Admin), validateRequest(createProductSchema), createProduct);
 
-// ─── PUT /api/product/:id (Permissions: Admin, Manager) ──────────────────────
+// ─── PUT /api/products/:id (Admin, Manager) ─────────────────────
 router.put(
   '/:id',
   restrictTo(UserRole.Admin, UserRole.Manager),
@@ -32,7 +31,7 @@ router.put(
   updateProduct,
 );
 
-// ─── PATCH /api/product/:id (Permissions: Admin, Manager) ────────────────────
+// ─── PATCH /api/products/:id ( Admin, Manager) ───────────────────
 router.patch(
   '/:id',
   restrictTo(UserRole.Admin, UserRole.Manager),

@@ -8,6 +8,7 @@ import { AddOrderDialog } from "./_components/add-order-dialog";
 import { FilterBar, FilterField } from "@/components/shared/filter-bar";
 import { OrderStatus } from "@/lib/validations";
 import { Pagination } from "@/components/shared/pagination";
+import { ErrorAlert } from "@/components/shared/error-alert";
 import { getCurrentUser } from "@/actions/auth.actions";
 
 interface OrdersPageProps {
@@ -105,10 +106,16 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
 
       <FilterBar filters={filters} />
 
-      {data.length > 0 ? (
+      {!result.success ? (
+        <ErrorAlert
+          error={
+            result.error || "Failed to load orders. Please try again later."
+          }
+        />
+      ) : data.length > 0 ? (
         <div className="flex flex-col gap-6">
           <OrderTable orders={data} userRole={user?.role} />
-          <Pagination meta={meta} />
+          <Pagination meta={meta} itemLabel="orders" />
         </div>
       ) : (
         <EmptyState

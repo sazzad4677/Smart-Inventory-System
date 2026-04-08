@@ -13,19 +13,18 @@ import { UserRole } from '../types';
 
 const router: Router = express.Router();
 
-// Apply auth protection to all order routes
 router.use(protect);
 
-// ─── POST /api/order (Permissions: Private) ──────────────────────────────────
+// ─── POST /api/orders (Admin, Manager, Staff) ───────────────────
 router.post('/', validateRequest(createOrderSchema), createOrder);
 
-// ─── GET /api/order (Permissions: Private) ───────────────────────────────────
+// ─── GET /api/orders (Admin, Manager, Staff) ────────────────────
 router.get('/', getOrders);
 
-// ─── GET /api/order/:id (Permissions: Private) ───────────────────────────────
+// ─── GET /api/orders/:id (Admin, Manager, Staff) ────────────────
 router.get('/:id', getOrderById);
 
-// ─── PUT /api/order/:id/status (Permissions: Admin, Manager) ─────────────────
+// ─── PUT /api/orders/:id/status (Admin, Manager) ────────────────
 router.put(
   '/:id/status',
   restrictTo(UserRole.Admin, UserRole.Manager),
@@ -33,7 +32,7 @@ router.put(
   updateOrderStatus,
 );
 
-// ─── DELETE /api/order/:id (Permissions: Admin Only) ──────────────────────────
+// ─── DELETE /api/orders/:id (Permissions: Admin) ─────────────────────────────
 router.delete('/:id', restrictTo(UserRole.Admin), deleteOrder);
 
 export default router;

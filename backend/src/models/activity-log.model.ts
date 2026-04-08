@@ -3,6 +3,8 @@ import { IActivityLog } from '../types';
 
 export interface IActivityLogDocument extends Omit<IActivityLog, 'user_id'>, Document {
   user_id: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface IActivityLogModel extends Model<IActivityLogDocument> {}
@@ -25,7 +27,7 @@ const activityLogSchema = new Schema<IActivityLogDocument, IActivityLogModel>(
       required: [true, 'User reference is required'],
     },
   },
-  { versionKey: false },
+  { timestamps: true, versionKey: false },
 );
 
 const ActivityLog = model<IActivityLogDocument, IActivityLogModel>(

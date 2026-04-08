@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { User as UserType } from "@/lib/types";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -23,10 +24,10 @@ const navigation = [
   { name: "Inventory", href: "/inventory", icon: Package },
   { name: "Restock Queue", href: "/restock-queue", icon: ClipboardList },
   { name: "Orders", href: "/orders", icon: ShoppingCart },
-  { name: "Activity", href: "/activity", icon: History },
+  { name: "Activity", href: "/activity", icon: History, adminOnly: true },
 ];
 
-export function Sidebar() {
+export function Sidebar({ user }: { user: UserType | null }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -70,32 +71,34 @@ export function Sidebar() {
             </Link>
           </div>
           <nav className="flex-1 space-y-1 px-3 py-2">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all group",
-                    isActive
-                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
-                      : "text-slate-400 hover:bg-white/5 hover:text-white",
-                  )}
-                  onClick={() => setIsOpen(false)}
-                >
-                  <item.icon
+            {navigation
+              .filter((item) => !item.adminOnly || user?.role === "Admin")
+              .map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
                     className={cn(
-                      "h-4 relative z-10 w-4 transition-colors",
+                      "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all group",
                       isActive
-                        ? "text-white"
-                        : "text-slate-500 group-hover:text-indigo-400",
+                        ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/20"
+                        : "text-slate-400 hover:bg-white/5 hover:text-white",
                     )}
-                  />
-                  {item.name}
-                </Link>
-              );
-            })}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <item.icon
+                      className={cn(
+                        "h-4 relative z-10 w-4 transition-colors",
+                        isActive
+                          ? "text-white"
+                          : "text-slate-500 group-hover:text-indigo-400",
+                      )}
+                    />
+                    {item.name}
+                  </Link>
+                );
+              })}
           </nav>
 
           <div className="border-t border-white/5 p-4 mt-auto">

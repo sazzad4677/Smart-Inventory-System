@@ -8,6 +8,7 @@ import { Lock, Mail, ArrowRight, Zap } from "lucide-react";
 import { UserLoginSchema, UserLoginInput } from "@/lib/validations";
 import { loginAction } from "@/actions/auth.actions";
 import { DynamicForm, FieldConfig } from "@/components/shared/dynamic-form";
+import { useAuthStore } from "@/store/auth.store";
 
 import {
   Card,
@@ -42,6 +43,7 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const setUser = useAuthStore((state) => state.setUser);
 
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 
@@ -49,12 +51,12 @@ export default function LoginPage() {
     setError(null);
     let success = false;
 
-    // Use a promise to wait for the transition to finish the API call
     await new Promise<void>((resolve) => {
       startTransition(async () => {
         const result = await loginAction(data);
         if (result.success) {
           success = true;
+          setUser(result.data.user);
           toast.success("Logged in successfully!");
         } else {
           const errorMessage = result.error || "Login failed";

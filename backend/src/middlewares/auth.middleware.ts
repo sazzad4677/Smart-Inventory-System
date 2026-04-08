@@ -2,46 +2,71 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AppError } from '../utils/AppError';
 import { catchAsync } from '../utils/catchAsync';
-import User from '../models/user.model';
+import User, { IUserDocument } from '../models/user.model';
+import Session from '../models/session.model';
+import { config } from '../config/config';
 
-export const protect = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  // 1) Getting token and check if it's there
-  let token;
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    token = req.headers.authorization.split(' ')[1];
+export interface AuthenticatedRequest extends Request {
+  user?: IUserDocument;
+}
+
+const extractBearerToken = (req: Request): string | undefined => {
+  if (req.headers.authorization?.startsWith('Bearer ')) {
+    return req.headers.authorization.split(' ')[1];
   }
+  return undefined;
+};
 
-  if (!token) {
-    return next(new AppError('You are not logged in! Please log in to get access.', 401));
-  }
+export const protect = catchAsync(
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    // Get token from Authorization header
+    const token = extractBearerToken(req);
 
-  // 2) Verification of token
-  const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as jwt.JwtPayload;
+    if (!token) {
+      return next(new AppError('You are not logged in! Please log in to get access.', 401));
+    }
 
-  // 3) Check if user still exists
-  const currentUser = await User.findById(decoded.id);
-  if (!currentUser) {
-    return next(new AppError('The user belonging to this token no longer exists.', 401));
-  }
+    // Verify token
+    let decoded: jwt.JwtPayload;
+    try {
+      decoded = jwt.verify(token, config.jwt.accessSecret) as jwt.JwtPayload;
+    } catch {
+      return next(new AppError('Access token is invalid or expired.', 401));
+    }
 
-  // decoded payload to req.user for use in middleware and controllers
-  (req as any).user = currentUser;
+    // Run database checks in parallel
+    let sessionPromise = Promise.resolve(true);
+    if (decoded.sessionId) {
+      sessionPromise = Session.findById(decoded.sessionId).then((s) => !!s);
+    }
 
-  next();
-});
+    const [sessionExists, currentUser] = await Promise.all([
+      sessionPromise,
+      User.findById(decoded.id),
+    ]);
 
-// Middleware to restrict access based on roles
+    if (!sessionExists) {
+      return next(new AppError('Session has been revoked or expired. Please log in again.', 401));
+    }
+
+    if (!currentUser) {
+      return next(new AppError('The user belonging to this token no longer exists.', 401));
+    }
+
+    req.user = currentUser;
+    next();
+  },
+);
+
 export const restrictTo = (...roles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const user = (req as any).user;
-    if (!user || !user.role) {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const user = req.user;
+    if (!user?.role) {
       return next(new AppError('You are not logged in or your role is undefined.', 401));
     }
-
     if (!roles.includes(user.role)) {
-      return next(new AppError('You do not have permission to perform this action', 403));
+      return next(new AppError('You do not have permission to perform this action.', 403));
     }
-
     next();
   };
 };

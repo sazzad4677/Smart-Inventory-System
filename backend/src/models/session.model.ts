@@ -2,7 +2,7 @@ import { Schema, model, Document, Types } from 'mongoose';
 
 export interface ISession extends Document {
   userId: Types.ObjectId;
-  token: string;
+  refreshToken: string;
   expiresAt: Date;
   userAgent?: string;
   ipAddress?: string;
@@ -15,9 +15,9 @@ const sessionSchema = new Schema<ISession>(
       ref: 'User',
       required: [true, 'Session must belong to a user'],
     },
-    token: {
+    refreshToken: {
       type: String,
-      required: [true, 'Session must have a token'],
+      required: [true, 'Session must have a refresh token'],
       index: true,
     },
     expiresAt: {
@@ -33,7 +33,7 @@ const sessionSchema = new Schema<ISession>(
   },
 );
 
-// TTL Index: Automatically delete sessions 1 second after 'expiresAt'
+// TTL Index: Automatically delete sessions after 'expiresAt'
 sessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 const Session = model<ISession>('Session', sessionSchema);

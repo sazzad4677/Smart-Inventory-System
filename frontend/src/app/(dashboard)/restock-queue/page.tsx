@@ -87,7 +87,7 @@ export default async function RestockQueuePage({
             </p>
           </div>
           <RestockClient initialProducts={restockItems} />
-          <Pagination meta={meta} />
+          <Pagination meta={meta} itemLabel="products" />
         </div>
       )}
     </div>

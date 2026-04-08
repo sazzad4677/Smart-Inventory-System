@@ -7,6 +7,7 @@ import { AddProductDialog } from "./_components/add-product-dialog";
 import { ProductList } from "./_components/product-list";
 import { FilterBar, FilterField } from "@/components/shared/filter-bar";
 import { Pagination } from "@/components/shared/pagination";
+import { ErrorAlert } from "@/components/shared/error-alert";
 import { getCurrentUser } from "@/actions/auth.actions";
 import { Category } from "@/lib/types";
 
@@ -95,7 +96,14 @@ export default async function InventoryPage({
         <FilterBar filters={filters} />
 
         <div className="relative group">
-          {products.length === 0 ? (
+          {!productsResponse.success ? (
+            <ErrorAlert
+              error={
+                productsResponse.error ||
+                "Failed to load inventory. Please try again later."
+              }
+            />
+          ) : products.length === 0 ? (
             <EmptyState
               className="py-12 bg-slate-900/10 border-white/5 rounded-2xl"
               icon={<PackageSearch className="h-12 w-12 text-indigo-500/40" />}
@@ -111,7 +119,7 @@ export default async function InventoryPage({
           ) : (
             <div className="flex flex-col gap-4">
               <ProductList products={products} />
-              <Pagination meta={meta} />
+              <Pagination meta={meta} itemLabel="products" />
             </div>
           )}
         </div>

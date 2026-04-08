@@ -5,11 +5,10 @@ import { UserRole } from '../types';
 
 const router: Router = Router();
 
-// Apply protection to all restock queue routes
 router.use(protect);
 router.use(restrictTo(UserRole.Admin, UserRole.Manager));
 
-// ─── GET /api/restock-queue (Permissions: Admin, Manager) ──────────
+// ─── GET /api/restock-queue (Admin, Manager) ────────────────────
 router.get('/', getRestockQueue);
 
 export default router;

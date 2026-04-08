@@ -1,4 +1,11 @@
 services:
+  mongodb:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
   backend:
     build:
       context: .
@@ -10,14 +17,17 @@ services:
     environment:
       - PORT=5000
       - REDIS_URI=redis://redis:6379
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017/smart_inventory}
     env_file:
       - ./backend/.env
     depends_on:
+      - mongodb
       - redis
     volumes:
       - ./backend/src:/usr/src/app/backend/src
       - ./backend/package.json:/usr/src/app/backend/package.json
       - ./backend/tsconfig.json:/usr/src/app/backend/tsconfig.json
+      - ./backend/logs:/usr/src/app/backend/logs
 
   redis:
     image: redis:alpine
@@ -41,3 +51,6 @@ services:
       - ./frontend/public:/usr/src/app/frontend/public
       - ./frontend/package.json:/usr/src/app/frontend/package.json
       - ./frontend/next.config.ts:/usr/src/app/frontend/next.config.ts
+
+volumes:
+  mongodb_data:

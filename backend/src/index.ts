@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response, NextFunction, Application } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -7,14 +7,20 @@ import { Server } from 'socket.io';
 
 import { config } from './config/config';
 import connectDB from './config/db';
-import { connectRedis } from './config/redis';
+import { connectRedis, redisClient } from './config/redis';
 import { apiRateLimiter } from './middlewares/rateLimiter.middleware';
+import { performanceMiddleware } from './middlewares/performance.middleware';
+import mongoose from 'mongoose';
 import { globalErrorHandler } from './middlewares/error.middleware';
 import router from './routes';
 import { AppError } from './utils/AppError';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerDocument } from './docs/swagger';
+import { logger } from './utils/logger';
+import { morganMiddleware } from './middlewares/morgan.middleware';
 
-const app = express();
-const server = http.createServer(app);
+export const app: Application = express();
+export const server: http.Server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: config.cors.clientUrl,
@@ -26,6 +32,8 @@ const io = new Server(server, {
 app.set('io', io);
 
 // Middleware
+app.use(morganMiddleware);
+app.use(performanceMiddleware);
 app.use(helmet());
 app.use(
   cors({
@@ -40,6 +48,8 @@ app.use(cookieParser());
 app.use('/api', apiRateLimiter);
 
 // Routes
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 app.get('/', (req: Request, res: Response) => {
   res.status(200).json({
     success: true,
@@ -47,17 +57,32 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
+const dbStateMaps = {
+  0: 'disconnected',
+  1: 'connected',
+  2: 'connecting',
+  3: 'disconnecting',
+};
+
 app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'ok', message: 'Server is running' });
+  const dbStatus = mongoose.connection.readyState;
+  res.status(200).json({
+    status: 'ok',
+    message: 'Server is running',
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    dbState: dbStateMaps[dbStatus as keyof typeof dbStateMaps] || 'unknown',
+    redisState: redisClient.isOpen ? 'connected' : 'disconnected',
+  });
 });
 
 app.use('/api', router);
 
 // Socket.io Connection Event
 io.on('connection', (socket) => {
-  console.log('New client connected');
+  logger.info(`New client connected: ${socket.id}`);
   socket.on('disconnect', () => {
-    console.log('Client disconnected');
+    logger.info(`Client disconnected: ${socket.id}`);
   });
 });
 
@@ -69,14 +94,16 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // Global Error Handler
 app.use(globalErrorHandler);
 
-// Start server after DB and Redis connection
+// Start server only when run directly (not when imported by tests)
 const startServer = async () => {
   await connectDB();
   await connectRedis();
 
   server.listen(config.server.port, () => {
-    console.log(`🚀 Server running in ${config.server.nodeEnv} mode on port ${config.server.port}`);
+    logger.info(`🚀 Server running in ${config.server.nodeEnv} mode on port ${config.server.port}`);
   });
 };
 
-startServer();
+if (require.main === module) {
+  startServer();
+}

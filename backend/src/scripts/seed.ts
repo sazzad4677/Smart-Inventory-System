@@ -10,7 +10,7 @@ import { UserRole, OrderStatus } from '../types';
 
 const seed = async () => {
   try {
-    console.log('🌱 Starting large-scale database seeding...');
+    console.log('🌱 Starting database seeding...');
     await mongoose.connect(config.db.uri);
 
     // 1. Clear existing data

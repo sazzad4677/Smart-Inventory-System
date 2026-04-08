@@ -11,9 +11,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { logoutAction } from "@/actions/auth.actions";
-import { useRouter } from "next/navigation";
 import NotificationBell from "./notification-bell";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { useAuthStore } from "@/store/auth.store";
+import { logoutAction } from "@/actions/auth.actions";
 
 interface NavbarProps {
   user: {
@@ -24,11 +26,20 @@ interface NavbarProps {
 
 export function Navbar({ user }: NavbarProps) {
   const router = useRouter();
+  const clearUser = useAuthStore((state) => state.clearUser);
+  const logout = async () => {
+    try {
+      const result = await logoutAction();
 
-  const handleLogout = async () => {
-    await logoutAction();
-    router.refresh();
-    router.push("/login");
+      if (result.success) {
+        clearUser();
+        router.push("/login");
+      } else {
+        toast.error(result.error || "Logout failed. Please try again.");
+      }
+    } catch {
+      toast.error("Logout failed. Please check your connection and try again.");
+    }
   };
 
   return (
@@ -78,7 +89,7 @@ export function Navbar({ user }: NavbarProps) {
             </DropdownMenuGroup>
             <DropdownMenuSeparator className="bg-white/5" />
             <DropdownMenuItem
-              onClick={handleLogout}
+              onClick={logout}
               className="text-rose-400 focus:bg-rose-500/10 focus:text-rose-400 rounded-lg mx-1 cursor-pointer"
             >
               Log out

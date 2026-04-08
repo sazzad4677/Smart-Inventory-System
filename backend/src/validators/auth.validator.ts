@@ -6,7 +6,11 @@ export const signupSchema = z.object({
     email: z.email({ message: 'Please provide a valid email address' }).min(1, 'Email is required'),
     password: z
       .string({ message: 'Please provide a password' })
-      .min(8, 'Password must be at least 8 characters long'),
+      .min(8, 'Password must be at least 8 characters long')
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/,
+        'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+      ),
     role: z
       .enum(UserRole, {
         error: `Role must be one of: ${Object.values(UserRole).join(', ')}`,
