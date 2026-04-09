@@ -1,4 +1,11 @@
-import { createProductIntoDB, getAllProductsFromDB, updateProductInDB } from '../product.service';
+import {
+  createProductIntoDB,
+  getAllProductsFromDB,
+  updateProductInDB,
+  getProductByIdFromDB,
+  deleteProductFromDB,
+  bulkDeleteProductsFromDB,
+} from '../product.service';
 import Product from '../../models/product.model';
 import Category from '../../models/category.model';
 import ActivityLog from '../../models/activity-log.model';
@@ -102,6 +109,57 @@ describe('Product Service', () => {
       await expect(
         updateProductInDB(new Types.ObjectId(), 'invalid_id', {} as any),
       ).rejects.toThrow('Product not found');
+    });
+  });
+
+  describe('getProductByIdFromDB', () => {
+    it('should fetch a single product if not deleted', async () => {
+      const productId = 'prod123';
+      (Product.findOne as jest.Mock).mockReturnValue({
+        populate: jest.fn().mockResolvedValue({ _id: productId, name: 'Product A' }),
+      });
+
+      const result = await getProductByIdFromDB(productId);
+
+      expect(Product.findOne).toHaveBeenCalledWith({ _id: productId, is_deleted: { $ne: true } });
+      expect(result?.name).toBe('Product A');
+    });
+  });
+
+  describe('deleteProductFromDB', () => {
+    it('should soft delete a product and log activity', async () => {
+      const userId = new Types.ObjectId();
+      const productId = 'prod123';
+      (Product.findByIdAndUpdate as jest.Mock).mockResolvedValue({
+        _id: productId,
+        name: 'Deleted P',
+      });
+      (ActivityLog.create as jest.Mock).mockResolvedValue({});
+
+      const result = await deleteProductFromDB(userId, productId);
+
+      expect(Product.findByIdAndUpdate).toHaveBeenCalledWith(
+        productId,
+        { is_deleted: true },
+        { new: true },
+      );
+      expect(ActivityLog.create).toHaveBeenCalled();
+      expect(result?.name).toBe('Deleted P');
+    });
+  });
+
+  describe('bulkDeleteProductsFromDB', () => {
+    it('should bulk soft delete products and log activity', async () => {
+      const userId = new Types.ObjectId();
+      const ids = ['p1', 'p2'];
+      (Product.updateMany as jest.Mock).mockResolvedValue({ modifiedCount: 2 });
+      (ActivityLog.create as jest.Mock).mockResolvedValue({});
+
+      const result = await bulkDeleteProductsFromDB(userId, ids);
+
+      expect(Product.updateMany).toHaveBeenCalledWith({ _id: { $in: ids } }, { is_deleted: true });
+      expect(ActivityLog.create).toHaveBeenCalled();
+      expect(result.modifiedCount).toBe(2);
     });
   });
 });

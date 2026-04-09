@@ -34,7 +34,7 @@ export const getAllProductsFromDB = async (query: Record<string, unknown>) => {
   const searchableFields = ['name', 'product_id']; // As per user request
 
   const productQuery = new QueryBuilder<IProductDocument>(
-    Product.find().populate('category_id'),
+    Product.find({ is_deleted: { $ne: true } }).populate('category_id'),
     query,
   )
     .search(searchableFields)
@@ -54,7 +54,7 @@ export const getAllProductsFromDB = async (query: Record<string, unknown>) => {
 
 // ─── GET /api/product/:id (Permissions: Admin, Manager) ──────────────────────
 export const getProductByIdFromDB = async (id: string) => {
-  return await Product.findById(id).populate('category_id');
+  return await Product.findOne({ _id: id, is_deleted: { $ne: true } }).populate('category_id');
 };
 
 // ─── PUT /api/product/:id (Permissions: Admin, Manager) ──────────────────────
@@ -79,6 +79,36 @@ export const updateProductInDB = async (
 
     await ActivityLog.create({
       action_text: actionText,
+      user_id: userId,
+      timestamp: new Date(),
+    });
+  }
+
+  return result;
+};
+
+// ─── DELETE /api/product/:id (Permissions: Admin, Manager) ──────────────────
+export const deleteProductFromDB = async (userId: Types.ObjectId, id: string) => {
+  const result = await Product.findByIdAndUpdate(id, { is_deleted: true }, { new: true });
+
+  if (result) {
+    await ActivityLog.create({
+      action_text: `Product deleted: ${result.name}`,
+      user_id: userId,
+      timestamp: new Date(),
+    });
+  }
+
+  return result;
+};
+
+// ─── DELETE /api/product/bulk (Permissions: Admin) ──────────────────────────
+export const bulkDeleteProductsFromDB = async (userId: Types.ObjectId, ids: string[]) => {
+  const result = await Product.updateMany({ _id: { $in: ids } }, { is_deleted: true });
+
+  if (result.modifiedCount > 0) {
+    await ActivityLog.create({
+      action_text: `Bulk deleted ${result.modifiedCount} products`,
       user_id: userId,
       timestamp: new Date(),
     });

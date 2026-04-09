@@ -50,11 +50,15 @@ const productSchema = new Schema<IProductDocument, IProductModel>(
       type: Boolean,
       default: false,
     },
+    is_deleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true, optimisticConcurrency: true },
 );
 
-productSchema.index({ category_id: 1, status: 1, createdAt: -1 });
+productSchema.index({ category_id: 1, status: 1, is_deleted: 1, createdAt: -1 });
 productSchema.index({ name: 'text' });
 productSchema.index({ stock_quantity: 1 });
 

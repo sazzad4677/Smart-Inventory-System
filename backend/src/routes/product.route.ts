@@ -6,6 +6,8 @@ import {
   getProducts,
   updateProduct,
   getProductById,
+  deleteProduct,
+  bulkDeleteProducts,
 } from '../controllers/product.controller';
 import { protect, restrictTo } from '../middlewares/auth.middleware';
 import { UserRole } from '../types';
@@ -38,5 +40,11 @@ router.patch(
   validateRequest(updateProductSchema),
   updateProduct,
 );
+
+// ─── DELETE /api/products/bulk (Admin) ──────────────────────────
+router.delete('/bulk', restrictTo(UserRole.Admin), bulkDeleteProducts);
+
+// ─── DELETE /api/products/:id (Admin, Manager) ──────────────────
+router.delete('/:id', restrictTo(UserRole.Admin, UserRole.Manager), deleteProduct);
 
 export default router;

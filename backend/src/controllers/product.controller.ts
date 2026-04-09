@@ -6,6 +6,8 @@ import {
   getAllProductsFromDB,
   updateProductInDB,
   getProductByIdFromDB,
+  deleteProductFromDB,
+  bulkDeleteProductsFromDB,
 } from '../services/product.service';
 import type { CreateProductInput, UpdateProductInput } from '../validators/product.validator';
 
@@ -58,6 +60,34 @@ export const updateProduct = catchAsync(async (req: Request, res: Response) => {
     statusCode: 200,
     success: true,
     message: 'Product updated successfully.',
+    data: result,
+  });
+});
+
+// ─── DELETE /api/product/:id (Permissions: Admin, Manager) ──────────────────
+export const deleteProduct = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const userId = (req as any).user?._id;
+  const result = await deleteProductFromDB(userId, id as string);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Product deleted successfully.',
+    data: result,
+  });
+});
+
+// ─── DELETE /api/product/bulk (Permissions: Admin) ──────────────────────────
+export const bulkDeleteProducts = catchAsync(async (req: Request, res: Response) => {
+  const { ids } = req.body;
+  const userId = (req as any).user?._id;
+  const result = await bulkDeleteProductsFromDB(userId, ids as string[]);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Products deleted successfully.',
     data: result,
   });
 });
