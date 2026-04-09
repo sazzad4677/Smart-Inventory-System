@@ -6,6 +6,7 @@ import { runAction } from "@/lib/error-utils";
 import { UserLoginInput, UserSignupInput } from "@/lib/validations";
 import { ActionResult, User } from "@/lib/types";
 import { AuthError } from "next-auth";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 
 export async function loginAction(
   data: UserLoginInput,
@@ -59,6 +60,7 @@ export async function getCurrentUser(): Promise<User | null> {
     const { data } = await response.json();
     return (data?.user as User) ?? null;
   } catch (error) {
+    if (isRedirectError(error)) throw error;
     console.error("Error fetching current user:", error);
     return null;
   }
