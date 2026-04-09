@@ -118,7 +118,11 @@ export default async function InventoryPage({
             />
           ) : (
             <div className="flex flex-col gap-4">
-              <ProductList products={products} />
+              <ProductList
+                products={products}
+                categoryOptions={categoryOptions}
+                userRole={user?.role}
+              />
               <Pagination meta={meta} itemLabel="products" />
             </div>
           )}

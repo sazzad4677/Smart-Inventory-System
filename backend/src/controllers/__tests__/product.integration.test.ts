@@ -105,4 +105,101 @@ describe('Product Integration Tests', () => {
       expect(res.body.success).toBe(false);
     });
   });
+
+  describe('GET /api/products', () => {
+    it('should only return non-deleted products', async () => {
+      await Product.create([
+        {
+          product_id: 'TEST-P1',
+          name: 'P1',
+          category_id: categoryId,
+          price: 10,
+          stock_quantity: 5,
+          min_threshold: 2,
+          is_deleted: false,
+        },
+        {
+          product_id: 'TEST-P2',
+          name: 'P2',
+          category_id: categoryId,
+          price: 20,
+          stock_quantity: 5,
+          min_threshold: 2,
+          is_deleted: true,
+        },
+      ]);
+
+      const res = await request(app).get('/api/products');
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(1);
+      expect(res.body.data[0].name).toBe('P1');
+    });
+  });
+
+  describe('PUT /api/products/:id', () => {
+    it('should update product details', async () => {
+      const product = await Product.create({
+        product_id: 'TEST-OLD',
+        name: 'Old Name',
+        category_id: categoryId,
+        price: 10,
+        stock_quantity: 5,
+        min_threshold: 2,
+      });
+
+      const res = await request(app).put(`/api/products/${product._id}`).send({ name: 'New Name' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.name).toBe('New Name');
+    });
+  });
+
+  describe('DELETE /api/products/:id', () => {
+    it('should soft delete a product', async () => {
+      const product = await Product.create({
+        product_id: 'TEST-DEL',
+        name: 'To Delete',
+        category_id: categoryId,
+        price: 10,
+        stock_quantity: 5,
+        min_threshold: 2,
+      });
+
+      const res = await request(app).delete(`/api/products/${product._id}`);
+      expect(res.status).toBe(200);
+
+      const check = await Product.findById(product._id);
+      expect(check?.is_deleted).toBe(true);
+    });
+  });
+
+  describe('DELETE /api/products/bulk', () => {
+    it('should bulk soft delete products', async () => {
+      const p1 = await Product.create({
+        product_id: 'TEST-B1',
+        name: 'B1',
+        category_id: categoryId,
+        price: 10,
+        stock_quantity: 5,
+        min_threshold: 2,
+      });
+      const p2 = await Product.create({
+        product_id: 'TEST-B2',
+        name: 'B2',
+        category_id: categoryId,
+        price: 10,
+        stock_quantity: 5,
+        min_threshold: 2,
+      });
+
+      const res = await request(app)
+        .delete('/api/products/bulk')
+        .send({ ids: [p1._id, p2._id] });
+
+      expect(res.status).toBe(200);
+
+      const check = await Product.find({ _id: { $in: [p1._id, p2._id] } });
+      expect(check.every((p) => p.is_deleted)).toBe(true);
+    });
+  });
 });

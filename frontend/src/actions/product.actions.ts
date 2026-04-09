@@ -88,3 +88,52 @@ export async function restockProductAction(
     revalidatePath("/inventory");
   }, "Failed to restock product");
 }
+
+export async function updateProductAction(
+  id: string,
+  data: ProductInput,
+): Promise<ActionResult> {
+  const validatedFields = ProductSchema.safeParse(data);
+
+  if (!validatedFields.success) {
+    return { success: false, error: validatedFields.error.issues[0].message };
+  }
+
+  return runAction(async () => {
+    await apiFetch(`/products/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(validatedFields.data),
+    });
+
+    revalidatePath("/inventory");
+    revalidatePath("/restock-queue");
+    revalidatePath("/dashboard");
+  }, "Failed to update product");
+}
+
+export async function deleteProductAction(id: string): Promise<ActionResult> {
+  return runAction(async () => {
+    await apiFetch(`/products/${id}`, {
+      method: "DELETE",
+    });
+
+    revalidatePath("/inventory");
+    revalidatePath("/restock-queue");
+    revalidatePath("/dashboard");
+  }, "Failed to delete product");
+}
+
+export async function bulkDeleteProductsAction(
+  ids: string[],
+): Promise<ActionResult> {
+  return runAction(async () => {
+    await apiFetch("/products/bulk", {
+      method: "DELETE",
+      body: JSON.stringify({ ids }),
+    });
+
+    revalidatePath("/inventory");
+    revalidatePath("/restock-queue");
+    revalidatePath("/dashboard");
+  }, "Failed to bulk delete products");
+}
