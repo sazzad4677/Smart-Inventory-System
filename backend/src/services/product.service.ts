@@ -16,7 +16,7 @@ export const createProductIntoDB = async (userId: Types.ObjectId, payload: Creat
   }
 
   const product_id = await generateNextId('product_id', 'PRD');
-  const result = await Product.create({ ...payload, product_id } as any);
+  const result = await Product.create({ ...payload, product_id, created_by: userId } as any);
 
   if (result) {
     await ActivityLog.create({
@@ -60,11 +60,23 @@ export const getProductByIdFromDB = async (id: string) => {
 // ─── PUT /api/product/:id (Permissions: Admin, Manager) ──────────────────────
 export const updateProductInDB = async (
   userId: Types.ObjectId,
+  userRole: string,
   id: string,
   payload: UpdateProductInput,
 ) => {
   const product = await Product.findById(id);
-  if (!product) throw new Error('Product not found');
+  if (!product) throw new AppError('Product not found', 404);
+
+  // Staff permission logic
+  if (userRole === 'Staff') {
+    const isRestockOnly = Object.keys(payload).length === 1 && payload.stock_quantity !== undefined;
+
+    const isCreator = product.created_by && product.created_by.toString() === userId.toString();
+
+    if (!isRestockOnly && !isCreator) {
+      throw new AppError('Staff can only update products they created.', 403);
+    }
+  }
 
   Object.assign(product, payload);
   const result = await product.save();
@@ -88,7 +100,10 @@ export const updateProductInDB = async (
 };
 
 // ─── DELETE /api/product/:id (Permissions: Admin, Manager) ──────────────────
-export const deleteProductFromDB = async (userId: Types.ObjectId, id: string) => {
+export const deleteProductFromDB = async (userId: Types.ObjectId, userRole: string, id: string) => {
+  if (userRole === 'Staff') {
+    throw new AppError('Staff are not allowed to delete products.', 403);
+  }
   const result = await Product.findByIdAndUpdate(id, { is_deleted: true }, { new: true });
 
   if (result) {

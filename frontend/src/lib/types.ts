@@ -21,7 +21,7 @@ export interface User {
   _id: string;
   name?: string;
   email: string;
-  role: "Admin" | "Manager" | "User";
+  role: "Admin" | "Manager" | "Staff" | "User";
 }
 
 export interface Product {
@@ -34,6 +34,7 @@ export interface Product {
   category_id?: string | { _id: string; name: string };
   price: number;
   status?: string;
+  created_by?: string;
 }
 
 export interface Category {

@@ -1,6 +1,6 @@
 # 🚀 Smart Inventory Management System
 
-[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-4.0-38B2AC?logo=tailwind-css)](https://tailwindcss.com/)
 [![Express.js](https://img.shields.io/badge/Express.js-5.2-lightgrey?logo=express)](https://expressjs.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-6.0-47A248?logo=mongodb)](https://www.mongodb.com/)
@@ -63,7 +63,7 @@ A high-performance, enterprise-grade inventory management solution designed for 
 
 ### Frontend
 
-- **Framework**: Next.js 15 (App Router)
+- **Framework**: Next.js 16 (App Router)
 - **State Management**: Zustand
 - **Auth**: NextAuth.js v5 (Beta)
 - **Styling**: Tailwind CSS 4, Lucide Icons, Shadcn UI

@@ -54,7 +54,13 @@ export const getProductById = catchAsync(async (req: Request, res: Response) => 
 export const updateProduct = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const userId = (req as any).user?._id;
-  const result = await updateProductInDB(userId, id as string, req.body as UpdateProductInput);
+  const userRole = (req as any).user?.role;
+  const result = await updateProductInDB(
+    userId,
+    userRole,
+    id as string,
+    req.body as UpdateProductInput,
+  );
 
   sendResponse(res, {
     statusCode: 200,
@@ -68,7 +74,8 @@ export const updateProduct = catchAsync(async (req: Request, res: Response) => {
 export const deleteProduct = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const userId = (req as any).user?._id;
-  const result = await deleteProductFromDB(userId, id as string);
+  const userRole = (req as any).user?.role;
+  const result = await deleteProductFromDB(userId, userRole, id as string);
 
   sendResponse(res, {
     statusCode: 200,

@@ -22,21 +22,26 @@ router.get('/', getProducts);
 // ─── GET /api/products/:id (Admin, Manager, Staff) ──────────────
 router.get('/:id', getProductById);
 
-// ─── POST /api/products (Admin) ─────────────────────────────────
-router.post('/', restrictTo(UserRole.Admin), validateRequest(createProductSchema), createProduct);
+// ─── POST /api/products (Admin, Staff) ─────────────────────────────────
+router.post(
+  '/',
+  restrictTo(UserRole.Admin, UserRole.Staff),
+  validateRequest(createProductSchema),
+  createProduct,
+);
 
-// ─── PUT /api/products/:id (Admin, Manager) ─────────────────────
+// ─── PUT /api/products/:id (Admin, Manager, Staff) ─────────────────────
 router.put(
   '/:id',
-  restrictTo(UserRole.Admin, UserRole.Manager),
+  restrictTo(UserRole.Admin, UserRole.Manager, UserRole.Staff),
   validateRequest(updateProductSchema),
   updateProduct,
 );
 
-// ─── PATCH /api/products/:id ( Admin, Manager) ───────────────────
+// ─── PATCH /api/products/:id (Admin, Manager, Staff) ───────────────────
 router.patch(
   '/:id',
-  restrictTo(UserRole.Admin, UserRole.Manager),
+  restrictTo(UserRole.Admin, UserRole.Manager, UserRole.Staff),
   validateRequest(updateProductSchema),
   updateProduct,
 );

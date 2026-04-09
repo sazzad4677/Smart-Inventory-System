@@ -3,6 +3,7 @@ import { IProduct, ProductStatus } from '../types';
 
 export interface IProductDocument extends Omit<IProduct, 'category_id'>, Document {
   category_id: Types.ObjectId;
+  created_by?: Types.ObjectId;
 }
 
 export interface IProductModel extends Model<IProductDocument> {}
@@ -53,6 +54,11 @@ const productSchema = new Schema<IProductDocument, IProductModel>(
     is_deleted: {
       type: Boolean,
       default: false,
+    },
+    created_by: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: [true, 'Created by is required'],
     },
   },
   { timestamps: true, optimisticConcurrency: true },

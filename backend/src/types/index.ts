@@ -5,6 +5,7 @@ import { Types } from 'mongoose';
 export enum UserRole {
   Admin = 'Admin',
   Manager = 'Manager',
+  Staff = 'Staff',
 }
 
 export enum ProductStatus {

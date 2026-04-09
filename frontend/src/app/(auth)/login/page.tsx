@@ -64,10 +64,11 @@ export default function LoginPage() {
     });
   }
 
-  const handleDemoLogin = (role: "Admin" | "Manager") => {
+  const handleDemoLogin = (role: "Admin" | "Manager" | "Staff") => {
     const credentials = {
       Admin: { email: "admin@demo.com", password: "admin123" },
       Manager: { email: "manager@demo.com", password: "manager123" },
+      Staff: { email: "staff@demo.com", password: "staff123" },
     };
     onSubmit(credentials[role]);
   };
@@ -105,26 +106,36 @@ export default function LoginPage() {
             isPending={isPending}
           />
 
-          <div className="grid grid-cols-2 gap-3 mt-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mt-8">
             <Button
               onClick={() => handleDemoLogin("Admin")}
               disabled={isPending}
               className={cn(
                 buttonVariants({ variant: "outline" }),
-                "border-white/5 bg-indigo-500/5 text-indigo-300 hover:bg-indigo-500/10 hover:text-indigo-200 transition-all rounded-xl py-6 text-xs font-bold",
+                "border-white/5 bg-indigo-500/5 text-indigo-300 hover:bg-indigo-500/10 hover:text-indigo-200 transition-all rounded-xl py-6 text-[10px] font-bold",
               )}
             >
-              Admin Demo
+              Admin
             </Button>
             <Button
               onClick={() => handleDemoLogin("Manager")}
               disabled={isPending}
               className={cn(
                 buttonVariants({ variant: "outline" }),
-                "border-white/5 bg-emerald-500/5 text-emerald-300 hover:bg-emerald-500/10 hover:text-emerald-200 transition-all rounded-xl py-6 text-xs font-bold",
+                "border-white/5 bg-emerald-500/5 text-emerald-300 hover:bg-emerald-500/10 hover:text-emerald-200 transition-all rounded-xl py-6 text-[10px] font-bold",
               )}
             >
-              Manager Demo
+              Manager
+            </Button>
+            <Button
+              onClick={() => handleDemoLogin("Staff")}
+              disabled={isPending}
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "border-white/5 bg-amber-500/5 text-amber-300 hover:bg-amber-500/10 hover:text-amber-200 transition-all rounded-xl py-6 text-[10px] font-bold col-span-2 lg:col-span-1",
+              )}
+            >
+              Staff Demo
             </Button>
           </div>
 
