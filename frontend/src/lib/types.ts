@@ -19,7 +19,7 @@ export interface PaginatedResponse<T> {
 
 export interface User {
   _id: string;
-  name: string;
+  name?: string;
   email: string;
   role: "Admin" | "Manager" | "User";
 }
@@ -40,7 +40,6 @@ export interface Category {
   _id: string;
   name: string;
   productCount?: number;
-  createdAt?: string;
   created_at?: string;
 }
 
@@ -53,8 +52,8 @@ export interface Activity {
     role: string;
   } | null;
   timestamp: string;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface DashboardData {
@@ -95,12 +94,11 @@ export interface Order {
     | "Completed";
   items?: OrderItem[];
   created_at: string;
-  createdAt?: string;
 }
 
 export interface OrderDetailResponse {
   order: Order;
-  items: (OrderItem & {
+  items: (Omit<OrderItem, "product_id"> & {
     product_id: { _id: string; product_id: string; name: string };
   })[];
 }

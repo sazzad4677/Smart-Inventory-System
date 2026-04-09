@@ -12,29 +12,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import NotificationBell from "./notification-bell";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useAuthStore } from "@/store/auth.store";
+import { useSession } from "next-auth/react";
 import { logoutAction } from "@/actions/auth.actions";
 
-interface NavbarProps {
-  user: {
-    email: string;
-    role: string;
-  } | null;
-}
+export function Navbar() {
+  const { data: session } = useSession();
+  const user = session?.user;
 
-export function Navbar({ user }: NavbarProps) {
-  const router = useRouter();
-  const clearUser = useAuthStore((state) => state.clearUser);
   const logout = async () => {
     try {
       const result = await logoutAction();
 
-      if (result.success) {
-        clearUser();
-        router.push("/login");
-      } else {
+      if (!result.success) {
         toast.error(result.error || "Logout failed. Please try again.");
       }
     } catch {
@@ -62,7 +52,7 @@ export function Navbar({ user }: NavbarProps) {
               <User className="h-5 w-5" />
             </div>
             <div className="hidden flex-col items-start text-sm md:flex">
-              <span className="font-semibold leading-none text-white">
+              <span className="font-semibold leading-none text-white text-left">
                 {user?.role || "Guest"}
               </span>
               <span className="text-xs text-slate-500">

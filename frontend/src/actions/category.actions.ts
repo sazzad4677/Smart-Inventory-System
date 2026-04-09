@@ -3,27 +3,23 @@
 import { apiFetch } from "@/lib/api";
 import { revalidatePath } from "next/cache";
 import { CategorySchema } from "@/lib/validations";
+import { runAction } from "@/lib/error-utils";
 import { ActionResult, Category, PaginatedResponse } from "@/lib/types";
-import { tryAction } from "@/lib/error-utils";
+import { buildQuery } from "@/lib/buildQuery";
 
-export async function getCategoriesAction(params?: {
+export interface GetCategoriesParams {
   page?: string;
   limit?: string;
   searchTerm?: string;
-}): Promise<ActionResult<PaginatedResponse<Category>>> {
-  return tryAction(async () => {
-    const query = new URLSearchParams();
-    if (params?.page) query.append("page", params.page);
-    if (params?.limit) query.append("limit", params.limit);
-    if (params?.searchTerm) query.append("searchTerm", params.searchTerm);
+}
 
-    const queryString = query.toString();
-    const url = `/categories${queryString ? `?${queryString}` : ""}`;
-
-    const response = await apiFetch(url, {
+export async function getCategoriesAction(
+  params?: GetCategoriesParams,
+): Promise<ActionResult<PaginatedResponse<Category>>> {
+  return runAction(async () => {
+    const response = await apiFetch(`/categories${buildQuery(params)}`, {
       next: { tags: ["categories"] },
     });
-
     const result = await response.json();
     return {
       data: result.data || [],
@@ -40,20 +36,14 @@ export async function createCategoryAction(
   });
 
   if (!validatedFields.success) {
-    return {
-      success: false,
-      error: validatedFields.error.issues[0].message,
-    };
+    return { success: false, error: validatedFields.error.issues[0].message };
   }
 
-  const { name } = validatedFields.data;
-
-  return tryAction(async () => {
+  return runAction(async () => {
     await apiFetch("/categories", {
       method: "POST",
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(validatedFields.data),
     });
-
     revalidatePath("/categories");
   }, "Failed to create category");
 }

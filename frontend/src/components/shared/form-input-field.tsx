@@ -39,6 +39,7 @@ interface FormInputFieldProps<T extends FieldValues> {
   showError?: boolean;
   onSearchValueChange?: (value: string) => void;
   isLoading?: boolean;
+  autoComplete?: string;
 }
 
 export function FormInputField<T extends FieldValues>({
@@ -55,6 +56,7 @@ export function FormInputField<T extends FieldValues>({
   showError = true,
   onSearchValueChange,
   isLoading,
+  autoComplete,
 }: FormInputFieldProps<T>) {
   return (
     <FormField
@@ -114,6 +116,7 @@ export function FormInputField<T extends FieldValues>({
                       <Input
                         type={type}
                         placeholder={placeholder}
+                        autoComplete={autoComplete}
                         className={cn(Icon && "pl-10", inputClassName)}
                         {...field}
                       />

@@ -1,27 +1,23 @@
 "use server";
 
 import { apiFetch } from "@/lib/api";
+import { buildQuery } from "@/lib/buildQuery";
+import { runAction } from "@/lib/error-utils";
 import { ActionResult, Product, PaginatedResponse } from "@/lib/types";
-import { tryAction } from "@/lib/error-utils";
 
-export async function getRestockQueue(params?: {
+export interface GetRestockParams {
   page?: string;
   limit?: string;
   searchTerm?: string;
-}): Promise<ActionResult<PaginatedResponse<Product>>> {
-  return tryAction(async () => {
-    const query = new URLSearchParams();
-    if (params?.page) query.append("page", params.page);
-    if (params?.limit) query.append("limit", params.limit);
-    if (params?.searchTerm) query.append("searchTerm", params.searchTerm);
+}
 
-    const queryString = query.toString();
-    const url = `/restock-queue${queryString ? `?${queryString}` : ""}`;
-
-    const response = await apiFetch(url, {
+export async function getRestockQueue(
+  params?: GetRestockParams,
+): Promise<ActionResult<PaginatedResponse<Product>>> {
+  return runAction(async () => {
+    const response = await apiFetch(`/restock-queue${buildQuery(params)}`, {
       next: { tags: ["restock-queue"] },
     });
-
     const result = await response.json();
     return {
       data: result.data || [],

@@ -4,7 +4,8 @@ import { apiFetch } from "@/lib/api";
 import { revalidatePath } from "next/cache";
 import { ProductInput, ProductSchema } from "@/lib/validations";
 import { ActionResult, Product } from "@/lib/types";
-import { tryAction } from "@/lib/error-utils";
+import { runAction } from "@/lib/error-utils";
+import { buildQuery } from "@/lib/buildQuery";
 
 export interface GetProductsParams {
   searchTerm?: string;
@@ -21,22 +22,8 @@ export type ProductsResponse = {
 export async function getProductsAction(
   params?: GetProductsParams,
 ): Promise<ActionResult<ProductsResponse>> {
-  return tryAction(async () => {
-    const searchParams = new URLSearchParams();
-    if (params?.searchTerm)
-      searchParams.append("searchTerm", params.searchTerm);
-    if (params?.category_id)
-      searchParams.append("category_id", params.category_id);
-    if (params?.page) searchParams.append("page", params.page.toString());
-    if (params?.limit) searchParams.append("limit", params.limit.toString());
-
-    const queryString = searchParams.toString();
-    const endpoint = `/products${queryString ? `?${queryString}` : ""}`;
-
-    const response = await apiFetch(endpoint, {
-      next: { tags: ["products"] },
-    });
-
+  return runAction(async () => {
+    const response = await apiFetch(`/products${buildQuery(params)}`);
     const result = await response.json();
 
     return {
@@ -52,13 +39,10 @@ export async function createProductAction(
   const validatedFields = ProductSchema.safeParse(data);
 
   if (!validatedFields.success) {
-    return {
-      success: false,
-      error: validatedFields.error.issues[0].message,
-    };
+    return { success: false, error: validatedFields.error.issues[0].message };
   }
 
-  return tryAction(async () => {
+  return runAction(async () => {
     await apiFetch("/products", {
       method: "POST",
       body: JSON.stringify(validatedFields.data),
@@ -73,12 +57,10 @@ export async function updateProductStockAction(
   current_stock: number,
   quantity_to_add: number,
 ): Promise<ActionResult> {
-  return tryAction(async () => {
-    const new_stock = current_stock + quantity_to_add;
-
+  return runAction(async () => {
     await apiFetch(`/products/${id}`, {
       method: "PATCH",
-      body: JSON.stringify({ stock_quantity: new_stock }),
+      body: JSON.stringify({ stock_quantity: current_stock + quantity_to_add }),
     });
 
     revalidatePath("/inventory");
@@ -91,16 +73,15 @@ export async function restockProductAction(
   productId: string,
   addedStock: number,
 ): Promise<ActionResult> {
-  return tryAction(async () => {
+  return runAction(async () => {
     const response = await apiFetch(`/products/${productId}`);
-    const result = await response.json();
-
-    const currentStock = result.data.stock_quantity;
-    const newStock = currentStock + addedStock;
+    const { data } = await response.json();
 
     await apiFetch(`/products/${productId}`, {
       method: "PATCH",
-      body: JSON.stringify({ stock_quantity: newStock }),
+      body: JSON.stringify({
+        stock_quantity: data.stock_quantity + addedStock,
+      }),
     });
 
     revalidatePath("/restock-queue");
