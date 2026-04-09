@@ -44,6 +44,7 @@ describe('Auth Controller', () => {
         message: 'Account created successfully.',
         data: {
           accessToken: 'access-token',
+          refreshToken: 'refresh-token',
           user: { id: 'user123', email: 'test@example.com', role: 'manager' },
         },
       });
@@ -79,6 +80,7 @@ describe('Auth Controller', () => {
         message: 'User logged in successfully.',
         data: {
           accessToken: 'access-token',
+          refreshToken: 'refresh-token',
           user: { id: 'user123', email: 'login@example.com', role: 'manager' },
         },
       });

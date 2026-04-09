@@ -16,6 +16,7 @@ declare module "next-auth" {
   interface Session {
     user: UserType & DefaultSession["user"];
     accessToken?: string;
+    refreshToken?: string;
     error?: string;
   }
 }
@@ -67,10 +68,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               email: result.data.user.email,
               role: result.data.user.role as UserType["role"],
               accessToken: result.data.accessToken,
-              refreshToken:
-                res.headers
-                  .get("set-cookie")
-                  ?.match(/refreshToken=([^;]+)/)?.[1] || "",
+              refreshToken: result.data.refreshToken,
             };
           }
           return null;
@@ -103,6 +101,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return token;
       }
 
+      // If we already have a refresh error, stop trying to refresh
+      if (token.error === "RefreshAccessTokenError") {
+        return token;
+      }
+
       // Access token has expired, try to update it
       return refreshAccessToken(token);
     },
@@ -113,6 +116,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.name = token.user.name ?? undefined;
       }
       session.accessToken = token.accessToken;
+      session.refreshToken = token.refreshToken;
       session.error = token.error;
       return session;
     },
@@ -123,41 +127,61 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
 });
 
+const refreshPromises = new Map<string, Promise<JWT>>();
+
 async function refreshAccessToken(token: JWT): Promise<JWT> {
-  try {
-    const API_URL =
-      process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL;
-
-    const res = await fetch(`${API_URL}/auth/refresh-token`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        refreshToken: token.refreshToken,
-      }),
-    });
-
-    const result = await res.json();
-
-    if (!res.ok) {
-      throw result;
-    }
-
-    return {
-      ...token,
-      accessToken: result.data.accessToken,
-      accessTokenExpires: getTokenExpiry(result.data.accessToken),
-      refreshToken: result.data.refreshToken ?? token.refreshToken,
-    };
-  } catch (error) {
-    console.error("Error refreshing access token", error);
-
-    return {
-      ...token,
-      error: "RefreshAccessTokenError",
-    };
+  // If a refresh is already in progress for this token, return that promise
+  if (token.refreshToken && refreshPromises.has(token.refreshToken)) {
+    return refreshPromises.get(token.refreshToken)!;
   }
+
+  const refreshPromise = (async () => {
+    try {
+      const API_URL =
+        process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL;
+
+      const res = await fetch(`${API_URL}/auth/refresh-token`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          refreshToken: token.refreshToken,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw result;
+      }
+
+      return {
+        ...token,
+        accessToken: result.data.accessToken,
+        accessTokenExpires: getTokenExpiry(result.data.accessToken),
+        refreshToken: result.data.refreshToken ?? token.refreshToken,
+      };
+    } catch (error) {
+      console.error("Error refreshing access token", error);
+
+      return {
+        ...token,
+        error: "RefreshAccessTokenError",
+      };
+    } finally {
+      // Clean up the promise from the cache
+      if (token.refreshToken) {
+        refreshPromises.delete(token.refreshToken);
+      }
+    }
+  })();
+
+  if (token.refreshToken) {
+    refreshPromises.set(token.refreshToken, refreshPromise);
+  }
+
+  return refreshPromise;
 }
 
 function getTokenExpiry(token?: string): number {

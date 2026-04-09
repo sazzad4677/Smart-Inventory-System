@@ -27,6 +27,10 @@ export default auth((req) => {
 
   // 2. Unauthenticated user OR expired token on a protected route -> redirect to login
   if (!isAuthenticated && !isAuthRoute && !isPublicRoute) {
+    if (req.method === "POST") {
+      return NextResponse.next();
+    }
+
     const loginUrl = new URL("/login", req.url);
     if (pathname !== "/" && pathname !== "/login") {
       loginUrl.searchParams.set("callbackUrl", pathname);

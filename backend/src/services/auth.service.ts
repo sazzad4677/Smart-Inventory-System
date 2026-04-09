@@ -20,11 +20,16 @@ const generateTokens = (
   role: string,
   sessionId: Types.ObjectId,
 ): TokenPair => {
-  const accessToken = jwt.sign({ id: userId, role, sessionId }, config.jwt.accessSecret, {
-    expiresIn: config.jwt.accessExpiresIn,
-  } as jwt.SignOptions);
+  const timestamp = Date.now();
+  const accessToken = jwt.sign(
+    { id: userId, role, sessionId, timestamp },
+    config.jwt.accessSecret,
+    {
+      expiresIn: config.jwt.accessExpiresIn,
+    } as jwt.SignOptions,
+  );
 
-  const refreshToken = jwt.sign({ id: userId }, config.jwt.refreshSecret, {
+  const refreshToken = jwt.sign({ id: userId, sessionId, timestamp }, config.jwt.refreshSecret, {
     expiresIn: config.jwt.refreshExpiresIn,
   } as jwt.SignOptions);
 
@@ -96,8 +101,8 @@ export const loginUser = async (
 
 export const refreshAccessToken = async (
   refreshToken: string,
-): Promise<{ accessToken: string }> => {
-  // 1) Verify the refresh token signature + expiry
+): Promise<{ accessToken: string; refreshToken: string }> => {
+  // Verify the refresh token signature + expiry
   let decoded: jwt.JwtPayload;
   try {
     decoded = jwt.verify(refreshToken, config.jwt.refreshSecret) as jwt.JwtPayload;
@@ -105,28 +110,28 @@ export const refreshAccessToken = async (
     throw new AppError('Invalid or expired refresh token. Please log in again.', 401);
   }
 
-  // 2) Confirm the session exists in DB (handles explicit logout / revocation)
+  // Confirm the session exists in DB (handles explicit logout / revocation)
   const session = await Session.findOne({ refreshToken });
   if (!session) {
-    throw new AppError('Session has been revoked. Please log in again.', 401);
+    throw new AppError('Session has been revoked or already rotated. Please log in again.', 401);
   }
 
-  // 3) Confirm user still exists
+  // Confirm user still exists
   const user = await User.findById(decoded.id);
   if (!user) {
     throw new AppError('The user belonging to this session no longer exists.', 401);
   }
 
-  // 4) Issue a new short-lived access token
-  const accessToken = jwt.sign(
-    { id: user._id, role: user.role, sessionId: session._id },
-    config.jwt.accessSecret,
-    {
-      expiresIn: config.jwt.accessExpiresIn,
-    } as jwt.SignOptions,
-  );
+  // Issue a new pair of tokens (Rotation)
+  const sessionId = session._id as Types.ObjectId;
+  const tokens = generateTokens(user._id as Types.ObjectId, user.role, sessionId);
 
-  return { accessToken };
+  // Update the session with the new refresh token
+  session.refreshToken = tokens.refreshToken;
+  session.expiresAt = new Date(Date.now() + ms(config.jwt.refreshExpiresIn as any));
+  await session.save();
+
+  return tokens;
 };
 
 // ─── POST /api/auth/logout ────────────────────────────────────────────────────

@@ -82,4 +82,87 @@ describe('Auth API Integration', () => {
       expect(res.body.message).toMatch(/Invalid email or password/i);
     });
   });
+
+  describe('POST /api/auth/refresh-token & Session Security', () => {
+    const testUser = {
+      email: 'session-test@example.com',
+      password: 'SessionPassword123!',
+    };
+
+    beforeEach(async () => {
+      await User.create({
+        email: testUser.email,
+        password_hash: testUser.password,
+      });
+    });
+
+    const getRefreshToken = (res: request.Response) => {
+      const cookies = res.get('Set-Cookie');
+      if (!cookies || !Array.isArray(cookies)) return null;
+      const refreshCookie = cookies.find((c) => c.startsWith('refreshToken='));
+      if (!refreshCookie) return null;
+      const cookieValue = refreshCookie.split(';')[0];
+      return cookieValue ? cookieValue.split('=')[1] || null : null;
+    };
+
+    it('should rotate BOTH tokens upon refresh', async () => {
+      // 1. Initial login
+      const loginRes = await request(app).post('/api/auth/login').send(testUser);
+      const firstAccessToken = loginRes.body.data.accessToken;
+      const firstRefreshToken = getRefreshToken(loginRes);
+
+      expect(firstRefreshToken).toBeDefined();
+
+      // 2. Perform refresh
+      const refreshRes = await request(app)
+        .post('/api/auth/refresh-token')
+        .set('Cookie', [`refreshToken=${firstRefreshToken}`]);
+
+      expect(refreshRes.status).toBe(200);
+      const secondAccessToken = refreshRes.body.data.accessToken;
+      const secondRefreshToken = getRefreshToken(refreshRes);
+
+      expect(secondAccessToken).not.toBe(firstAccessToken);
+      expect(secondRefreshToken).not.toBe(firstRefreshToken);
+      expect(refreshRes.body.data.refreshToken).toBe(secondRefreshToken);
+    });
+
+    it('should fail (Reuse Protection) when using a rotated refresh token', async () => {
+      // 1. Login
+      const loginRes = await request(app).post('/api/auth/login').send(testUser);
+      const firstRefreshToken = getRefreshToken(loginRes);
+
+      // 2. Refresh (Rotates firstToken -> secondToken)
+      await request(app)
+        .post('/api/auth/refresh-token')
+        .set('Cookie', [`refreshToken=${firstRefreshToken}`]);
+
+      // 3. Attempt to use firstToken AGAIN
+      const reuseRes = await request(app)
+        .post('/api/auth/refresh-token')
+        .set('Cookie', [`refreshToken=${firstRefreshToken}`]);
+
+      expect(reuseRes.status).toBe(401);
+      expect(reuseRes.body.message).toMatch(/revoked or already rotated/i);
+    });
+
+    it('should invalidate session upon logout', async () => {
+      // 1. Login
+      const loginRes = await request(app).post('/api/auth/login').send(testUser);
+      const refreshToken = getRefreshToken(loginRes);
+
+      // 2. Logout
+      const logoutRes = await request(app)
+        .post('/api/auth/logout')
+        .set('Cookie', [`refreshToken=${refreshToken}`]);
+      expect(logoutRes.status).toBe(200);
+
+      // 3. Attempt to refresh with the logged-out token
+      const refreshRes = await request(app)
+        .post('/api/auth/refresh-token')
+        .set('Cookie', [`refreshToken=${refreshToken}`]);
+
+      expect(refreshRes.status).toBe(401);
+    });
+  });
 });

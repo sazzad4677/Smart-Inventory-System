@@ -15,6 +15,7 @@ import NotificationBell from "./notification-bell";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { logoutAction } from "@/actions/auth.actions";
+import { isRedirectError } from "@/lib/api";
 
 export function Navbar() {
   const { data: session } = useSession();
@@ -24,10 +25,13 @@ export function Navbar() {
     try {
       const result = await logoutAction();
 
-      if (!result.success) {
+      if (result && !result.success) {
         toast.error(result.error || "Logout failed. Please try again.");
       }
-    } catch {
+    } catch (error) {
+      if (isRedirectError(error)) throw error;
+
+      console.error("Logout failed:", error);
       toast.error("Logout failed. Please check your connection and try again.");
     }
   };
