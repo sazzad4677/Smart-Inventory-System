@@ -195,6 +195,7 @@ function getTokenExpiry(token?: string): number {
     const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
     return payload.exp * 1000; // convert seconds to milliseconds
   } catch {
+    // fallback: 15 min if token is malformed
     return Date.now() + 15 * 60 * 1000;
   }
 }
