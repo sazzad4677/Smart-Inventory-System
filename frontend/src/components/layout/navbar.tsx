@@ -16,10 +16,13 @@ import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { logoutAction } from "@/actions/auth.actions";
 import { isRedirectError } from "@/lib/api";
+import { useAuthStore } from "@/store/auth-store";
+import { User as UserType } from "@/lib/types";
 
-export function Navbar() {
+export function Navbar({ user: initialUser }: { user?: UserType | null }) {
   const { data: session } = useSession();
-  const user = session?.user;
+  const { user: storeUser } = useAuthStore();
+  const user = initialUser || storeUser || session?.user;
 
   const logout = async () => {
     try {
