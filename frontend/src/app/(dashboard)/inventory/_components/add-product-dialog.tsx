@@ -23,6 +23,7 @@ export function AddProductDialog({ categoryOptions }: AddProductDialogProps) {
       label: "Product Name",
       type: "text",
       placeholder: "e.g., Wireless Mouse",
+      autoComplete: "off",
     },
     {
       name: "category_id",
@@ -53,16 +54,12 @@ export function AddProductDialog({ categoryOptions }: AddProductDialogProps) {
 
   const onSubmit = (data: ProductInput) => {
     startTransition(async () => {
-      try {
-        const result = await createProductAction(data);
-        if (result.success) {
-          setIsOpen(false);
-          toast.success("Product added successfully");
-        } else {
-          toast.error(result.error || "Failed to add product");
-        }
-      } catch {
-        toast.error("Something went wrong");
+      const result = await createProductAction(data);
+      if (result.success) {
+        setIsOpen(false);
+        toast.success("Product added successfully");
+      } else {
+        toast.error(result.error || "Failed to add product");
       }
     });
   };

@@ -3,12 +3,11 @@
 import { useTransition, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Lock, Mail, ArrowRight, Zap } from "lucide-react";
+import { Lock, Mail, Zap } from "lucide-react";
 
 import { UserLoginSchema, UserLoginInput } from "@/lib/validations";
 import { loginAction } from "@/actions/auth.actions";
 import { DynamicForm, FieldConfig } from "@/components/shared/dynamic-form";
-import { useAuthStore } from "@/store/auth.store";
 
 import {
   Card,
@@ -20,6 +19,8 @@ import {
 } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 const loginFields: FieldConfig[] = [
   {
@@ -43,33 +44,24 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const setUser = useAuthStore((state) => state.setUser);
 
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 
   async function onSubmit(data: UserLoginInput) {
     setError(null);
-    let success = false;
 
-    await new Promise<void>((resolve) => {
-      startTransition(async () => {
-        const result = await loginAction(data);
-        if (result.success) {
-          success = true;
-          setUser(result.data.user);
-          toast.success("Logged in successfully!");
-        } else {
-          const errorMessage = result.error || "Login failed";
-          setError(errorMessage);
-          toast.error(errorMessage);
-        }
-        resolve();
-      });
+    startTransition(async () => {
+      const result = await loginAction(data);
+      if (result.success) {
+        toast.success("Logged in successfully!");
+        router.push(callbackUrl);
+        router.refresh();
+      } else {
+        const errorMessage = result.error || "Login failed";
+        setError(errorMessage);
+        toast.error(errorMessage);
+      }
     });
-
-    if (success) {
-      router.push(callbackUrl);
-    }
   }
 
   const handleDemoLogin = (role: "Admin" | "Manager") => {
@@ -154,7 +146,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <a
+          <Link
             href="/signup"
             className={cn(
               buttonVariants({ variant: "ghost" }),
@@ -162,7 +154,7 @@ export default function LoginPage() {
             )}
           >
             Create an account <ArrowRight className="h-4 w-4" />
-          </a>
+          </Link>
         </CardFooter>
       </Card>
 

@@ -1,26 +1,22 @@
 "use server";
 
 import { apiFetch } from "@/lib/api";
+import { runAction } from "@/lib/error-utils";
 import { ActionResult, Activity, DashboardData } from "@/lib/types";
-import { tryAction } from "@/lib/error-utils";
 
 export async function getDashboardData(): Promise<ActionResult<DashboardData>> {
-  return tryAction(async () => {
-    const response = await apiFetch("/dashboard", {
-      next: { revalidate: 60 }, // Cache for 1 minute
-    });
-
+  return runAction(async () => {
+    const response = await apiFetch("/dashboard", { next: { revalidate: 60 } });
     const result = await response.json();
     return result.data;
   }, "Failed to fetch dashboard data");
 }
 
 export async function getLatestActivities(): Promise<ActionResult<Activity[]>> {
-  return tryAction(async () => {
+  return runAction(async () => {
     const response = await apiFetch("/activities", {
-      next: { revalidate: 60 }, // Cache for 1 minute
+      next: { revalidate: 60 },
     });
-
     const result = await response.json();
     return result.data;
   }, "Failed to fetch activities");

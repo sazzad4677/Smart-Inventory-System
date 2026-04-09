@@ -132,19 +132,21 @@ describe('Auth Service', () => {
       const refreshToken = 'valid-token';
       const mockDecoded = { id: 'user123' };
       const userId = new mongoose.Types.ObjectId();
-      const mockSession = { _id: 'session123', userId };
+      const mockSession = { _id: 'session123', userId, save: jest.fn().mockResolvedValue({}) };
       const mockUser = { _id: 'user123', role: 'manager' };
 
       (jwt.verify as jest.Mock).mockReturnValue(mockDecoded);
       (Session.findOne as jest.Mock).mockResolvedValue(mockSession);
       (User.findById as jest.Mock).mockResolvedValue(mockUser);
-      (jwt.sign as jest.Mock).mockReturnValue('new-access-token');
+      (jwt.sign as jest.Mock).mockReturnValue('new-token');
 
       const result = await refreshAccessToken(refreshToken);
 
       expect(jwt.verify).toHaveBeenCalledWith(refreshToken, expect.any(String));
       expect(Session.findOne).toHaveBeenCalledWith({ refreshToken });
-      expect(result.accessToken).toBe('new-access-token');
+      expect(result.accessToken).toBe('new-token');
+      expect(result.refreshToken).toBe('new-token');
+      expect(mockSession.save).toHaveBeenCalled();
     });
 
     it('should throw 401 if refresh token verification fails', async () => {
@@ -162,7 +164,7 @@ describe('Auth Service', () => {
       (Session.findOne as jest.Mock).mockResolvedValue(null);
 
       await expect(refreshAccessToken('valid-but-no-session')).rejects.toThrow(
-        new AppError('Session has been revoked. Please log in again.', 401),
+        new AppError('Session has been revoked or already rotated. Please log in again.', 401),
       );
     });
 

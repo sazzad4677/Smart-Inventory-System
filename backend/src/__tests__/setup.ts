@@ -1,6 +1,6 @@
 // Global setup for infrastructure mocks
 
-// 1. Mock the logger utility
+// Mock the logger utility
 jest.mock('../utils/logger', () => ({
   logger: {
     info: jest.fn(),
@@ -11,14 +11,7 @@ jest.mock('../utils/logger', () => ({
   },
 }));
 
-// 2. Mock mongoose
-jest.mock('mongoose', () => {
-  const mongoose = jest.requireActual('mongoose');
-  mongoose.connect = jest.fn().mockResolvedValue(mongoose);
-  return mongoose;
-});
-
-// 3. Mock Redis client config
+// Mock Redis client config
 jest.mock('../config/redis', () => ({
   redisClient: {
     on: jest.fn(),
@@ -30,7 +23,7 @@ jest.mock('../config/redis', () => ({
   connectRedis: jest.fn().mockResolvedValue(true),
 }));
 
-// 4. Mock the API Metric model
+// Mock the API Metric model
 jest.mock('../models/ApiMetric.model', () => ({
   __esModule: true,
   default: {
@@ -44,7 +37,7 @@ jest.mock('../models/ApiMetric.model', () => ({
   },
 }));
 
-// 5. Mock the Rate Limiter Middleware completely
+// Mock the Rate Limiter Middleware completely
 jest.mock('../middlewares/rateLimiter.middleware', () => ({
   apiRateLimiter: (req: any, res: any, next: any) => next(),
   loginRateLimiter: (req: any, res: any, next: any) => next(),

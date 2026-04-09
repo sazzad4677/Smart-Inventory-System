@@ -7,7 +7,7 @@ import { useSocket } from "@/hooks/use-socket";
 const STORAGE_KEY = "inventory_notifications";
 
 interface Notification {
-  id: string;
+  _id: string;
   productName: string;
   currentStock: number;
   message: string;
@@ -121,7 +121,7 @@ const NotificationBell = () => {
               <div className="divide-y divide-gray-50">
                 {notifications.map((notification) => (
                   <div
-                    key={notification.id}
+                    key={notification._id}
                     className="p-4 hover:bg-gray-50 transition-colors"
                   >
                     <p className="text-sm text-gray-800 leading-tight mb-1">

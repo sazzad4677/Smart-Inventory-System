@@ -27,6 +27,7 @@ export const signup = catchAsync(async (req: Request, res: Response) => {
     message: 'Account created successfully.',
     data: {
       accessToken,
+      refreshToken,
       user: { id: user._id, email: user.email, role: user.role },
     },
   });
@@ -44,6 +45,7 @@ export const login = catchAsync(async (req: Request, res: Response) => {
     message: 'User logged in successfully.',
     data: {
       accessToken,
+      refreshToken,
       user: { id: user._id, email: user.email, role: user.role },
     },
   });
@@ -57,12 +59,13 @@ export const refreshToken = catchAsync(async (req: Request, res: Response) => {
     return res.status(401).json({ success: false, message: 'No refresh token provided.' });
   }
 
-  const { accessToken } = await refreshAccessToken(token);
+  const { accessToken, refreshToken: newRefreshToken } = await refreshAccessToken(token);
+  res.cookie('refreshToken', newRefreshToken, cookieOptions);
   sendResponse(res, {
     statusCode: 200,
     success: true,
     message: 'Access token refreshed.',
-    data: { accessToken },
+    data: { accessToken, refreshToken: newRefreshToken },
   });
 });
 

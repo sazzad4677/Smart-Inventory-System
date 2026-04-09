@@ -1,5 +1,6 @@
 import { createProductIntoDB, getAllProductsFromDB, updateProductInDB } from '../product.service';
 import Product from '../../models/product.model';
+import Category from '../../models/category.model';
 import ActivityLog from '../../models/activity-log.model';
 import { generateNextId } from '../../utils/id.utils';
 import { Types } from 'mongoose';
@@ -7,6 +8,7 @@ import QueryBuilder from '../../builders/QueryBuilder';
 
 // Mock dependencies
 jest.mock('../../models/product.model');
+jest.mock('../../models/category.model');
 jest.mock('../../models/activity-log.model');
 jest.mock('../../utils/id.utils');
 jest.mock('../../builders/QueryBuilder');
@@ -20,6 +22,7 @@ describe('Product Service', () => {
     it('should successfully create a product and log the activity', async () => {
       const userId = new Types.ObjectId();
       const payload = { name: 'New Product', price: 100 } as any;
+      (Category.findById as jest.Mock).mockResolvedValue({ _id: 'cat123' });
       (generateNextId as jest.Mock).mockResolvedValue('PRD-001');
       (Product.create as jest.Mock).mockResolvedValue({ _id: 'prod123', name: 'New Product' });
       (ActivityLog.create as jest.Mock).mockResolvedValue({});

@@ -1,12 +1,20 @@
 import QueryBuilder from '../builders/QueryBuilder';
 import Product, { IProductDocument } from '../models/product.model';
+import Category from '../models/category.model';
 import ActivityLog from '../models/activity-log.model';
 import { CreateProductInput, UpdateProductInput } from '../validators/product.validator';
 import { Types } from 'mongoose';
 import { generateNextId } from '../utils/id.utils';
+import { AppError } from '../utils/AppError';
 
 // ─── POST /api/product (Permissions: Admin Only) ─────────────────────────────
 export const createProductIntoDB = async (userId: Types.ObjectId, payload: CreateProductInput) => {
+  // Verify category exists
+  const categoryExists = await Category.findById(payload.category_id);
+  if (!categoryExists) {
+    throw new AppError('The specified category does not exist.', 400);
+  }
+
   const product_id = await generateNextId('product_id', 'PRD');
   const result = await Product.create({ ...payload, product_id } as any);
 

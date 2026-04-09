@@ -45,8 +45,8 @@ describe('Dashboard Service', () => {
       expect(stats.pendingVsCompleted.Completed).toBe(3);
       expect(stats.lowStockCount).toBe(2);
       expect(stats.totalProducts).toBe(50);
-      expect(stats.productSummary[0].status).toBe('Low Stock');
-      expect(stats.productSummary[1].status).toBe('OK');
+      expect(stats.productSummary?.[0]?.status).toBe('Low Stock');
+      expect(stats.productSummary?.[1]?.status).toBe('OK');
     });
   });
 

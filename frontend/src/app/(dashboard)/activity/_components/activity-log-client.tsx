@@ -107,7 +107,7 @@ export function ActivityLogClient({
     {
       header: "Timestamp",
       cell: (activity) => {
-        const date = new Date(activity.createdAt || activity.timestamp);
+        const date = new Date(activity.created_at || activity.timestamp);
         return (
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-1.5 text-slate-400">

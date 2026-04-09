@@ -1,34 +1,22 @@
 import { ApiError, isRedirectError } from "./api";
 import { ActionResult } from "./types";
 
-// ─── Error handler ────────────────────────────────────────────────────────────
-
-export function handleActionError<T>(
-  error: unknown,
-  fallbackMessage = "Something went wrong",
-): ActionResult<T> {
-  if (isRedirectError(error)) throw error;
-
-  if (error instanceof ApiError) {
-    return { success: false, error: error.message, statusCode: error.status };
-  }
-
-  console.error("Action error:", error);
-  return {
-    success: false,
-    error: error instanceof Error ? error.message : fallbackMessage,
-  };
-}
-
-// ─── Action wrapper ───────────────────────────────────────────────────────────
-
-export async function tryAction<T>(
+export async function runAction<T>(
   action: () => Promise<T>,
-  fallbackMessage?: string,
+  fallbackMessage = "Something went wrong",
 ): Promise<ActionResult<T>> {
   try {
-    return { success: true, data: await action() };
+    const data = await action();
+    return { success: true, data };
   } catch (error) {
-    return handleActionError(error, fallbackMessage);
+    if (isRedirectError(error)) throw error;
+    if (error instanceof ApiError) {
+      return { success: false, error: error.message, statusCode: error.status };
+    }
+    console.error("Action error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : fallbackMessage,
+    };
   }
 }

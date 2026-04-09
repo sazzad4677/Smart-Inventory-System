@@ -8,7 +8,6 @@ import { Lock, Mail, ShieldCheck, ArrowLeft, UserPlus } from "lucide-react";
 import { UserSignupSchema, UserSignupInput, UserRole } from "@/lib/validations";
 import { signupAction } from "@/actions/auth.actions";
 import { DynamicForm, FieldConfig } from "@/components/shared/dynamic-form";
-import { useAuthStore } from "@/store/auth.store";
 
 import {
   Card,
@@ -53,16 +52,14 @@ export default function SignupPage() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const setUser = useAuthStore((state) => state.setUser);
 
   async function onSubmit(data: UserSignupInput) {
     setError(null);
     startTransition(async () => {
       const result = await signupAction(data);
       if (result.success) {
-        setUser(result.data.user);
-        toast.success("Account created successfully!");
-        router.push("/dashboard");
+        toast.success("Account created successfully! Please sign in.");
+        router.push("/login");
       } else {
         const errorMessage = result.error || "Signup failed";
         setError(errorMessage);
