@@ -447,6 +447,29 @@ export const swaggerDocument = {
         },
       },
     },
+    '/products/bulk': {
+      delete: {
+        tags: ['Products'],
+        summary: 'Bulk delete products',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  ids: { type: 'array', items: { type: 'string' } },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Bulk items deleted' },
+        },
+      },
+    },
 
     '/orders': {
       get: {
@@ -588,6 +611,32 @@ export const swaggerDocument = {
         security: [{ bearerAuth: [] }],
         parameters: [{ name: 'limit', in: 'query', schema: { type: 'integer' } }],
         responses: { 200: { description: 'Success' } },
+      },
+    },
+    '/activity-logs/{id}/undo': {
+      post: {
+        tags: ['Activity Logs'],
+        summary: 'Undo a specific activity (e.g., restore product)',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: { description: 'Action undone successfully' },
+          400: { description: 'Action cannot be undone' },
+          404: { description: 'Activity log or original resource not found' },
+        },
+      },
+    },
+    '/activity-logs/{id}/redo': {
+      post: {
+        tags: ['Activity Logs'],
+        summary: 'Redo a specific activity (e.g., delete product again)',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: {
+          200: { description: 'Action redone successfully' },
+          400: { description: 'Action cannot be redone' },
+          404: { description: 'Activity log or original resource not found' },
+        },
       },
     },
 
