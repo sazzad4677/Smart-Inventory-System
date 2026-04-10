@@ -29,6 +29,10 @@ describe('Order API Integration', () => {
     });
     authToken = loginRes.body.data.accessToken;
 
+    // Get user id from DB
+    const user = await User.findOne({ email: testUser.email });
+    const userId = user!._id;
+
     // 3. Create a dummy Category
     const category = await Category.create({ name: 'Furniture' });
     categoryId = (category._id as any).toString();
@@ -41,6 +45,7 @@ describe('Order API Integration', () => {
       stock_quantity: 10,
       min_threshold: 2,
       status: ProductStatus.Active,
+      created_by: userId as any,
     });
     productId = (product._id as any).toString();
   });
@@ -61,6 +66,10 @@ describe('Order API Integration', () => {
         .post('/api/orders')
         .set('Authorization', `Bearer ${authToken}`)
         .send(payload);
+
+      if (res.status !== 201) {
+        console.log('DEBUG RES BODY:', JSON.stringify(res.body, null, 2));
+      }
 
       // Verify response
       expect(res.status).toBe(201);

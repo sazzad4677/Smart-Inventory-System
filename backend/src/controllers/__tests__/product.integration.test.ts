@@ -4,11 +4,13 @@ import Product from '../../models/product.model';
 import Category from '../../models/category.model';
 import { UserRole } from '../../types';
 
+const MOCK_USER_ID = '507f1f77bcf86cd799439011';
+
 // Mock the authentication middleware to bypass JWT/Session requirements
 jest.mock('../../middlewares/auth.middleware', () => ({
   protect: (req: any, res: any, next: any) => {
     // Mock user object as expected by controllers
-    req.user = { _id: '507f1f77bcf86cd799439011', role: UserRole.Admin };
+    req.user = { _id: MOCK_USER_ID, role: UserRole.Admin };
     next();
   },
   restrictTo:
@@ -117,6 +119,7 @@ describe('Product Integration Tests', () => {
           stock_quantity: 5,
           min_threshold: 2,
           is_deleted: false,
+          created_by: MOCK_USER_ID as any,
         },
         {
           product_id: 'TEST-P2',
@@ -126,6 +129,7 @@ describe('Product Integration Tests', () => {
           stock_quantity: 5,
           min_threshold: 2,
           is_deleted: true,
+          created_by: MOCK_USER_ID as any,
         },
       ]);
 
@@ -145,6 +149,7 @@ describe('Product Integration Tests', () => {
         price: 10,
         stock_quantity: 5,
         min_threshold: 2,
+        created_by: MOCK_USER_ID as any,
       });
 
       const res = await request(app).put(`/api/products/${product._id}`).send({ name: 'New Name' });
@@ -163,6 +168,7 @@ describe('Product Integration Tests', () => {
         price: 10,
         stock_quantity: 5,
         min_threshold: 2,
+        created_by: MOCK_USER_ID as any,
       });
 
       const res = await request(app).delete(`/api/products/${product._id}`);
@@ -182,6 +188,7 @@ describe('Product Integration Tests', () => {
         price: 10,
         stock_quantity: 5,
         min_threshold: 2,
+        created_by: MOCK_USER_ID as any,
       });
       const p2 = await Product.create({
         product_id: 'TEST-B2',
@@ -190,6 +197,7 @@ describe('Product Integration Tests', () => {
         price: 10,
         stock_quantity: 5,
         min_threshold: 2,
+        created_by: MOCK_USER_ID as any,
       });
 
       const res = await request(app)

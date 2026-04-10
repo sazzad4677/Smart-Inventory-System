@@ -18,8 +18,16 @@ jest.mock('bcryptjs', () => ({
 }));
 
 describe('Auth Service', () => {
+  let req: any;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    req = {
+      ip: '127.0.0.1',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.1' },
+      get: jest.fn().mockReturnValue('mock-agent'),
+    };
   });
 
   describe('signupUser', () => {
@@ -111,16 +119,11 @@ describe('Auth Service', () => {
   describe('logoutUser', () => {
     it('should successfully delete the session by refresh token', async () => {
       const userId = new mongoose.Types.ObjectId();
-      const mockSession = {
-        _id: 'session123',
-        userId,
-        deleteOne: jest.fn().mockResolvedValue({}),
-      };
+      const mockSession = { deleteOne: jest.fn().mockResolvedValue({}) };
       (Session.findOne as jest.Mock).mockResolvedValue(mockSession);
-      (User.findById as jest.Mock).mockResolvedValue({ _id: 'user123', email: 'test@test.com' });
-      (ActivityLog.create as jest.Mock).mockResolvedValue({});
+      (User.findById as jest.Mock).mockResolvedValue({ email: 'test@test.com' });
 
-      await logoutUser('mock-refresh-token');
+      await logoutUser(req, 'mock-refresh-token');
 
       expect(Session.findOne).toHaveBeenCalledWith({ refreshToken: 'mock-refresh-token' });
       expect(mockSession.deleteOne).toHaveBeenCalled();

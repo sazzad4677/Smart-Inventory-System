@@ -21,6 +21,16 @@ export enum OrderStatus {
   Cancelled = 'Cancelled',
 }
 
+export enum ActivityType {
+  Create = 'CREATE',
+  Update = 'UPDATE',
+  Delete = 'DELETE',
+  Login = 'LOGIN',
+  Logout = 'LOGOUT',
+  Restock = 'RESTOCK',
+  System = 'SYSTEM',
+}
+
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
 export interface IUser {
@@ -64,6 +74,13 @@ export interface IOrderItem {
 
 export interface IActivityLog {
   action_text: string;
+  type: ActivityType;
+  resource?: string;
+  resource_id?: string;
+  details?: Record<string, unknown>;
+  ip_address?: string;
+  user_agent?: string;
   timestamp: Date;
   user_id: import('mongoose').Types.ObjectId;
+  is_undone?: boolean;
 }

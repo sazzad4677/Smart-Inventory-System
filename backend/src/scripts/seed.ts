@@ -6,7 +6,7 @@ import Product from '../models/product.model';
 import Order from '../models/order.model';
 import OrderItem from '../models/order-item.model';
 import ActivityLog from '../models/activity-log.model';
-import { UserRole, OrderStatus } from '../types';
+import { UserRole, OrderStatus, ActivityType } from '../types';
 
 const seed = async () => {
   try {
@@ -111,6 +111,8 @@ const seed = async () => {
     const logs = Array.from({ length: 15 }).map((_, i) => ({
       action_text: `User performed action #${i + 1}`,
       user_id: i % 2 === 0 ? admin._id : manager._id,
+      type: ActivityType.Create,
+      resource: 'PRODUCT',
       timestamp: new Date(),
     }));
     await ActivityLog.insertMany(logs);

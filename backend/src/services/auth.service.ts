@@ -7,6 +7,9 @@ import jwt from 'jsonwebtoken';
 import ms from 'ms';
 import { config } from '../config/config';
 import { Types } from 'mongoose';
+import { captureActivity } from '../utils/activity-logger';
+import { ActivityType } from '../types';
+import { Request } from 'express';
 
 // ─── Token Generation ──────────────────────────────────────────────────────────
 
@@ -136,14 +139,15 @@ export const refreshAccessToken = async (
 
 // ─── POST /api/auth/logout ────────────────────────────────────────────────────
 
-export const logoutUser = async (refreshToken: string): Promise<void> => {
+export const logoutUser = async (req: Request, refreshToken: string): Promise<void> => {
   const session = await Session.findOne({ refreshToken });
   if (session) {
     const user = await User.findById(session.userId);
     if (user) {
-      await ActivityLog.create({
-        user_id: user._id,
+      await captureActivity(req, {
+        type: ActivityType.Logout,
         action_text: `User ${user.email} logged out.`,
+        userId: user._id as Types.ObjectId,
       });
     }
     await session.deleteOne();

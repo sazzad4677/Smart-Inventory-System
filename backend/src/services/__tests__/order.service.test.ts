@@ -25,9 +25,16 @@ jest.mock('../../builders/QueryBuilder');
 
 describe('OrderService - createOrderInDB', () => {
   let session: any;
+  let req: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    req = {
+      ip: '127.0.0.1',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.1' },
+      get: jest.fn().mockReturnValue('mock-agent'),
+    };
 
     // Mock session
     session = {
@@ -79,7 +86,7 @@ describe('OrderService - createOrderInDB', () => {
     (OrderItem.create as jest.Mock).mockResolvedValue(true);
     (ActivityLog.create as jest.Mock).mockResolvedValue(true);
 
-    const result = await createOrderInDB(userId, payload);
+    const result = await createOrderInDB(req as any, userId, payload);
 
     expect(Product.findById).toHaveBeenCalledWith('prod123');
     expect(mockProduct.stock_quantity).toBe(8); // 10 - 2
@@ -100,7 +107,7 @@ describe('OrderService - createOrderInDB', () => {
       session: jest.fn().mockResolvedValue(null),
     });
 
-    await expect(createOrderInDB(userId, payload)).rejects.toThrow(
+    await expect(createOrderInDB(req as any, userId, payload)).rejects.toThrow(
       new AppError('Product with ID nonexistent not found', 404),
     );
 
@@ -125,7 +132,7 @@ describe('OrderService - createOrderInDB', () => {
       session: jest.fn().mockResolvedValue(mockProduct),
     });
 
-    await expect(createOrderInDB(userId, payload)).rejects.toThrow(
+    await expect(createOrderInDB(req as any, userId, payload)).rejects.toThrow(
       new AppError('Only 10 items available for "Test Product"', 400),
     );
 
@@ -142,7 +149,7 @@ describe('OrderService - createOrderInDB', () => {
       ],
     };
 
-    await expect(createOrderInDB(userId, payload)).rejects.toThrow(
+    await expect(createOrderInDB(req as any, userId, payload)).rejects.toThrow(
       new AppError('Duplicate products found in the order.', 400),
     );
   });
@@ -162,7 +169,7 @@ describe('OrderService - createOrderInDB', () => {
       session: jest.fn().mockResolvedValue(mockProduct),
     });
 
-    await expect(createOrderInDB(userId, payload)).rejects.toThrow(
+    await expect(createOrderInDB(req as any, userId, payload)).rejects.toThrow(
       expect.objectContaining({ statusCode: 400 }),
     );
   });
@@ -188,7 +195,7 @@ describe('OrderService - createOrderInDB', () => {
     (OrderItem.create as jest.Mock).mockResolvedValue(true);
     (ActivityLog.create as jest.Mock).mockResolvedValue(true);
 
-    const result = await createOrderInDB(userId, payload);
+    const result = await createOrderInDB(req as any, userId, payload);
     expect(mockProduct.is_restock_required).toBe(true);
     expect(result.lowStockProducts).toHaveLength(1);
   });
@@ -254,6 +261,12 @@ describe('OrderService - updateOrderStatusInDB', () => {
   });
 
   it('should update status and log activity', async () => {
+    const req = {
+      ip: '127.0.0.1',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.1' },
+      get: jest.fn().mockReturnValue('mock-agent'),
+    };
     const mockOrder = {
       _id: 'order123',
       status: OrderStatus.Pending,
@@ -264,7 +277,12 @@ describe('OrderService - updateOrderStatusInDB', () => {
     });
     (ActivityLog.create as jest.Mock).mockResolvedValue(true);
 
-    const result = await updateOrderStatusInDB(userId, 'order123', OrderStatus.Confirmed);
+    const result = await updateOrderStatusInDB(
+      req as any,
+      userId,
+      'order123',
+      OrderStatus.Confirmed,
+    );
     expect(mockOrder.status).toBe(OrderStatus.Confirmed);
     expect(session.commitTransaction).toHaveBeenCalled();
     expect(result).toEqual(mockOrder);
@@ -294,7 +312,13 @@ describe('OrderService - updateOrderStatusInDB', () => {
       session: jest.fn().mockResolvedValue(mockProduct),
     });
 
-    await updateOrderStatusInDB(userId, 'order123', OrderStatus.Cancelled);
+    const req = {
+      ip: '127.0.0.1',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.1' },
+      get: jest.fn().mockReturnValue('mock-agent'),
+    };
+    await updateOrderStatusInDB(req as any, userId, 'order123', OrderStatus.Cancelled);
 
     expect(mockProduct.stock_quantity).toBe(15);
     expect(mockProduct.save).toHaveBeenCalled();
@@ -305,9 +329,15 @@ describe('OrderService - updateOrderStatusInDB', () => {
     (Order.findById as jest.Mock).mockReturnValue({
       session: jest.fn().mockResolvedValue(null),
     });
-    await expect(updateOrderStatusInDB(userId, 'invalid', OrderStatus.Confirmed)).rejects.toThrow(
-      new AppError('Order not found', 404),
-    );
+    const req = {
+      ip: '127.0.0.1',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.1' },
+      get: jest.fn().mockReturnValue('mock-agent'),
+    };
+    await expect(
+      updateOrderStatusInDB(req as any, userId, 'invalid', OrderStatus.Confirmed),
+    ).rejects.toThrow(new AppError('Order not found', 404));
   });
 
   it('should throw 400 if order is already cancelled', async () => {
@@ -315,9 +345,15 @@ describe('OrderService - updateOrderStatusInDB', () => {
     (Order.findById as jest.Mock).mockReturnValue({
       session: jest.fn().mockResolvedValue(mockOrder),
     });
-    await expect(updateOrderStatusInDB(userId, 'o1', OrderStatus.Confirmed)).rejects.toThrow(
-      new AppError('Order is already cancelled.', 400),
-    );
+    const req = {
+      ip: '127.0.0.1',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.1' },
+      get: jest.fn().mockReturnValue('mock-agent'),
+    };
+    await expect(
+      updateOrderStatusInDB(req as any, userId, 'o1', OrderStatus.Confirmed),
+    ).rejects.toThrow(new AppError('Order is already cancelled.', 400));
   });
 });
 
@@ -338,7 +374,13 @@ describe('OrderService - deleteOrderFromDB', () => {
 
     (Order.findByIdAndUpdate as jest.Mock).mockResolvedValue(mockOrder);
 
-    const result = await deleteOrderFromDB(userId, 'order123');
+    const req = {
+      ip: '127.0.0.1',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.1' },
+      get: jest.fn().mockReturnValue('mock-agent'),
+    };
+    const result = await deleteOrderFromDB(req as any, userId, 'order123');
     expect(result.is_deleted).toBe(true);
     expect(session.commitTransaction).toHaveBeenCalled();
   });
@@ -346,7 +388,13 @@ describe('OrderService - deleteOrderFromDB', () => {
   it('should throw 404 if order not found for deletion', async () => {
     const userId = new mongoose.Types.ObjectId();
     (Order.findByIdAndUpdate as jest.Mock).mockResolvedValue(null);
-    await expect(deleteOrderFromDB(userId, 'invalid')).rejects.toThrow(
+    const req = {
+      ip: '127.0.0.1',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.1' },
+      get: jest.fn().mockReturnValue('mock-agent'),
+    };
+    await expect(deleteOrderFromDB(req as any, userId, 'invalid')).rejects.toThrow(
       new AppError('Order not found', 404),
     );
   });

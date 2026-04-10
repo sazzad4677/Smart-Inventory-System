@@ -93,7 +93,7 @@ describe('Auth Controller', () => {
 
       await logout(req as Request, res as Response, next);
 
-      expect(authService.logoutUser).toHaveBeenCalledWith('mock-refresh-token');
+      expect(authService.logoutUser).toHaveBeenCalledWith(req, 'mock-refresh-token');
       expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', expect.any(Object));
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(

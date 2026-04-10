@@ -41,15 +41,28 @@ const NotificationBell = () => {
     const handleAlert = (notification: Notification) => {
       setNotifications((prev) => {
         const updated = [notification, ...prev];
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated.slice(0, 50))); // Cap at 50
         return updated;
       });
     };
 
     socket.on("low_stock_alert", handleAlert);
+    socket.on(
+      "new_activity",
+      (data: { _id: string; message: string; timestamp: string }) => {
+        handleAlert({
+          _id: data._id,
+          productName: "Activity",
+          currentStock: 0,
+          message: data.message,
+          timestamp: data.timestamp,
+        });
+      },
+    );
 
     return () => {
       socket.off("low_stock_alert", handleAlert);
+      socket.off("new_activity");
     };
   }, [socketRef]);
 

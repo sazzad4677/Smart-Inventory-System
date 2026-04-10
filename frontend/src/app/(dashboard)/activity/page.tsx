@@ -17,8 +17,8 @@ export default async function ActivityPage({
     getCurrentUser(),
   ]);
 
-  if (user?.role !== "Admin") {
-    redirect("/dashboard");
+  if (!user) {
+    redirect("/login");
   }
 
   // Transform searchParams for the server action

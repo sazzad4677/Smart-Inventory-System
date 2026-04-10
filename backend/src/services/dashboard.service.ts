@@ -66,9 +66,15 @@ export const getDashboardStatsFromDB = async () => {
   };
 };
 
-// ─── GET /api/dashboard/activities (Permissions: Admin, Manager) ─────────────
-export const getLatestActivitiesFromDB = async () => {
-  const activities = await ActivityLog.find()
+// ─── GET /api/dashboard/activities (Permissions: All Logged In Users) ───────────────────
+export const getLatestActivitiesFromDB = async (requestingUser?: { _id: string; role: string }) => {
+  const query: any = {};
+
+  if (requestingUser && requestingUser.role !== 'Admin') {
+    query.user_id = requestingUser._id;
+  }
+
+  const activities = await ActivityLog.find(query)
     .sort({ timestamp: -1 })
     .limit(10)
     .populate('user_id', 'email role');

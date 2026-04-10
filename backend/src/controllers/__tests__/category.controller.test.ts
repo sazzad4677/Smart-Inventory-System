@@ -32,7 +32,7 @@ describe('Category Controller', () => {
 
       await createCategory(req as Request, res as Response, next);
 
-      expect(categoryService.createCategoryIntoDB).toHaveBeenCalledWith('user123', req.body);
+      expect(categoryService.createCategoryIntoDB).toHaveBeenCalledWith(req, 'user123', req.body);
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
         success: true,

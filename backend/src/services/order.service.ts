@@ -9,9 +9,12 @@ import { OrderStatus, ProductStatus } from '../types';
 import QueryBuilder from '../builders/QueryBuilder';
 import { formatOrderId } from '../utils/formatOrderId';
 import { generateNextId } from '../utils/id.utils';
+import { captureActivity } from '../utils/activity-logger';
+import { ActivityType } from '../types';
+import { Request } from 'express';
 
 // ─── POST /api/order (Permissions: Private) ──────────────────────────────────
-export const createOrderInDB = async (userId: string, payload: CreateOrderInput) => {
+export const createOrderInDB = async (req: Request, userId: string, payload: CreateOrderInput) => {
   const { customer_name, items } = payload;
 
   const order_id = await generateNextId('order_id', 'ORD');
@@ -107,16 +110,12 @@ export const createOrderInDB = async (userId: string, payload: CreateOrderInput)
     );
 
     // 8. Create Activity Log entry
-    await ActivityLog.create(
-      [
-        {
-          action_text: `Order ${formatOrderId(order._id)} created for ${customer_name}`,
-          user_id: userId,
-          timestamp: new Date(),
-        },
-      ],
-      { session, ordered: true },
-    );
+    await captureActivity(req, {
+      type: ActivityType.Create,
+      resource: 'ORDER',
+      action_text: `Order ${formatOrderId(order._id)} created for ${customer_name}`,
+      userId: userId as any,
+    });
 
     await session.commitTransaction();
     session.endSession();
@@ -165,6 +164,7 @@ export const getOrderByIdFromDB = async (orderId: string) => {
 
 // ─── PUT /api/order/:id/status (Permissions: Admin, Manager) ─────────────────
 export const updateOrderStatusInDB = async (
+  req: Request,
   userId: Types.ObjectId,
   orderId: string,
   status: OrderStatus,
@@ -200,16 +200,12 @@ export const updateOrderStatusInDB = async (
     existingOrder.status = status;
     await existingOrder.save({ session });
 
-    await ActivityLog.create(
-      [
-        {
-          action_text: `Order ${formatOrderId(existingOrder._id)} status updated to ${status}`,
-          user_id: userId,
-          timestamp: new Date(),
-        },
-      ],
-      { session },
-    );
+    await captureActivity(req, {
+      type: ActivityType.Update,
+      resource: 'ORDER',
+      action_text: `Order ${formatOrderId(existingOrder._id)} status updated to ${status}`,
+      userId: userId,
+    });
 
     await session.commitTransaction();
     session.endSession();
@@ -223,7 +219,7 @@ export const updateOrderStatusInDB = async (
 };
 
 // ─── DELETE /api/order/:id (Permissions: Admin Only) ──────────────────────────
-export const deleteOrderFromDB = async (userId: Types.ObjectId, orderId: string) => {
+export const deleteOrderFromDB = async (req: Request, userId: Types.ObjectId, orderId: string) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -238,16 +234,12 @@ export const deleteOrderFromDB = async (userId: Types.ObjectId, orderId: string)
       throw new AppError('Order not found', 404);
     }
 
-    await ActivityLog.create(
-      [
-        {
-          action_text: `Order ${formatOrderId(order._id)} deleted`,
-          user_id: userId,
-          timestamp: new Date(),
-        },
-      ],
-      { session },
-    );
+    await captureActivity(req, {
+      type: ActivityType.Delete,
+      resource: 'ORDER',
+      action_text: `Order ${formatOrderId(order._id)} deleted`,
+      userId: userId,
+    });
 
     await session.commitTransaction();
     session.endSession();

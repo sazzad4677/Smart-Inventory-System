@@ -47,12 +47,19 @@ export interface Category {
 export interface Activity {
   _id: string;
   action_text: string;
+  type: string;
+  resource?: string;
+  resource_id?: string;
+  details?: Record<string, unknown>;
+  ip_address?: string;
+  user_agent?: string;
   user_id: {
     _id: string;
     email: string;
     role: string;
   } | null;
   timestamp: string;
+  is_undone?: boolean;
   created_at: string;
   updated_at: string;
 }

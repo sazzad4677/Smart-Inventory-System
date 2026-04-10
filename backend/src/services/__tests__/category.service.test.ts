@@ -10,8 +10,16 @@ jest.mock('../../models/activity-log.model');
 jest.mock('../../builders/QueryBuilder');
 
 describe('Category Service', () => {
+  let req: any;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    req = {
+      ip: '127.0.0.1',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.1' },
+      get: jest.fn().mockReturnValue('mock-agent'),
+    };
   });
 
   describe('createCategoryIntoDB', () => {
@@ -21,7 +29,7 @@ describe('Category Service', () => {
       (Category.create as jest.Mock).mockResolvedValue({ _id: 'cat123', name: 'Electronics' });
       (ActivityLog.create as jest.Mock).mockResolvedValue({});
 
-      const result = await createCategoryIntoDB(userId, payload);
+      const result = await createCategoryIntoDB(req as any, userId, payload);
 
       expect(Category.create).toHaveBeenCalledWith(payload);
       expect(ActivityLog.create).toHaveBeenCalled();
