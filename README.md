@@ -79,6 +79,23 @@ A high-performance, enterprise-grade inventory management solution designed for 
 - **Docs**: Swagger UI (OpenAPI 3.0)
 - **Logging**: Winston, Morgan
 - **Real-time**: Socket.io
+- **Validation**: Zod (Shared schemas)
+
+---
+
+## 📐 Architecture & Workflow
+
+### 🗄️ Entity Relationship Diagram (ERD)
+
+The database schema is designed for high data integrity and efficient auditing. It features a normalized structure for products and categories with a robust link to activity logs for real-time auditing.
+
+![ERD Diagram](./docs/media/erd_diagram.png)
+
+### 🔄 System Flow Chart
+
+The application follows a clean, event-driven architecture using Socket.io for real-time updates and a modern "Auth-Proxy" layer for secure session management.
+
+![Flow Chart](./docs/media/flow_chart.png)
 
 ---
 
@@ -135,7 +152,7 @@ Initialize your environment variables from the templates:
 
 ```bash
 # Backend
-cp backend/.env.example backend/.env
+cp backend/.env.example backend/.env.local
 
 # Frontend
 cp frontend/.env.example frontend/.env.local
@@ -188,6 +205,14 @@ docker compose up --build
 - **Networking**: All services communicate over an internal virtual network, isolating them from unauthorized external access.
 - **Persistence**: Database state is kept across container restarts using the `mongodb_data` named volume.
 - **Performance**: Multi-stage builds are used in the `Dockerfile`s to minimize image sizes for production.
+
+---
+
+## 🚀 Deployment & Infrastructure
+
+For a detailed guide on moving this project to production, covering **MongoDB Replica Sets**, **Redis Scaling**, and **CI/CD Pipelines**, please refer to our:
+
+👉 **[Deployment & Infrastructure Guide](./docs/DEPLOYMENT.md)**
 
 ---
 
