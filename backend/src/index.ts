@@ -18,6 +18,7 @@ import swaggerUi from 'swagger-ui-express';
 import { swaggerDocument } from './docs/swagger';
 import { logger } from './utils/logger';
 import { morganMiddleware } from './middlewares/morgan.middleware';
+import ActivityLog from './models/activity-log.model';
 
 export const app: Application = express();
 export const server: http.Server = http.createServer(app);
@@ -101,6 +102,27 @@ const startServer = async () => {
 
   server.listen(config.server.port, () => {
     logger.info(`🚀 Server running in ${config.server.nodeEnv} mode on port ${config.server.port}`);
+
+    // Retention Job: Cleanup logs older than 90 days every 24 hours
+    setInterval(
+      async () => {
+        try {
+          const ninetyDaysAgo = new Date();
+          ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+          const result = await ActivityLog.deleteMany({
+            timestamp: { $lt: ninetyDaysAgo },
+          });
+
+          if (result.deletedCount > 0) {
+            logger.info(`🧹 Retention Policy: Deleted ${result.deletedCount} old activity logs.`);
+          }
+        } catch (error) {
+          logger.error('Failed to run retention cleanup job:', error);
+        }
+      },
+      24 * 60 * 60 * 1000,
+    );
   });
 };
 

@@ -58,7 +58,7 @@ describe('OrderController - createOrder', () => {
 
     await createOrder(req as Request, res as Response, next);
 
-    expect(orderService.createOrderInDB).toHaveBeenCalledWith('user123', req.body);
+    expect(orderService.createOrderInDB).toHaveBeenCalledWith(req, 'user123', req.body);
     expect(redisClient.del).toHaveBeenCalledWith('dashboard_metrics');
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith(
@@ -155,6 +155,7 @@ describe('OrderController - updateOrderStatus', () => {
     (orderService.updateOrderStatusInDB as jest.Mock).mockResolvedValue(mockOrder);
 
     await updateOrderStatus(req, res, next);
+    expect(orderService.updateOrderStatusInDB).toHaveBeenCalledWith(req, 'u1', 'o1', 'Confirmed');
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ data: mockOrder }));
   });
@@ -173,6 +174,7 @@ describe('OrderController - deleteOrder', () => {
     (orderService.deleteOrderFromDB as jest.Mock).mockResolvedValue(mockOrder);
 
     await deleteOrder(req, res, next);
+    expect(orderService.deleteOrderFromDB).toHaveBeenCalledWith(req, 'u1', 'o1');
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ message: 'Order deleted successfully.' }),

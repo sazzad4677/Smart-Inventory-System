@@ -14,7 +14,7 @@ import type { CreateProductInput, UpdateProductInput } from '../validators/produ
 // ─── POST /api/product (Permissions: Admin Only) ─────────────────────────────
 export const createProduct = catchAsync(async (req: Request, res: Response) => {
   const userId = (req as any).user?._id;
-  const result = await createProductIntoDB(userId, req.body as CreateProductInput);
+  const result = await createProductIntoDB(req, userId, req.body as CreateProductInput);
 
   sendResponse(res, {
     statusCode: 201,
@@ -54,7 +54,14 @@ export const getProductById = catchAsync(async (req: Request, res: Response) => 
 export const updateProduct = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const userId = (req as any).user?._id;
-  const result = await updateProductInDB(userId, id as string, req.body as UpdateProductInput);
+  const userRole = (req as any).user?.role;
+  const result = await updateProductInDB(
+    req,
+    userId,
+    userRole,
+    id as string,
+    req.body as UpdateProductInput,
+  );
 
   sendResponse(res, {
     statusCode: 200,
@@ -68,7 +75,8 @@ export const updateProduct = catchAsync(async (req: Request, res: Response) => {
 export const deleteProduct = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const userId = (req as any).user?._id;
-  const result = await deleteProductFromDB(userId, id as string);
+  const userRole = (req as any).user?.role;
+  const result = await deleteProductFromDB(req, userId, userRole, id as string);
 
   sendResponse(res, {
     statusCode: 200,
@@ -82,7 +90,7 @@ export const deleteProduct = catchAsync(async (req: Request, res: Response) => {
 export const bulkDeleteProducts = catchAsync(async (req: Request, res: Response) => {
   const { ids } = req.body;
   const userId = (req as any).user?._id;
-  const result = await bulkDeleteProductsFromDB(userId, ids as string[]);
+  const result = await bulkDeleteProductsFromDB(req, userId, ids as string[]);
 
   sendResponse(res, {
     statusCode: 200,

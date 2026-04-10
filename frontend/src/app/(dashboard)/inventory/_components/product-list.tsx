@@ -63,7 +63,7 @@ export function ProductList({
     });
   };
 
-  const columns: Column<Product>[] = [
+  const allColumns: Column<Product>[] = [
     {
       header: "Select",
       headerClassName: "w-[50px]",
@@ -92,7 +92,7 @@ export function ProductList({
       cell: (product) => {
         const categoryName =
           typeof product.category_id === "object"
-            ? product.category_id.name
+            ? (product.category_id as { name: string }).name
             : "N/A";
         return <span className="text-slate-400">{categoryName}</span>;
       },
@@ -151,39 +151,48 @@ export function ProductList({
     },
   ];
 
+  const columns = allColumns.filter((col) => {
+    if (userRole === "Staff") {
+      return col.header !== "Select" && col.header !== "Actions";
+    }
+    return true;
+  });
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between px-2 h-10">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Input
-              type="checkbox"
-              className="!h-4 !w-4 !p-0 rounded border border-white/10 bg-slate-900/50 accent-indigo-600 transition-all cursor-pointer hover:border-indigo-500/20 focus:ring-2 focus:ring-indigo-500/20 focus:ring-offset-0"
-              checked={
-                products.length > 0 && selectedIds.length === products.length
-              }
-              onChange={(e) => handleSelectAll(e.target.checked)}
-            />
-            <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">
-              {selectedIds.length > 0
-                ? `${selectedIds.length} Selected`
-                : "Select All"}
-            </span>
-          </div>
+      {userRole !== "Staff" && (
+        <div className="flex items-center justify-between px-2 h-10">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Input
+                type="checkbox"
+                className="!h-4 !w-4 !p-0 rounded border border-white/10 bg-slate-900/50 accent-indigo-600 transition-all cursor-pointer hover:border-indigo-500/20 focus:ring-2 focus:ring-indigo-500/20 focus:ring-offset-0"
+                checked={
+                  products.length > 0 && selectedIds.length === products.length
+                }
+                onChange={(e) => handleSelectAll(e.target.checked)}
+              />
+              <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">
+                {selectedIds.length > 0
+                  ? `${selectedIds.length} Selected`
+                  : "Select All"}
+              </span>
+            </div>
 
-          {selectedIds.length > 0 && userRole === "Admin" && (
-            <Button
-              variant="destructive"
-              size="sm"
-              className="h-8 bg-rose-500/80 hover:bg-rose-500 text-rose-500 border border-rose-500/20 transition-all font-semibold px-3"
-              onClick={() => setIsBulkDeleteOpen(true)}
-            >
-              <Trash2 className="h-3.5 w-3.5 mr-2" />
-              Delete Selected
-            </Button>
-          )}
+            {selectedIds.length > 0 && userRole === "Admin" && (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-8 bg-rose-500/80 hover:bg-rose-500 text-rose-500 border border-rose-500/20 transition-all font-semibold px-3"
+                onClick={() => setIsBulkDeleteOpen(true)}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-2" />
+                Delete Selected
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <DataTable data={products} columns={columns} />
 

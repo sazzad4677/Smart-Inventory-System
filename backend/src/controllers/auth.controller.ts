@@ -6,6 +6,8 @@ import type { SignupInput, LoginInput } from '../validators/auth.validator';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { config } from '../config/config';
 import ms from 'ms';
+import { captureActivity } from '../utils/activity-logger';
+import { ActivityType } from '../types';
 
 const refreshExpiresIn = ms(config.jwt.refreshExpiresIn as any);
 const cookieOptions = {
@@ -20,6 +22,14 @@ export const signup = catchAsync(async (req: Request, res: Response) => {
   const { user, accessToken, refreshToken } = await signupUser(req.body as SignupInput);
 
   res.cookie('refreshToken', refreshToken, cookieOptions);
+
+  await captureActivity(req, {
+    type: ActivityType.Create,
+    resource: 'USER',
+    action_text: `New account created: ${user.email}`,
+    details: { email: user.email, role: user.role },
+    userId: user._id,
+  });
 
   sendResponse(res, {
     statusCode: 201,
@@ -38,6 +48,13 @@ export const login = catchAsync(async (req: Request, res: Response) => {
   const { user, accessToken, refreshToken } = await loginUser(req.body as LoginInput);
 
   res.cookie('refreshToken', refreshToken, cookieOptions);
+
+  await captureActivity(req, {
+    type: ActivityType.Login,
+    action_text: `User logged in: ${user.email}`,
+    details: { email: user.email, role: user.role },
+    userId: user._id,
+  });
 
   sendResponse(res, {
     statusCode: 200,
@@ -74,7 +91,7 @@ export const logout = catchAsync(async (req: Request, res: Response) => {
   const token = (req.body as { refreshToken?: string })?.refreshToken || req.cookies?.refreshToken;
 
   if (token) {
-    await logoutUser(token);
+    await logoutUser(req, token);
   }
 
   res.clearCookie('refreshToken', {

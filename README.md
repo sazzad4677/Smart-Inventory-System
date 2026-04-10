@@ -1,33 +1,61 @@
 # 🚀 Smart Inventory Management System
 
-A high-performance, full-stack inventory management solution designed for real-time tracking, stock management, and comprehensive order analytics. Built with **Next.js 15**, **Node.js**, and **MongoDB**, this system provides a seamless experience for both administrators and managers to maintain accurate inventory levels.
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-4.0-38B2AC?logo=tailwind-css)](https://tailwindcss.com/)
+[![Express.js](https://img.shields.io/badge/Express.js-5.2-lightgrey?logo=express)](https://expressjs.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-6.0-47A248?logo=mongodb)](https://www.mongodb.com/)
+[![Redis](https://img.shields.io/badge/Redis-Latest-DC382D?logo=redis)](https://redis.io/)
+[![License](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
+
+A high-performance, enterprise-grade inventory management solution designed for real-time tracking, automated restock management, and comprehensive order analytics. This system is built for speed, scalability, and developer experience.
 
 ---
 
-## 🌐 Live Demo
+## 🌐 Live Deployment
 
-- **Frontend URL**: [https://smart-inventory-system-sazzad.vercel.app/](https://smart-inventory-system-sazzad.vercel.app/)
-- **Backend API URL**: [https://smart-inventory-system-o2pv.onrender.com/api](https://smart-inventory-system-o2pv.onrender.com/api)
+| Service               | URL                                                                                                  |
+| :-------------------- | :--------------------------------------------------------------------------------------------------- |
+| **Frontend**          | [https://smart-inventory.sazzad.dev](https://smart-inventory.sazzad.dev)                             |
+| **API Documentation** | [https://api.smart-inventory.sazzad.dev/api-docs/](https://api.smart-inventory.sazzad.dev/api-docs/) |
 
 ### 🔑 Demo Credentials
 
-| Role    | Email              | Password     |
-| :------ | :----------------- | :----------- |
-| Admin   | `admin@demo.com`   | `admin123`   |
-| Manager | `manager@demo.com` | `manager123` |
+| Role        | Email              | Password     |
+| :---------- | :----------------- | :----------- |
+| **Admin**   | `admin@demo.com`   | `admin123`   |
+| **Manager** | `manager@demo.com` | `manager123` |
 
 ---
 
 ## ✨ Features
 
-- **🛡️ Secure Authentication**: Role-based Access Control (RBAC) for Admin and Manager roles.
-- **📊 Real-time Dashboard**: Overview of total products, categories, and low-stock alerts.
-- **📦 Inventory Management**: Full CRUD operations for products with category-wise filtering.
-- **📂 Category Management**: Organize and manage product categories efficiently.
-- **🛒 Order Tracking**: Comprehensive order management with status updates (Pending, Processing, Shipped, Delivered, Cancelled).
-- **📝 Activity Logging**: Track all system activities for better auditability.
-- **📱 Responsive UI**: Fully optimized for mobile, tablet, and desktop views.
-- **🌓 Dark Mode**: Modern aesthetic with native dark mode support.
+### 🛡️ Advanced Security
+
+- **Role-Based Access Control (RBAC)**: Fine-grained permissions for Admin and Manager roles.
+- **NextAuth 5 (Beta)**: Secure, modern authentication with JWT rotation.
+- **Rate Limiting**: Redis-backed protection against brute-force and API abuse.
+- **Validation**: Strict schema validation using Zod on both frontend and backend.
+
+### 📊 Intelligence & Monitoring
+
+- **Real-time Dashboard**: Live updates on stock levels, order status, and system activity via Socket.io.
+- **Automated Restock Queue**: Intelligent identification of low-stock items with a dedicated resolution workflow.
+- **Health Monitoring**: Public `/health` endpoint for uptime, memory usage, and service state (DB/Redis).
+- **Analytics Engine**: Tracking for API response times and client-side engagement metrics.
+
+### 📦 Operational Excellence
+
+- **Inventory Management**: Comprehensive CRUD for products with multi-attribute tracking and image support.
+- **Order Lifecycle**: End-to-end tracking from pending to delivery with automated stock adjustments.
+- **Activity Audit**: Persistent logging of all critical system actions for compliance and debugging.
+- **Swagger UI**: Interactive API documentation for seamless integration.
+
+### 🎨 Modern UI/UX
+
+- **Tailwind CSS 4**: Utilizing the latest CSS capabilities for a blazing-fast, modern interface.
+- **Shadcn UI**: High-quality, accessible components for a premium look and feel.
+- **Mobile First**: Fully responsive design optimized for all device sizes.
+- **Dark Mode Native**: Seamless theme switching with system preference detection.
 
 ---
 
@@ -35,170 +63,138 @@ A high-performance, full-stack inventory management solution designed for real-t
 
 ### Frontend
 
-- **Framework**: [Next.js 15 (App Router)](https://nextjs.org/)
-- **Language**: TypeScript
-- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
-- **UI Components**: [Shadcn UI](https://ui.shadcn.com/), [Radix UI](https://www.radix-ui.com/), [Lucide React](https://lucide.dev/)
-- **Forms**: React Hook Form, Zod (Validation)
-- **State Management**: React Server Actions & Client-side hooks
+- **Framework**: Next.js 16 (App Router)
+- **State Management**: Zustand
+- **Auth**: NextAuth.js v5 (Beta)
+- **Styling**: Tailwind CSS 4, Lucide Icons, Shadcn UI
+- **Real-time**: Socket.io-client
+- **Hooks/Forms**: React Hook Form, Sonner (Toasts)
 
 ### Backend
 
-- **Runtime**: [Node.js](https://nodejs.org/) with [Express.js](https://expressjs.com/)
-- **Language**: TypeScript
-- **Database**: [MongoDB](https://www.mongodb.com/) with [Mongoose](https://mongoosejs.com/)
-- **Auth**: [JWT (JSON Web Tokens)](https://jwt.io/), [BcryptJS](https://www.npmjs.com/package/bcryptjs)
-- **Security**: Helmet, CORS, Cookie-Parser
-- **Validation**: [Zod](https://zod.dev/)
+- **Runtime**: Node.js 22 (CommonJS/TypeScript)
+- **Framework**: Express 5.2.x
+- **Database**: MongoDB 6.0 (Mongoose)
+- **Caching/Rate Limit**: Redis
+- **Docs**: Swagger UI (OpenAPI 3.0)
+- **Logging**: Winston, Morgan
+- **Real-time**: Socket.io
 
 ---
 
-## ⚙️ Local Setup Instructions
+## 🧪 Testing Architecture
 
-Follow these steps to set up the project locally.
+The project maintains a high-quality codebase through a comprehensive suite of unit and integration tests powered by **Jest**.
+
+### 🛠️ Testing Tools
+
+- **Framework**: [Jest](https://jestjs.io/)
+- **API Testing**: [Supertest](https://github.com/ladjs/supertest)
+- **Database Mocking**: [MongoDB Memory Server](https://github.com/nodkz/mongodb-memory-server) for isolated integration tests.
+- **Assertions**: Custom matchers and Zod schema validation.
+
+### 📂 Test Suites
+
+The backend includes over 12 specialized test suites covering:
+
+- **Controllers**: Unit tests for Auth, Product, Order, Category, and Dashboard logic.
+- **Integrations**: Full API flow validation for Authentication and Inventory workflows.
+- **System**: Health check and middleware performance testing.
+
+### 🚀 Running Tests
+
+```bash
+cd backend
+pnpm test          # Run all tests
+pnpm run test:watch  # Watch mode
+pnpm run test:coverage # Generate coverage report
+```
+
+---
+
+## ⚙️ Local Development
 
 ### 📋 Prerequisites
 
-- **Node.js** (v18 or higher)
-- **pnpm** (Recommended) or npm/yarn
-- **MongoDB** (Local or Atlas instance)
+- **Node.js**: v18+
+- **pnpm**: v9+ (Highly recommended)
+- **Docker**: For running MongoDB/Redis easily
 
-### 1. Clone the Repository
+### 1. Repository Setup
 
 ```bash
 git clone https://github.com/sazzad4677/Smart-Inventory-System.git
 cd Smart-Inventory-System
-```
-
-### 2. Install Dependencies
-
-This project is a monorepo. Use pnpm to install all dependencies for both frontend and backend.
-
-```bash
 pnpm install
 ```
 
-### 3. Environment Variables Setup
+### 2. Environment Configuration
 
-You can quickly set up your environment files by running these commands from the **root** of the project:
+Initialize your environment variables from the templates:
 
 ```bash
-# Backend setup
+# Backend
 cp backend/.env.example backend/.env
 
-# Frontend setup
+# Frontend
 cp frontend/.env.example frontend/.env.local
 ```
 
-Alternatively, create the files manually and copy the settings below:
+### 3. Database Seeding
 
-#### 📁 Backend (`backend/.env`)
-
-> [!TIP]
-> Copy the block below and save it as `backend/.env`
-
-```env
-# Server Configuration
-NODE_ENV=development
-PORT=5000
-
-# MongoDB Connection
-MONGODB_URI=mongodb://localhost:27017/smart_inventory
-
-# Authentication
-JWT_SECRET=your_super_secret_jwt_key_change_in_production
-JWT_EXPIRES_IN=7d
-
-# CORS (Frontend URL)
-CLIENT_URL=http://localhost:3000
-```
-
-#### 📁 Frontend (`frontend/.env.local`)
-
-> [!TIP]
-> Copy the block below and save it as `frontend/.env.local`
-
-```env
-# API URL (Backend endpoint)
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
-```
-
-### 4. Database Seeding (Optional but Recommended)
-
-To populate your local database with sample products, categories, and users (Admin/Manager):
+Populate your database with high-quality sample data:
 
 ```bash
 cd backend
-pnpm ts-node src/scripts/seed.ts
+pnpm run seed
 ```
 
-### 5. Running the Application
+### 4. Running the App
 
-Return to the root directory and run:
+From the root directory:
 
 ```bash
 pnpm dev
 ```
 
-- **Frontend** will run on: `http://localhost:3000`
-- **Backend** will run on: `http://localhost:5000`
+- **Frontend**: `http://localhost:3000`
+- **Backend**: `http://localhost:5000`
+- **API Docs**: `http://localhost:5000/api-docs`
 
 ---
 
-## 🐳 Docker Setup (Recommended)
+## 🐳 Docker Architecture
 
-The easiest way to run the entire stack (Frontend, Backend, Redis, and MongoDB) is using Docker Compose.
+The project leverages a multi-container Docker architecture to ensure environment consistency across development and production.
 
-### 🐳 Prerequisites (Docker)
+### 📦 Services Orchestration
 
-- **Docker** and **Docker Compose** installed on your machine.
+- **`frontend`**: Next.js 15 app running in a Node environment.
+- **`backend`**: Express API server with hot-reloading enabled via volume mapping.
+- **`mongodb`**: Primary persistent database with volume storage.
+- **`redis`**: High-performance key-value store for session caching and rate limiting.
 
-### 1. Environment Configuration
+### 🚀 Deployment Commands
 
-The Docker setup uses the same `.env` files as the local setup. Ensure you have them created:
-
-```bash
-cp backend/.env.example backend/.env.local
-cp frontend/.env.example frontend/.env.local
-```
-
-> [!NOTE]
-> By default, the `docker-compose.yml` is configured to use the internal MongoDB container. If you wish to use an external MongoDB (like Atlas), update the `MONGODB_URI` in `backend/.env.local`.
-
-### 2. Run with Docker Compose
-
-From the root directory, run:
+From the root directory, spin up the entire ecosystem:
 
 ```bash
 docker compose up --build
 ```
 
-- Build the Frontend and Backend images.
-- Start **MongoDB**, **Redis**, **Backend**, and **Frontend** services.
-- Set up hot-reloading for both Frontend and Backend (changes to source code will reflect immediately).
+### 🛡️ Technical Details
 
-### 3. Database Seeding (Docker)
-
-To populate the database with sample data while the containers are running:
-
-```bash
-docker compose exec backend pnpm --filter backend run seed
-```
-
-### 4. Access the Application
-
-- **Frontend**: [http://localhost:3000](http://localhost:3000)
-- **Backend API**: [http://localhost:5000/api](http://localhost:5000/api)
-- **Redis**: `localhost:6379`
-- **MongoDB**: `localhost:27017`
+- **Networking**: All services communicate over an internal virtual network, isolating them from unauthorized external access.
+- **Persistence**: Database state is kept across container restarts using the `mongodb_data` named volume.
+- **Performance**: Multi-stage builds are used in the `Dockerfile`s to minimize image sizes for production.
 
 ---
 
-## 🧪 Testing
+## 🧪 Quality Standards
 
-- Standardized Git commits using **Commitlint** and **Husky**.
-- Form validation ensured by **Zod**.
-- Type safety across the stack with **TypeScript**.
+- **TypeScript**: 100% type safety across the monorepo.
+- **Commits**: Conventional Commits enforced via **Husky** & **Commitlint**.
+- **Linting**: ESLint & Prettier for consistent code style.
 
 ---
 

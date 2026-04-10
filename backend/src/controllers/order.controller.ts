@@ -13,7 +13,7 @@ import { redisClient } from '../config/redis';
 // ─── POST /api/order (Permissions: Private) ──────────────────────────────────
 export const createOrder = catchAsync(async (req: Request, res: Response) => {
   const userId = (req as any).user?._id;
-  const { order, lowStockProducts } = await createOrderInDB(userId, req.body);
+  const { order, lowStockProducts } = await createOrderInDB(req, userId, req.body);
 
   // Invalidate dashboard metrics cache
   await redisClient.del('dashboard_metrics');
@@ -74,7 +74,7 @@ export const updateOrderStatus = catchAsync(async (req: Request, res: Response) 
   const { id } = req.params;
   const { status } = req.body;
 
-  const result = await updateOrderStatusInDB(userId, id as string, status);
+  const result = await updateOrderStatusInDB(req, userId, id as string, status);
 
   sendResponse(res, {
     statusCode: 200,
@@ -89,7 +89,7 @@ export const deleteOrder = catchAsync(async (req: Request, res: Response) => {
   const userId = (req as any).user?._id;
   const { id } = req.params;
 
-  const result = await deleteOrderFromDB(userId, id as string);
+  const result = await deleteOrderFromDB(req, userId, id as string);
 
   sendResponse(res, {
     statusCode: 200,

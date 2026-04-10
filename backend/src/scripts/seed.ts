@@ -6,7 +6,7 @@ import Product from '../models/product.model';
 import Order from '../models/order.model';
 import OrderItem from '../models/order-item.model';
 import ActivityLog from '../models/activity-log.model';
-import { UserRole, OrderStatus } from '../types';
+import { UserRole, OrderStatus, ActivityType } from '../types';
 
 const seed = async () => {
   try {
@@ -33,6 +33,13 @@ const seed = async () => {
       password_hash: 'manager123',
       role: UserRole.Manager,
     });
+    const staff = await User.create({
+      email: 'staff@demo.com',
+      password_hash: 'staff123',
+      role: UserRole.Staff,
+    });
+    const users = [admin, manager, staff];
+    console.log('👤 Seeded Demo Users');
 
     // 3. Seed Categories
     const catNames = ['Electronics', 'Furniture', 'Groceries', 'Apparel', 'Books', 'Toys'];
@@ -46,14 +53,18 @@ const seed = async () => {
       const price = parseFloat((Math.random() * (1000 - 5) + 5).toFixed(2));
       const stock = Math.floor(Math.random() * 150);
       const threshold = 20;
+      const creator = users[i % users.length] || users[0];
+      if (!creator) throw new Error('No users seeded');
 
       productsData.push({
+        product_id: `PRD-${1000 + i}`,
         name: `Product SKU-${1000 + i}`,
         category_id: (category as any)._id,
         price,
         stock_quantity: stock,
         min_threshold: threshold,
         description: `High-quality item from our ${category?.name || `Random-${1000 + i}`} collection.`,
+        created_by: creator._id,
       });
     }
     const products = await Product.insertMany(productsData);
@@ -64,6 +75,7 @@ const seed = async () => {
     const ordersData = [];
     for (let i = 1; i <= 25; i++) {
       ordersData.push({
+        order_id: `ORD-${1000 + i}`,
         customer_name: `Customer ${String.fromCharCode(65 + (i % 26))}`,
         total_price: 0, // Will update after items
         status: statuses[Math.floor(Math.random() * statuses.length)],
@@ -99,6 +111,8 @@ const seed = async () => {
     const logs = Array.from({ length: 15 }).map((_, i) => ({
       action_text: `User performed action #${i + 1}`,
       user_id: i % 2 === 0 ? admin._id : manager._id,
+      type: ActivityType.Create,
+      resource: 'PRODUCT',
       timestamp: new Date(),
     }));
     await ActivityLog.insertMany(logs);

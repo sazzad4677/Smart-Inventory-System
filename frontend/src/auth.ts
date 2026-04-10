@@ -113,7 +113,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token.user) {
         session.user._id = token.user._id as string;
         session.user.role = token.user.role as UserType["role"];
-        session.user.name = token.user.name ?? undefined;
+        session.user.email = token.user.email as string;
+        session.user.name = (token.user.name ?? undefined) as
+          | string
+          | undefined;
       }
       session.accessToken = token.accessToken;
       session.refreshToken = token.refreshToken;
@@ -192,6 +195,7 @@ function getTokenExpiry(token?: string): number {
     const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
     return payload.exp * 1000; // convert seconds to milliseconds
   } catch {
+    // fallback: 15 min if token is malformed
     return Date.now() + 15 * 60 * 1000;
   }
 }

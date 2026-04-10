@@ -23,7 +23,7 @@ describe('Product Controller', () => {
       body: {},
       params: {},
       query: {},
-      user: { _id: 'user123' },
+      user: { _id: 'user123', role: 'Admin' },
     };
     res = {
       status: jest.fn().mockReturnThis(),
@@ -40,7 +40,7 @@ describe('Product Controller', () => {
 
       await createProduct(req as Request, res as Response, next);
 
-      expect(productService.createProductIntoDB).toHaveBeenCalledWith('user123', req.body);
+      expect(productService.createProductIntoDB).toHaveBeenCalledWith(req, 'user123', req.body);
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
@@ -123,7 +123,13 @@ describe('Product Controller', () => {
 
       await updateProduct(req as Request, res as Response, next);
 
-      expect(productService.updateProductInDB).toHaveBeenCalledWith('user123', 'prod123', req.body);
+      expect(productService.updateProductInDB).toHaveBeenCalledWith(
+        req,
+        'user123',
+        'Admin',
+        'prod123',
+        req.body,
+      );
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
@@ -149,7 +155,12 @@ describe('Product Controller', () => {
 
       await deleteProduct(req as Request, res as Response, next);
 
-      expect(productService.deleteProductFromDB).toHaveBeenCalledWith('user123', 'prod123');
+      expect(productService.deleteProductFromDB).toHaveBeenCalledWith(
+        req,
+        'user123',
+        'Admin',
+        'prod123',
+      );
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
@@ -175,7 +186,10 @@ describe('Product Controller', () => {
 
       await bulkDeleteProducts(req as Request, res as Response, next);
 
-      expect(productService.bulkDeleteProductsFromDB).toHaveBeenCalledWith('user123', ['p1', 'p2']);
+      expect(productService.bulkDeleteProductsFromDB).toHaveBeenCalledWith(req, 'user123', [
+        'p1',
+        'p2',
+      ]);
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,

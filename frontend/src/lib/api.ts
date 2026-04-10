@@ -20,6 +20,10 @@ export async function apiFetch(
   options: RequestInit = {},
 ): Promise<Response> {
   const session = await auth();
+  if (session?.error === "RefreshAccessTokenError") {
+    await signOut({ redirect: false });
+    redirect("/login");
+  }
   const token = session?.accessToken as string | undefined;
 
   const url = endpoint.startsWith("/")

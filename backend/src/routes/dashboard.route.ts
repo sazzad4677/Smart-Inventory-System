@@ -7,12 +7,16 @@ import { UserRole } from '../types';
 const router: Router = Router();
 
 router.use(protect);
-router.use(restrictTo(UserRole.Admin, UserRole.Manager));
 
 // ─── GET /api/dashboard (Admin, Manager) ────────────────────────
-router.get('/dashboard', checkCache('dashboard_metrics'), getDashboardMetrics);
+router.get(
+  '/dashboard',
+  restrictTo(UserRole.Admin, UserRole.Manager),
+  checkCache('dashboard_metrics'),
+  getDashboardMetrics,
+);
 
-// ─── GET /api/activities (Admin, Manager) ───────────────────────
+// ─── GET /api/activities (All Logged In Users) ───────────────────────
 router.get('/activities', getLatestActivities);
 
 export default router;

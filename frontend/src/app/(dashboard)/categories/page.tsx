@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { getCategoriesAction } from "@/actions/category.actions";
 import { AddCategoryDialog } from "./_components/add-category-dialog";
 import { CategoryList } from "./_components/category-list";
+import { getCurrentUser } from "@/actions/auth.actions";
 
 import { FilterBar, FilterField } from "@/components/shared/filter-bar";
 import { Pagination } from "@/components/shared/pagination";
@@ -20,7 +21,7 @@ interface CategoriesPageProps {
 export default async function CategoriesPage({
   searchParams,
 }: CategoriesPageProps) {
-  const params = await searchParams;
+  const [params, user] = await Promise.all([searchParams, getCurrentUser()]);
   const response = await getCategoriesAction({
     searchTerm: params.searchTerm,
     page: params.page,
@@ -57,7 +58,7 @@ export default async function CategoriesPage({
         title="Categories"
         description="Organize your products into categories for better filtering."
       >
-        <AddCategoryDialog />
+        {user && user.role !== "Staff" && <AddCategoryDialog />}
       </PageHeader>
 
       <FilterBar filters={filters} />

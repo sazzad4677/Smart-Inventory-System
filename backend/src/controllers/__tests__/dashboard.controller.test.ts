@@ -20,7 +20,9 @@ describe('Dashboard Controller', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    req = {};
+    req = {
+      user: { _id: 'user123', role: 'manager' },
+    };
     res = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis(),
@@ -73,7 +75,10 @@ describe('Dashboard Controller', () => {
 
       await getLatestActivities(req as Request, res as Response, next);
 
-      expect(dashboardService.getLatestActivitiesFromDB).toHaveBeenCalled();
+      expect(dashboardService.getLatestActivitiesFromDB).toHaveBeenCalledWith({
+        _id: 'user123',
+        role: 'manager',
+      });
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,

@@ -24,10 +24,10 @@ router.get('/', getOrders);
 // ─── GET /api/orders/:id (Admin, Manager, Staff) ────────────────
 router.get('/:id', getOrderById);
 
-// ─── PUT /api/orders/:id/status (Admin, Manager) ────────────────
+// ─── PUT /api/orders/:id/status (Admin, Manager, Staff) ────────────────
 router.put(
   '/:id/status',
-  restrictTo(UserRole.Admin, UserRole.Manager),
+  restrictTo(UserRole.Admin, UserRole.Manager, UserRole.Staff),
   validateRequest(updateOrderStatusSchema),
   updateOrderStatus,
 );

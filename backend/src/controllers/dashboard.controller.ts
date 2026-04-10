@@ -20,9 +20,13 @@ export const getDashboardMetrics = catchAsync(async (req: Request, res: Response
   });
 });
 
-// ─── GET /api/dashboard/activities (Permissions: Admin, Manager) ─────────────
+// ─── GET /api/dashboard/activities (Permissions: All Authenticated Users) ─────────────
 export const getLatestActivities = catchAsync(async (req: Request, res: Response) => {
-  const result = await getLatestActivitiesFromDB();
+  const user = (req as any).user;
+  const result = await getLatestActivitiesFromDB({
+    _id: user._id.toString(),
+    role: user.role,
+  });
 
   sendResponse(res, {
     statusCode: 200,

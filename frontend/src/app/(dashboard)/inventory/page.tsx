@@ -87,7 +87,7 @@ export default async function InventoryPage({
         title="Inventory"
         description="Manage your products, stock levels, and pricing."
       >
-        {user?.role === "Admin" && (
+        {(user?.role === "Admin" || user?.role === "Staff") && (
           <AddProductDialog categoryOptions={categoryOptions} />
         )}
       </PageHeader>

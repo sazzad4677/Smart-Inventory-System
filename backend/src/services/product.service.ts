@@ -1,14 +1,21 @@
 import QueryBuilder from '../builders/QueryBuilder';
 import Product, { IProductDocument } from '../models/product.model';
 import Category from '../models/category.model';
-import ActivityLog from '../models/activity-log.model';
+import OrderItem from '../models/order-item.model';
 import { CreateProductInput, UpdateProductInput } from '../validators/product.validator';
 import { Types } from 'mongoose';
 import { generateNextId } from '../utils/id.utils';
 import { AppError } from '../utils/AppError';
+import { captureActivity } from '../utils/activity-logger';
+import { ActivityType } from '../types';
+import { Request } from 'express';
 
 // ─── POST /api/product (Permissions: Admin Only) ─────────────────────────────
-export const createProductIntoDB = async (userId: Types.ObjectId, payload: CreateProductInput) => {
+export const createProductIntoDB = async (
+  req: Request,
+  userId: Types.ObjectId,
+  payload: CreateProductInput,
+) => {
   // Verify category exists
   const categoryExists = await Category.findById(payload.category_id);
   if (!categoryExists) {
@@ -16,13 +23,21 @@ export const createProductIntoDB = async (userId: Types.ObjectId, payload: Creat
   }
 
   const product_id = await generateNextId('product_id', 'PRD');
-  const result = await Product.create({ ...payload, product_id } as any);
+  const result = await Product.create({ ...payload, product_id, created_by: userId } as any);
 
   if (result) {
-    await ActivityLog.create({
+    await captureActivity(req, {
+      type: ActivityType.Create,
+      resource: 'PRODUCT',
+      resourceId: result._id.toString(),
       action_text: `New product created: ${result.name}`,
-      user_id: userId,
-      timestamp: new Date(),
+      details: {
+        product_id: result.product_id,
+        name: result.name,
+        category: categoryExists.name,
+        initial_stock: result.stock_quantity,
+      },
+      userId,
     });
   }
 
@@ -31,7 +46,7 @@ export const createProductIntoDB = async (userId: Types.ObjectId, payload: Creat
 
 // ─── GET /api/product (Permissions: Admin, Manager) ──────────────────────────
 export const getAllProductsFromDB = async (query: Record<string, unknown>) => {
-  const searchableFields = ['name', 'product_id']; // As per user request
+  const searchableFields = ['name', 'product_id'];
 
   const productQuery = new QueryBuilder<IProductDocument>(
     Product.find({ is_deleted: { $ne: true } }).populate('category_id'),
@@ -59,28 +74,60 @@ export const getProductByIdFromDB = async (id: string) => {
 
 // ─── PUT /api/product/:id (Permissions: Admin, Manager) ──────────────────────
 export const updateProductInDB = async (
+  req: Request,
   userId: Types.ObjectId,
+  userRole: string,
   id: string,
   payload: UpdateProductInput,
 ) => {
   const product = await Product.findById(id);
-  if (!product) throw new Error('Product not found');
+  if (!product) throw new AppError('Product not found', 404);
+
+  // Capture old product state for diffing
+  const oldProduct: Record<string, any> = product.toObject();
+
+  // Staff permission logic
+  if (userRole === 'Staff') {
+    const isRestockOnly = Object.keys(payload).length === 1 && payload.stock_quantity !== undefined;
+    const isCreator = product.created_by && product.created_by.toString() === userId.toString();
+
+    if (!isRestockOnly && !isCreator) {
+      throw new AppError('Staff can only update products they created.', 403);
+    }
+  }
 
   Object.assign(product, payload);
   const result = await product.save();
 
   if (result) {
+    // Generate diff
+    const diff: Record<string, any> = {};
+    Object.keys(payload).forEach((key) => {
+      const k = key as keyof UpdateProductInput;
+      if (oldProduct[k] !== payload[k]) {
+        diff[k] = { old: oldProduct[k], new: payload[k] };
+      }
+    });
+
+    let type = ActivityType.Update;
     let actionText = `Product updated: ${result.name}`;
 
-    // Check if it was a restock (only stock_quantity updated or significantly changed)
     if (payload.stock_quantity !== undefined) {
+      type = ActivityType.Restock;
       actionText = `Stock updated for ${result.name} to ${result.stock_quantity}`;
     }
 
-    await ActivityLog.create({
+    await captureActivity(req, {
+      type,
+      resource: 'PRODUCT',
+      resourceId: result._id.toString(),
       action_text: actionText,
-      user_id: userId,
-      timestamp: new Date(),
+      details: {
+        product_id: result.product_id,
+        name: result.name,
+        changes: diff,
+      },
+      userId,
     });
   }
 
@@ -88,14 +135,35 @@ export const updateProductInDB = async (
 };
 
 // ─── DELETE /api/product/:id (Permissions: Admin, Manager) ──────────────────
-export const deleteProductFromDB = async (userId: Types.ObjectId, id: string) => {
+export const deleteProductFromDB = async (
+  req: Request,
+  userId: Types.ObjectId,
+  userRole: string,
+  id: string,
+) => {
+  if (userRole === 'Staff') {
+    throw new AppError('Staff are not allowed to delete products.', 403);
+  }
+
+  // Protection: Check if product has been ordered
+  const hasOrders = await OrderItem.exists({ product_id: id });
+  if (hasOrders) {
+    throw new AppError('Cannot delete product that has been ordered.', 400);
+  }
+
   const result = await Product.findByIdAndUpdate(id, { is_deleted: true }, { new: true });
 
   if (result) {
-    await ActivityLog.create({
+    await captureActivity(req, {
+      type: ActivityType.Delete,
+      resource: 'PRODUCT',
+      resourceId: result._id.toString(),
       action_text: `Product deleted: ${result.name}`,
-      user_id: userId,
-      timestamp: new Date(),
+      details: {
+        product_id: result.product_id,
+        name: result.name,
+      },
+      userId,
     });
   }
 
@@ -103,14 +171,36 @@ export const deleteProductFromDB = async (userId: Types.ObjectId, id: string) =>
 };
 
 // ─── DELETE /api/product/bulk (Permissions: Admin) ──────────────────────────
-export const bulkDeleteProductsFromDB = async (userId: Types.ObjectId, ids: string[]) => {
-  const result = await Product.updateMany({ _id: { $in: ids } }, { is_deleted: true });
+export const bulkDeleteProductsFromDB = async (
+  req: Request,
+  userId: Types.ObjectId,
+  ids: string[],
+) => {
+  // Protection: Filter out products that have orders
+  const productsWithOrders = await OrderItem.find({ product_id: { $in: ids } }).distinct(
+    'product_id',
+  );
+  const idsToDelete = ids.filter((id) => !productsWithOrders.some((pId) => pId.toString() === id));
+
+  if (idsToDelete.length === 0 && ids.length > 0) {
+    throw new AppError(
+      'None of the selected products can be deleted as they are linked to orders.',
+      400,
+    );
+  }
+
+  const result = await Product.updateMany({ _id: { $in: idsToDelete } }, { is_deleted: true });
 
   if (result.modifiedCount > 0) {
-    await ActivityLog.create({
+    await captureActivity(req, {
+      type: ActivityType.Delete,
+      resource: 'PRODUCT',
       action_text: `Bulk deleted ${result.modifiedCount} products`,
-      user_id: userId,
-      timestamp: new Date(),
+      details: {
+        product_ids: ids,
+        count: result.modifiedCount,
+      },
+      userId,
     });
   }
 

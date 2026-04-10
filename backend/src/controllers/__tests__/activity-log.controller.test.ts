@@ -14,6 +14,7 @@ describe('ActivityLogController', () => {
     jest.clearAllMocks();
     req = {
       query: {},
+      user: { _id: 'user123', role: 'manager' },
     };
     res = {
       status: jest.fn().mockReturnThis(),
@@ -32,7 +33,10 @@ describe('ActivityLogController', () => {
 
       await getAllActivityLogs(req as Request, res as Response, next);
 
-      expect(activityLogService.getAllActivityLogsFromDB).toHaveBeenCalledWith(req.query);
+      expect(activityLogService.getAllActivityLogsFromDB).toHaveBeenCalledWith(req.query, {
+        _id: 'user123',
+        role: 'manager',
+      });
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
