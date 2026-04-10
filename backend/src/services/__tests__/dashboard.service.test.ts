@@ -16,15 +16,24 @@ describe('Dashboard Service', () => {
   describe('getDashboardStatsFromDB', () => {
     it('should aggregate and calculate dashboard metrics correctly', async () => {
       (Order.countDocuments as jest.Mock).mockResolvedValue(5);
+      (Product.countDocuments as jest.Mock).mockResolvedValueOnce(2); // lowStockCount
+      (Product.countDocuments as jest.Mock).mockResolvedValueOnce(50); // totalProducts
+
+      (Product.aggregate as jest.Mock).mockResolvedValueOnce([
+        { name: 'Electronics', value: 10 },
+        { name: 'Office', value: 5 },
+      ]); // categoryDistribution
+
       (Order.aggregate as jest.Mock)
         .mockResolvedValueOnce([
           { _id: 'Pending', count: 2 },
           { _id: 'Confirmed', count: 3 },
         ]) // pendingVsCompleted
-        .mockResolvedValueOnce([{ _id: null, total: 1000 }]); // revenueToday
+        .mockResolvedValueOnce([{ _id: null, total: 1000 }]) // revenueToday
+        .mockResolvedValueOnce([
+          { _id: new Date().toISOString().split('T')[0], count: 5, revenue: 1000 },
+        ]); // orderTrends
 
-      (Product.countDocuments as jest.Mock).mockResolvedValueOnce(2); // lowStockCount
-      (Product.countDocuments as jest.Mock).mockResolvedValueOnce(50); // totalProducts
       (Product.find as jest.Mock).mockReturnValue({
         sort: jest.fn().mockReturnThis(),
         limit: jest.fn().mockResolvedValue([
@@ -36,8 +45,9 @@ describe('Dashboard Service', () => {
       const stats = await getDashboardStatsFromDB();
 
       expect(Order.countDocuments).toHaveBeenCalled();
-      expect(Order.aggregate).toHaveBeenCalledTimes(2);
+      expect(Order.aggregate).toHaveBeenCalledTimes(3);
       expect(Product.countDocuments).toHaveBeenCalledTimes(2);
+      expect(Product.aggregate).toHaveBeenCalledTimes(1);
 
       expect(stats.totalOrdersToday).toBe(5);
       expect(stats.revenueToday).toBe(1000);
@@ -45,6 +55,8 @@ describe('Dashboard Service', () => {
       expect(stats.pendingVsCompleted.Completed).toBe(3);
       expect(stats.lowStockCount).toBe(2);
       expect(stats.totalProducts).toBe(50);
+      expect(stats.categoryDistribution?.[0]?.name).toBe('Electronics');
+      expect(stats.orderTrends?.length).toBe(7);
       expect(stats.productSummary?.[0]?.status).toBe('Low Stock');
       expect(stats.productSummary?.[1]?.status).toBe('OK');
     });

@@ -16,6 +16,10 @@ import {
   getLatestActivities,
 } from "@/actions/dashboard.actions";
 import { Badge } from "@/components/ui/badge";
+import { TrendingChart } from "./_components/TrendingChart";
+import { CategoryDistribution } from "./_components/CategoryDistribution";
+import { Activity, PieChart } from "lucide-react";
+import { AIInsightsCard } from "./_components/AIInsightsCard";
 
 export default async function DashboardPage() {
   const [statsResponse, activitiesResponse] = await Promise.all([
@@ -78,7 +82,6 @@ export default async function DashboardPage() {
         title="Dashboard Overview"
         description="Welcome back! Here's what's happening with your inventory today."
       />
-
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4 lg:gap-8">
         {stats.map((stat) => (
           <Card
@@ -128,6 +131,40 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      <div>
+        <AIInsightsCard />
+      </div>
+
+      <div className="grid gap-8 grid-cols-1 xl:grid-cols-7 mt-2">
+        <Card className="xl:col-span-4 bg-slate-900/40 backdrop-blur-xl border-white/5 shadow-2xl overflow-hidden">
+          <CardHeader className="pb-6">
+            <CardTitle className="text-xl font-bold text-white flex items-center gap-2">
+              <Activity className="h-5 w-5 text-indigo-400" />
+              Order & Revenue Trends
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="h-[350px] p-6 pt-0">
+            {dashboardData?.orderTrends && (
+              <TrendingChart data={dashboardData.orderTrends} />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="xl:col-span-3 bg-slate-900/40 backdrop-blur-xl border-white/5 shadow-2xl overflow-hidden">
+          <CardHeader className="pb-6">
+            <CardTitle className="text-xl font-bold text-white flex items-center gap-2">
+              <PieChart className="h-5 w-5 text-purple-400" />
+              Inventory Distribution
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="h-[350px] p-6 pt-0">
+            {dashboardData?.categoryDistribution && (
+              <CategoryDistribution data={dashboardData.categoryDistribution} />
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-8 grid-cols-1 xl:grid-cols-7 mt-4">

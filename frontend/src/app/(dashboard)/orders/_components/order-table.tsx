@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { deleteOrderAction } from "@/actions/order.actions";
 import { toast } from "sonner";
 import { ActionModal } from "@/components/shared/action-modal";
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
 import { Order } from "@/lib/types";
+import { useSocket } from "@/hooks/use-socket";
 
 interface OrderTableProps {
   orders: Order[];
@@ -18,8 +20,54 @@ interface OrderTableProps {
 
 export function OrderTable({ orders, userRole }: OrderTableProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [stateOrders, setStateOrders] = useState<Order[]>(orders);
   const [isPending, startTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const socket = useSocket();
+
+  // Sync state with props when they change (pagination/filtering)
+  useEffect(() => {
+    setStateOrders(orders);
+  }, [orders]);
+
+  // Real-time synchronization
+  useEffect(() => {
+    if (!socket?.current) return;
+    const socketInstance = socket.current;
+
+    const handleOrderCreated = (newOrder: Order) => {
+      const page = searchParams.get("page") || "1";
+      if (page !== "1") return;
+
+      setStateOrders((prev) => {
+        if (prev.some((o) => o._id === newOrder._id)) return prev;
+        const updated = [newOrder, ...prev];
+        const limit = parseInt(searchParams.get("limit") || "10");
+        return updated.slice(0, limit);
+      });
+    };
+
+    const handleOrderUpdated = (updatedOrder: Order) => {
+      setStateOrders((prev) =>
+        prev.map((o) => (o._id === updatedOrder._id ? updatedOrder : o)),
+      );
+    };
+
+    const handleOrderDeleted = (deletedId: string) => {
+      setStateOrders((prev) => prev.filter((o) => o._id !== deletedId));
+    };
+
+    socketInstance.on("order_created", handleOrderCreated);
+    socketInstance.on("order_updated", handleOrderUpdated);
+    socketInstance.on("order_deleted", handleOrderDeleted);
+
+    return () => {
+      socketInstance.off("order_created", handleOrderCreated);
+      socketInstance.off("order_updated", handleOrderUpdated);
+      socketInstance.off("order_deleted", handleOrderDeleted);
+    };
+  }, [socket, searchParams]);
 
   const handleDelete = (id: string) => {
     startTransition(async () => {
@@ -101,7 +149,7 @@ export function OrderTable({ orders, userRole }: OrderTableProps) {
   return (
     <>
       <DataTable
-        data={orders}
+        data={stateOrders}
         columns={columns}
         onRowClick={(order) => router.push(`/orders/${order._id}`)}
       />

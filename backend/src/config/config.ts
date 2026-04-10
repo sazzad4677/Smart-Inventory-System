@@ -1,11 +1,16 @@
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ path: ['.env.local', '.env'] });
 
-const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET', 'JWT_REFRESH_SECRET'] as const;
+const requiredEnvVars = [
+  'MONGODB_URI',
+  'JWT_SECRET',
+  'JWT_REFRESH_SECRET',
+  'GOOGLE_API_KEY',
+] as const;
 
 for (const envVar of requiredEnvVars) {
-  if (!process.env[envVar]) {
+  if (!process.env[envVar] && process.env.NODE_ENV !== 'test') {
     throw new Error(`Missing required environment variable: ${envVar}`);
   }
 }
@@ -29,5 +34,9 @@ export const config = {
   },
   redis: {
     uri: process.env.REDIS_URI || 'redis://localhost:6379',
+  },
+  ai: {
+    googleKey: process.env.GOOGLE_API_KEY as string,
+    model: process.env.AI_MODEL || 'gemini-flash-latest',
   },
 } as const;

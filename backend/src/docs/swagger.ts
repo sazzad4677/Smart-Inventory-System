@@ -28,6 +28,35 @@ export const swaggerDocument = {
           message: { type: 'string', example: 'Error message description' },
         },
       },
+      UnauthorizedError: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean', example: false },
+          message: { type: 'string', example: 'Unauthorized: Invalid or expired token' },
+        },
+      },
+      ForbiddenError: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean', example: false },
+          message: { type: 'string', example: 'Forbidden: Insufficient permissions' },
+        },
+      },
+      NotFoundError: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean', example: false },
+          message: { type: 'string', example: 'Resource not found' },
+        },
+      },
+      ConflictError: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean', example: false },
+          message: { type: 'string', example: 'Conflict: Request could not be completed' },
+          errorDetails: { type: 'string', example: 'Product is linked to active orders' },
+        },
+      },
       UserAuth: {
         type: 'object',
         properties: {
@@ -38,12 +67,12 @@ export const swaggerDocument = {
               user: {
                 type: 'object',
                 properties: {
-                  id: { type: 'string' },
-                  email: { type: 'string' },
-                  role: { type: 'string' },
+                  id: { type: 'string', example: '65f1a2b3c4d5e6f7a8b9c0d1' },
+                  email: { type: 'string', example: 'admin@demo.com' },
+                  role: { type: 'string', example: 'ADMIN' },
                 },
               },
-              accessToken: { type: 'string' },
+              accessToken: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
             },
           },
         },
@@ -51,41 +80,43 @@ export const swaggerDocument = {
       Category: {
         type: 'object',
         properties: {
-          _id: { type: 'string' },
-          name: { type: 'string' },
-          description: { type: 'string' },
+          _id: { type: 'string', example: '65f1a2b3c4d5e6f7a8b9c0d1' },
+          name: { type: 'string', example: 'Electronics' },
+          description: { type: 'string', example: 'Gadgets and hardware' },
         },
       },
       Product: {
         type: 'object',
         properties: {
-          _id: { type: 'string' },
-          name: { type: 'string' },
-          category_id: { type: 'string' },
-          price: { type: 'number' },
-          stock_quantity: { type: 'number' },
-          min_threshold: { type: 'number' },
-          status: { type: 'string' },
+          _id: { type: 'string', example: '65f1a2b3c4d5e6f7a8b9c0d1' },
+          name: { type: 'string', example: 'MacBook Pro M3' },
+          category_id: { type: 'string', example: '65f1a2b3c4d5e6f7a8b9c0d1' },
+          price: { type: 'number', example: 1999.99 },
+          stock_quantity: { type: 'number', example: 45 },
+          min_threshold: { type: 'number', example: 10 },
+          status: { type: 'string', example: 'Active' },
         },
       },
       Order: {
         type: 'object',
         properties: {
-          _id: { type: 'string' },
-          customer_name: { type: 'string' },
+          _id: { type: 'string', example: '65f1a2b3c4d5e6f7a8b9c0d1' },
+          order_id: { type: 'string', example: 'ORD0001' },
+          customer_name: { type: 'string', example: 'Jane Smith' },
           items: {
             type: 'array',
             items: {
               type: 'object',
               properties: {
-                product_id: { type: 'string' },
-                quantity: { type: 'number' },
-                price_at_purchase: { type: 'number' },
+                product_id: { type: 'string', example: '65f1a2b3c4d5e6f7a8b9c0d1' },
+                quantity: { type: 'number', example: 2 },
+                unit_price: { type: 'number', example: 999.99 },
               },
             },
           },
-          total_price: { type: 'number' },
-          status: { type: 'string' },
+          total_price: { type: 'number', example: 1999.98 },
+          status: { type: 'string', example: 'Pending' },
+          created_at: { type: 'string', format: 'date-time', example: '2024-03-20T10:00:00Z' },
         },
       },
       HealthStatus: {
@@ -236,7 +267,7 @@ export const swaggerDocument = {
             description: 'Success',
             content: { 'application/json': { schema: { $ref: '#/components/schemas/UserAuth' } } },
           },
-          401: { description: 'Unauthorized' },
+          401: { $ref: '#/components/schemas/UnauthorizedError' },
         },
       },
     },
@@ -528,6 +559,7 @@ export const swaggerDocument = {
               },
             },
           },
+          401: { $ref: '#/components/schemas/UnauthorizedError' },
         },
       },
     },

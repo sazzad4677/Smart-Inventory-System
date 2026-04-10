@@ -9,6 +9,7 @@ import {
   deleteOrderFromDB,
 } from '../services/order.service';
 import { redisClient } from '../config/redis';
+import { logger } from '../utils/logger';
 
 // ─── POST /api/order (Permissions: Private) ──────────────────────────────────
 export const createOrder = catchAsync(async (req: Request, res: Response) => {
@@ -18,14 +19,20 @@ export const createOrder = catchAsync(async (req: Request, res: Response) => {
   // Invalidate dashboard metrics cache
   await redisClient.del('dashboard_metrics');
 
-  // Socket.io: Low stock alerts
-  if (lowStockProducts && lowStockProducts.length > 0) {
-    const io = req.app.get('io');
-    console.log(`📡 Found ${lowStockProducts.length} low stock products. Emitting alerts...`);
+  const io = req.app.get('io');
+
+  //  Real-time order update
+  if (io) {
+    io.emit('order_created', order);
+  }
+
+  //  Low stock alerts
+  if (lowStockProducts && lowStockProducts.length > 0 && io) {
+    logger.info(`📡 Found ${lowStockProducts.length} low stock products. Emitting alerts...`);
     lowStockProducts.forEach((product: any) => {
-      console.log(`🔔 Emitting low_stock_alert for: ${product.name} (Stock: ${product.stock})`);
+      logger.info(`🔔 Emitting low_stock_alert for: ${product.name} (Stock: ${product.stock})`);
       io.emit('low_stock_alert', {
-        id: Math.random().toString(36).substr(2, 9),
+        id: Math.random().toString(36).substring(2, 9),
         productName: product.name,
         currentStock: product.stock,
         message: `Critical: ${product.name} stock dropped to ${product.stock}`,
@@ -76,6 +83,12 @@ export const updateOrderStatus = catchAsync(async (req: Request, res: Response) 
 
   const result = await updateOrderStatusInDB(req, userId, id as string, status);
 
+  // Real-time update
+  const io = req.app.get('io');
+  if (io) {
+    io.emit('order_updated', result);
+  }
+
   sendResponse(res, {
     statusCode: 200,
     success: true,
@@ -90,6 +103,12 @@ export const deleteOrder = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
 
   const result = await deleteOrderFromDB(req, userId, id as string);
+
+  // Real-time deletion
+  const io = req.app.get('io');
+  if (io) {
+    io.emit('order_deleted', id);
+  }
 
   sendResponse(res, {
     statusCode: 200,
