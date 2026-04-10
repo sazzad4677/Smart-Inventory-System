@@ -85,6 +85,12 @@ A high-performance, enterprise-grade inventory management solution designed for 
 
 ## 📐 Architecture & Workflow
 
+### 🏙️ High-Level Architecture (Infrastructure)
+
+Shows the Docker service orchestration, internal networking, and the relationship between the Frontend, Backend, Redis, and MongoDB Replica Set.
+
+![Architecture Diagram](./docs/media/architecture_diagram.png)
+
 ### 🗄️ Entity Relationship Diagram (ERD)
 
 The database schema is designed for high data integrity and efficient auditing. It features a normalized structure for products and categories with a robust link to activity logs for real-time auditing.
@@ -96,6 +102,18 @@ The database schema is designed for high data integrity and efficient auditing. 
 The application follows a clean, event-driven architecture using Socket.io for real-time updates and a modern "Auth-Proxy" layer for secure session management.
 
 ![Flow Chart](./docs/media/flow_chart.png)
+
+### 🔐 Authentication & Token Rotation
+
+A detailed sequence showing how the Next.js Middleware and Auth Proxy layer handle JWT rotation and session persistence securely.
+
+![Auth Sequence](./docs/media/auth_sequence.png)
+
+### 👥 Role-Based Access Control (RBAC)
+
+Visualizes the permission hierarchy (Staff → Manager → Admin) and the specific system actions available to each user role.
+
+![Use Case Diagram](./docs/media/use-case-diagram.png)
 
 ---
 
