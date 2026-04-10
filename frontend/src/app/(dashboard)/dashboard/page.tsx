@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { TrendingChart } from "./_components/TrendingChart";
 import { CategoryDistribution } from "./_components/CategoryDistribution";
 import { Activity, PieChart } from "lucide-react";
+import { AIInsightsCard } from "./_components/AIInsightsCard";
 
 export default async function DashboardPage() {
   const [statsResponse, activitiesResponse] = await Promise.all([
@@ -81,7 +82,6 @@ export default async function DashboardPage() {
         title="Dashboard Overview"
         description="Welcome back! Here's what's happening with your inventory today."
       />
-
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4 lg:gap-8">
         {stats.map((stat) => (
           <Card
@@ -133,7 +133,11 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid gap-8 grid-cols-1 xl:grid-cols-7 mt-4">
+      <div>
+        <AIInsightsCard />
+      </div>
+
+      <div className="grid gap-8 grid-cols-1 xl:grid-cols-7 mt-2">
         <Card className="xl:col-span-4 bg-slate-900/40 backdrop-blur-xl border-white/5 shadow-2xl overflow-hidden">
           <CardHeader className="pb-6">
             <CardTitle className="text-xl font-bold text-white flex items-center gap-2">

@@ -10,10 +10,7 @@ const robustSendCommand = async (...args: string[]) => {
     if (!redisClient.isOpen) {
       await connectRedis();
     }
-    // If still not open after attempting connection, fall back gracefully
-    if (!redisClient.isOpen) {
-      return null;
-    }
+    if (!redisClient.isOpen) return null;
     return await redisClient.sendCommand(args);
   } catch (error: any) {
     console.error('❌ Redis Command Failed:', error.message);
@@ -27,10 +24,12 @@ export const apiRateLimiter = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
-  store: new RedisStore({
-    // @ts-expect-error
-    sendCommand: (...args: string[]) => robustSendCommand(...args),
-    prefix: 'rl:api:',
+  ...(process.env.NODE_ENV !== 'test' && {
+    store: new RedisStore({
+      // @ts-expect-error
+      sendCommand: (...args: string[]) => robustSendCommand(...args),
+      prefix: 'rl:api:',
+    }),
   }),
   message: {
     success: false,
@@ -46,10 +45,12 @@ export const authRateLimiter = rateLimit({
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  store: new RedisStore({
-    // @ts-expect-error
-    sendCommand: (...args: string[]) => robustSendCommand(...args),
-    prefix: 'rl:auth:',
+  ...(process.env.NODE_ENV !== 'test' && {
+    store: new RedisStore({
+      // @ts-expect-error
+      sendCommand: (...args: string[]) => robustSendCommand(...args),
+      prefix: 'rl:auth:',
+    }),
   }),
   message: {
     success: false,
