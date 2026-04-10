@@ -47,7 +47,7 @@ services:
       - REDIS_URI=redis://redis:6379
       - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017/smart_inventory}
     env_file:
-      - ./backend/.env
+      - ./backend/.env.local
     depends_on:
       - mongodb
       - redis

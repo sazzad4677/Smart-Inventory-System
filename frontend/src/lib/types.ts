@@ -78,6 +78,15 @@ export interface DashboardData {
     stock_quantity: number;
     status: string;
   }[];
+  categoryDistribution?: {
+    name: string;
+    value: number;
+  }[];
+  orderTrends?: {
+    date: string;
+    count: number;
+    revenue: number;
+  }[];
 }
 
 export interface OrderItem {

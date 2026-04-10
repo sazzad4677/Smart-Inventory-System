@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ path: ['.env.local', '.env'] });
 
 const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET', 'JWT_REFRESH_SECRET'] as const;
 

@@ -47,7 +47,64 @@ export const getDashboardStatsFromDB = async () => {
   // 5. Total Products
   const totalProducts = await Product.countDocuments();
 
-  // 6. Product Summary (Prioritize Low Stock Items)
+  // 6. Category Distribution
+  const categoryDistribution = await Product.aggregate([
+    {
+      $group: {
+        _id: '$category_id',
+        value: { $sum: 1 },
+      },
+    },
+    {
+      $lookup: {
+        from: 'categories',
+        localField: '_id',
+        foreignField: '_id',
+        as: 'category',
+      },
+    },
+    { $unwind: '$category' },
+    {
+      $project: {
+        _id: 0,
+        name: '$category.name',
+        value: 1,
+      },
+    },
+  ]);
+
+  // 7. Order Trends (Last 7 Days)
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
+
+  const orderTrendsRaw = await Order.aggregate([
+    { $match: { created_at: { $gte: sevenDaysAgo } } },
+    {
+      $group: {
+        _id: { $dateToString: { format: '%Y-%m-%d', date: '$created_at' } },
+        count: { $sum: 1 },
+        revenue: { $sum: '$total_price' },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+
+  // Fill in missing days for the chart
+  const orderTrends = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const dateStr = d.toISOString().split('T')[0];
+    const dayData = orderTrendsRaw.find((t) => t._id === dateStr);
+    orderTrends.push({
+      date: dateStr,
+      count: dayData ? dayData.count : 0,
+      revenue: dayData ? dayData.revenue : 0,
+    });
+  }
+
+  // 8. Product Summary (Prioritize Low Stock Items)
   const products = await Product.find().sort({ stock_quantity: 1, createdAt: -1 }).limit(10);
 
   const productSummary = products.map((p) => ({
@@ -63,6 +120,8 @@ export const getDashboardStatsFromDB = async () => {
     revenueToday,
     totalProducts,
     productSummary,
+    categoryDistribution,
+    orderTrends,
   };
 };
 
