@@ -6,6 +6,7 @@ import Product from '../../models/product.model';
 import Category from '../../models/category.model';
 import User from '../../models/user.model';
 import { UserRole, ProductStatus } from '../../types';
+import { logger } from '../../utils/logger';
 
 describe('Order API Integration', () => {
   let authToken: string;
@@ -68,7 +69,7 @@ describe('Order API Integration', () => {
         .send(payload);
 
       if (res.status !== 201) {
-        console.log('DEBUG RES BODY:', JSON.stringify(res.body, null, 2));
+        logger.info('DEBUG RES BODY:', JSON.stringify(res.body, null, 2));
       }
 
       // Verify response

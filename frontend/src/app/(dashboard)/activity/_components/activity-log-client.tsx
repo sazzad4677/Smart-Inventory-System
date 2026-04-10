@@ -1,5 +1,7 @@
 "use client";
 
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Activity, PaginationMeta } from "@/lib/types";
 import { FilterBar, FilterField } from "@/components/shared/filter-bar";
 import { DataTable, Column } from "@/components/shared/data-table";
@@ -13,6 +15,7 @@ import {
   redoActivityAction,
 } from "@/actions/activity.actions";
 import { toast } from "sonner";
+import { useSocket } from "@/hooks/use-socket";
 
 interface ActivityLogClientProps {
   activities: Activity[];
@@ -23,6 +26,57 @@ export function ActivityLogClient({
   activities,
   meta,
 }: ActivityLogClientProps) {
+  const [stateActivities, setStateActivities] =
+    useState<Activity[]>(activities);
+  const searchParams = useSearchParams();
+  const socket = useSocket();
+
+  // Keep local state in sync with server props (for pagination/filtering from URL)
+  useEffect(() => {
+    setStateActivities(activities);
+  }, [activities]);
+
+  // Listen for real-time updates
+  useEffect(() => {
+    if (!socket?.current) return;
+
+    const handleNewActivity = (activity: Activity) => {
+      // Check if user is on the first page
+      const currentPage = searchParams.get("page") || "1";
+      if (currentPage !== "1") return;
+
+      // check if it matches current filters
+      const filterType = searchParams.get("type") || "all";
+      const filterRole = searchParams.get("role") || "all";
+      const filterResource = searchParams.get("resource") || "all";
+
+      if (filterType !== "all" && activity.type !== filterType) return;
+      if (
+        filterRole !== "all" &&
+        activity.user_id?.role?.toLowerCase() !== filterRole.toLowerCase()
+      )
+        return;
+      if (filterResource !== "all" && activity.resource !== filterResource)
+        return;
+
+      // Prepend to list
+      setStateActivities((prev) => {
+        // Avoid duplicates (e.g. if event loop triggers twice)
+        if (prev.some((a) => a._id === activity._id)) return prev;
+
+        const updated = [activity, ...prev];
+        // Keep to the current limit to avoid page growing indefinitely
+        const limit = parseInt(searchParams.get("limit") || "10");
+        return updated.slice(0, limit);
+      });
+    };
+
+    const socketInstance = socket.current;
+    socketInstance.on("new_activity", handleNewActivity);
+    return () => {
+      socketInstance.off("new_activity", handleNewActivity);
+    };
+  }, [socket, searchParams]);
   const filters: FilterField[] = [
     {
       key: "type",
@@ -236,7 +290,7 @@ export function ActivityLogClient({
   return (
     <div className="flex flex-col gap-6">
       <FilterBar filters={filters} />
-      <DataTable data={activities} columns={columns} />
+      <DataTable data={stateActivities} columns={columns} />
       <div className="mt-2">
         <Pagination meta={meta} itemLabel="activities" />
       </div>

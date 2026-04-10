@@ -31,31 +31,31 @@ A high-performance, enterprise-grade inventory management solution designed for 
 
 ### 🛡️ Advanced Security
 
-- **Role-Based Access Control (RBAC)**: Fine-grained permissions for Admin and Manager roles.
-- **NextAuth 5 (Beta)**: Secure, modern authentication with JWT rotation.
+- **Role-Based Access Control (RBAC)**: Fine-grained permissions for Admin, Manager, and Staff roles.
+- **NextAuth 5 (Beta)**: Secure, modern authentication with JWT rotation and "Refresh Lock" mechanisms.
 - **Rate Limiting**: Redis-backed protection against brute-force and API abuse.
 - **Validation**: Strict schema validation using Zod on both frontend and backend.
 
 ### 📊 Intelligence & Monitoring
 
-- **Real-time Dashboard**: Live updates on stock levels, order status, and system activity via Socket.io.
+- **Real-time Synchronization**: Live updates for Activity Logs and Order Tables via Socket.io, ensuring all staff see changes instantly.
+- **Real-time Dashboard**: Live updates on stock levels and system metrics.
 - **Automated Restock Queue**: Intelligent identification of low-stock items with a dedicated resolution workflow.
-- **Health Monitoring**: Public `/health` endpoint for uptime, memory usage, and service state (DB/Redis).
-- **Analytics Engine**: Tracking for API response times and client-side engagement metrics.
+- **Activity Audit**: Persistent, real-time logging of all critical system actions with **Undo/Redo** support for product deletions.
 
 ### 📦 Operational Excellence
 
-- **Inventory Management**: Comprehensive CRUD for products with multi-attribute tracking and image support.
-- **Order Lifecycle**: End-to-end tracking from pending to delivery with automated stock adjustments.
-- **Activity Audit**: Persistent logging of all critical system actions for compliance and debugging.
+- **Inventory Management**: Comprehensive CRUD for products with multi-attribute tracking, image support, and bulk operations.
+- **Deletion Safeguards**: Intelligent business logic prevents the deletion of products that are linked to existing order history.
+- **Order Lifecycle**: End-to-end tracking from pending to delivery with automated stock adjustments and real-time status updates.
 - **Swagger UI**: Interactive API documentation for seamless integration.
 
 ### 🎨 Modern UI/UX
 
+- **Skeleton Loading States**: Professional, content-aware loading skeletons replace global spinners for a smoother transition experience.
 - **Tailwind CSS 4**: Utilizing the latest CSS capabilities for a blazing-fast, modern interface.
 - **Shadcn UI**: High-quality, accessible components for a premium look and feel.
 - **Mobile First**: Fully responsive design optimized for all device sizes.
-- **Dark Mode Native**: Seamless theme switching with system preference detection.
 
 ---
 
@@ -74,7 +74,7 @@ A high-performance, enterprise-grade inventory management solution designed for 
 
 - **Runtime**: Node.js 22 (CommonJS/TypeScript)
 - **Framework**: Express 5.2.x
-- **Database**: MongoDB 6.0 (Mongoose)
+- **Database**: MongoDB 6.0 (Mongoose) with Replica Set support for transactions.
 - **Caching/Rate Limit**: Redis
 - **Docs**: Swagger UI (OpenAPI 3.0)
 - **Logging**: Winston, Morgan
@@ -84,22 +84,23 @@ A high-performance, enterprise-grade inventory management solution designed for 
 
 ## 🧪 Testing Architecture
 
-The project maintains a high-quality codebase through a comprehensive suite of unit and integration tests powered by **Jest**.
+The project maintains a rigorous quality standard with a comprehensive suite of unit and integration tests powered by **Jest**.
 
-### 🛠️ Testing Tools
+### 🛠️ Coverage Metrics
 
-- **Framework**: [Jest](https://jestjs.io/)
-- **API Testing**: [Supertest](https://github.com/ladjs/supertest)
-- **Database Mocking**: [MongoDB Memory Server](https://github.com/nodkz/mongodb-memory-server) for isolated integration tests.
-- **Assertions**: Custom matchers and Zod schema validation.
+- **Statements**: >95%
+- **Branches**: >80%
+- **Functions**: >90%
+- **Lines**: >95%
 
 ### 📂 Test Suites
 
-The backend includes over 12 specialized test suites covering:
+The backend includes over **30 specialized test files** covering:
 
 - **Controllers**: Unit tests for Auth, Product, Order, Category, and Dashboard logic.
-- **Integrations**: Full API flow validation for Authentication and Inventory workflows.
-- **System**: Health check and middleware performance testing.
+- **Services**: Business logic validation including Undo/Redo state management and staff permission guards.
+- **Integrations**: Full API flow validation for Authentication, Inventory, and Order workflows.
+- **Auditing**: Verification of real-time event broadcasting and activity logging accuracy.
 
 ### 🚀 Running Tests
 

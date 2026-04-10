@@ -2,6 +2,7 @@ import { Request } from 'express';
 import ActivityLog from '../models/activity-log.model';
 import { ActivityType } from '../types';
 import { Types } from 'mongoose';
+import { logger } from './logger';
 
 interface LogOptions {
   type: ActivityType;
@@ -45,7 +46,8 @@ export const captureActivity = async (req: Request | null, options: LogOptions) 
     if (ip_address) logData.ip_address = ip_address;
     if (user_agent) logData.user_agent = user_agent;
 
-    await ActivityLog.create(logData);
+    const newLog = await ActivityLog.create(logData);
+    const populatedLog = await newLog.populate('user_id', 'email role');
 
     // Emit real-time activity event via Socket.io
     const io = req?.app?.get('io');
@@ -57,15 +59,12 @@ export const captureActivity = async (req: Request | null, options: LogOptions) 
           : `${resource ? resource.charAt(0) + resource.slice(1).toLowerCase() : 'System'} ${type.toLowerCase()}`;
 
       io.emit('new_activity', {
-        _id: new Types.ObjectId().toString(), // Temp ID for frontend key
-        type,
-        resource,
+        ...populatedLog.toObject(),
         message: briefMessage,
-        timestamp: new Date(),
       });
     }
   } catch (error) {
-    // We don't want activity logging to crash the main request
-    console.error('Failed to capture activity log:', error);
+    // don't want activity logging to crash the main request
+    logger.error('Failed to capture activity log:', error);
   }
 };
