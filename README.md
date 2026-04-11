@@ -32,6 +32,7 @@ A high-performance, enterprise-grade inventory management solution designed for 
 ### 🛡️ Advanced Security
 
 - **Role-Based Access Control (RBAC)**: Fine-grained permissions for Admin, Manager, and Staff roles.
+- **Invite-Only Enrollment**: Advanced membership security—new users can only register via authenticated email invitations with expiring secure tokens.
 - **NextAuth 5 (Beta)**: Secure, modern authentication with JWT rotation and "Refresh Lock" mechanisms.
 - **Rate Limiting**: Redis-backed protection against brute-force and API abuse.
 - **Validation**: Strict schema validation using Zod on both frontend and backend.
@@ -40,6 +41,7 @@ A high-performance, enterprise-grade inventory management solution designed for 
 
 - **Real-time Synchronization**: Live updates for Activity Logs and Order Tables via Socket.io, ensuring all staff see changes instantly.
 - **Real-time Dashboard**: Live updates on stock levels and system metrics.
+- **Remote Session Revocation**: Admins can instantly monitor and terminate any active user session across all devices.
 - **Automated Restock Queue**: Intelligent identification of low-stock items with a dedicated resolution workflow.
 - **Activity Audit**: Persistent, real-time logging of all critical system actions with **Undo/Redo** support for product deletions.
 
@@ -52,7 +54,9 @@ A high-performance, enterprise-grade inventory management solution designed for 
 
 ### 🎨 Modern UI/UX
 
-- **Skeleton Loading States**: Professional, content-aware loading skeletons replace global spinners for a smoother transition experience.
+- **Skeleton Loading States**: Professional, content-aware loading skeletons (including specialized table skeletons) replace global spinners.
+- **Component-Driven Tables**: Reusable, modular `DataTable` and `FilterBar` logic with URL-synced state management.
+- **Glassmorphic Action Modals**: Custom-themed confirmation dialogs replacing native browser popups for a premium, unified look.
 - **Tailwind CSS 4**: Utilizing the latest CSS capabilities for a blazing-fast, modern interface.
 - **Shadcn UI**: High-quality, accessible components for a premium look and feel.
 - **Mobile First**: Fully responsive design optimized for all device sizes.
