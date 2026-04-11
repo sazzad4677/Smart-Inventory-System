@@ -11,12 +11,8 @@ export const signupSchema = z.object({
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/,
         'Password must contain at least one uppercase letter, one lowercase letter, and one number',
       ),
-    role: z
-      .enum(UserRole, {
-        error: `Role must be one of: ${Object.values(UserRole).join(', ')}`,
-      })
-      .optional()
-      .default(UserRole.Manager),
+    role: z.enum(UserRole).optional(),
+    token: z.string().min(1, 'Invitation token is required'),
   }),
 });
 

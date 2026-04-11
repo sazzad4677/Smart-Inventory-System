@@ -1,6 +1,7 @@
 import request from 'supertest';
 import { app } from '../../__tests__/integration.setup';
 import User from '../../models/user.model';
+import Invitation from '../../models/invitation.model';
 
 describe('Auth API Integration', () => {
   const registerPayload = {
@@ -10,7 +11,18 @@ describe('Auth API Integration', () => {
 
   describe('POST /api/auth/signup', () => {
     it('should successfully register a new user and return 201', async () => {
-      const res = await request(app).post('/api/auth/signup').send(registerPayload);
+      // Seed invitation
+      const invitation = await Invitation.create({
+        email: registerPayload.email,
+        token: 'valid-token',
+        role: 'Manager',
+        expiresAt: new Date(Date.now() + 3600000), // 1 hour
+        invitedBy: new Invitation()._id, // Dummy ID
+      });
+
+      const res = await request(app)
+        .post('/api/auth/signup')
+        .send({ ...registerPayload, token: invitation.token });
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -18,13 +30,24 @@ describe('Auth API Integration', () => {
     });
 
     it('should fail if the email is already in use', async () => {
+      // Seed invitation
+      const invitation = await Invitation.create({
+        email: registerPayload.email,
+        token: 'valid-token',
+        role: 'Manager',
+        expiresAt: new Date(Date.now() + 3600000),
+        invitedBy: new Invitation()._id,
+      });
+
       // Seed a user first
       await User.create({
         email: registerPayload.email,
         password_hash: 'HashedPassword123!',
       });
 
-      const res = await request(app).post('/api/auth/signup').send(registerPayload);
+      const res = await request(app)
+        .post('/api/auth/signup')
+        .send({ ...registerPayload, token: invitation.token });
 
       // Note: Backend returns 409 Conflict for duplicate emails
       expect(res.status).toBe(409);
@@ -33,13 +56,25 @@ describe('Auth API Integration', () => {
 
     it('should verify password encryption in the database', async () => {
       const plainPassword = 'EncryptionTest1!';
+      const email = 'encrypt@example.com';
+
+      // Seed invitation
+      const invitation = await Invitation.create({
+        email,
+        token: 'valid-token-encrypt',
+        role: 'Manager',
+        expiresAt: new Date(Date.now() + 3600000),
+        invitedBy: new Invitation()._id,
+      });
+
       await request(app).post('/api/auth/signup').send({
-        email: 'encrypt@example.com',
+        email,
         password: plainPassword,
+        token: invitation.token,
       });
 
       // Fetch user directly from DB including the password field
-      const user = await User.findOne({ email: 'encrypt@example.com' }).select('+password_hash');
+      const user = await User.findOne({ email }).select('+password_hash');
 
       expect(user).toBeTruthy();
       expect(user?.password_hash).not.toBe(plainPassword);

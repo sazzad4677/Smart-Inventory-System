@@ -40,6 +40,7 @@ interface FormInputFieldProps<T extends FieldValues> {
   onSearchValueChange?: (value: string) => void;
   isLoading?: boolean;
   autoComplete?: string;
+  disabled?: boolean;
 }
 
 export function FormInputField<T extends FieldValues>({
@@ -57,6 +58,7 @@ export function FormInputField<T extends FieldValues>({
   onSearchValueChange,
   isLoading,
   autoComplete,
+  disabled,
 }: FormInputFieldProps<T>) {
   return (
     <FormField
@@ -80,6 +82,7 @@ export function FormInputField<T extends FieldValues>({
                         "bg-slate-900/50 border-white/10 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:ring-indigo-500/20 transition-all min-h-[100px]",
                         inputClassName,
                       )}
+                      disabled={disabled}
                       {...field}
                     />
                   );
@@ -91,6 +94,7 @@ export function FormInputField<T extends FieldValues>({
                       onValueChange={field.onChange}
                       placeholder={placeholder}
                       triggerClassName={cn("w-full", inputClassName)}
+                      disabled={disabled}
                     />
                   );
                 case "combobox":
@@ -105,6 +109,7 @@ export function FormInputField<T extends FieldValues>({
                       isLoading={isLoading}
                       placeholder={placeholder}
                       className={inputClassName}
+                      disabled={disabled}
                     />
                   );
                 default:
@@ -118,6 +123,7 @@ export function FormInputField<T extends FieldValues>({
                         placeholder={placeholder}
                         autoComplete={autoComplete}
                         className={cn(Icon && "pl-10", inputClassName)}
+                        disabled={disabled}
                         {...field}
                       />
                     </div>

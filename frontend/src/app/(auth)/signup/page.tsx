@@ -1,11 +1,11 @@
 "use client";
 
 import { useTransition, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Lock, Mail, ShieldCheck, ArrowLeft, UserPlus } from "lucide-react";
+import { Lock, Mail, ArrowLeft, UserPlus, Info } from "lucide-react";
 
-import { UserSignupSchema, UserSignupInput, UserRole } from "@/lib/validations";
+import { UserSignupSchema, UserSignupInput } from "@/lib/validations";
 import { signupAction } from "@/actions/auth.actions";
 import { DynamicForm, FieldConfig } from "@/components/shared/dynamic-form";
 
@@ -27,6 +27,7 @@ const signupFields: FieldConfig[] = [
     type: "email",
     placeholder: "jane@example.com",
     icon: Mail,
+    disabled: true, // Email is fixed by invitation
   },
   {
     name: "password",
@@ -35,28 +36,26 @@ const signupFields: FieldConfig[] = [
     placeholder: "••••••••",
     icon: Lock,
   },
-  {
-    name: "role",
-    label: "Account Role",
-    type: "select",
-    placeholder: "Select your role",
-    icon: ShieldCheck,
-    options: [
-      { label: "Administrator", value: UserRole.Admin },
-      { label: "Manager", value: UserRole.Manager },
-    ],
-  },
 ];
 
 export default function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  const email = searchParams.get("email") || "";
+  const token = searchParams.get("token") || "";
+
   async function onSubmit(data: UserSignupInput) {
+    if (!token) {
+      toast.error("Invitation token is missing!");
+      return;
+    }
+
     setError(null);
     startTransition(async () => {
-      const result = await signupAction(data);
+      const result = await signupAction({ ...data, token, email });
       if (result.success) {
         toast.success("Account created successfully! Please sign in.");
         router.push("/login");
@@ -68,6 +67,38 @@ export default function SignupPage() {
     });
   }
 
+  if (!token) {
+    return (
+      <div className="w-full max-w-md animate-in fade-in zoom-in duration-500">
+        <Card className="border-rose-500/20 bg-slate-900/40 backdrop-blur-xl shadow-2xl mx-auto">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose-500/10">
+              <Info className="h-6 w-6 text-rose-500" />
+            </div>
+            <CardTitle className="text-2xl font-bold text-white">
+              Invite Only
+            </CardTitle>
+            <CardDescription className="text-slate-400">
+              Registration is currently restricted. You need a valid invitation
+              link to create an account.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <a
+              href="/login"
+              className={cn(
+                buttonVariants({ variant: "ghost" }),
+                "w-full text-slate-400 hover:text-white",
+              )}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" /> Back to Sign In
+            </a>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-md animate-in fade-in zoom-in duration-500">
       <div className="mb-8 text-center space-y-2">
@@ -75,11 +106,11 @@ export default function SignupPage() {
           <UserPlus className="h-6 w-6 text-white" />
         </div>
         <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-          Create Account
+          Complete Registration
         </h1>
-        <p className="text-slate-400">
-          Join the smart inventory management system
-        </p>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold uppercase tracking-wider">
+          Invite Only
+        </div>
       </div>
 
       <Card className="border-white/10 bg-slate-900/40 backdrop-blur-xl shadow-2xl mx-auto">
@@ -88,16 +119,16 @@ export default function SignupPage() {
             Register
           </CardTitle>
           <CardDescription className="text-slate-500">
-            Set up your credentials and role
+            Create your password to join the system
           </CardDescription>
         </CardHeader>
         <CardContent>
           <DynamicForm
             schema={UserSignupSchema}
             defaultValues={{
-              email: "",
+              email: email,
               password: "",
-              role: UserRole.Manager,
+              token: token,
             }}
             fields={signupFields}
             onSubmit={onSubmit}
@@ -111,17 +142,6 @@ export default function SignupPage() {
           )}
         </CardContent>
         <CardFooter className="flex flex-col gap-4 border-t border-white/5 pt-6 bg-transparent">
-          <div className="relative w-full">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-white/10" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase px-2">
-              <span className="bg-slate-950/20 text-slate-500 font-medium tracking-wider">
-                Already have an account?
-              </span>
-            </div>
-          </div>
-
           <a
             href="/login"
             className={cn(
@@ -133,10 +153,6 @@ export default function SignupPage() {
           </a>
         </CardFooter>
       </Card>
-
-      <p className="mt-8 text-center text-sm text-slate-500">
-        By signing up, you agree to our Terms and Privacy Policy.
-      </p>
     </div>
   );
 }
