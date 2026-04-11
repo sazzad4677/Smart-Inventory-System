@@ -14,6 +14,9 @@ describe('Auth Controller', () => {
     jest.clearAllMocks();
     req = {
       body: {},
+      headers: {},
+      socket: { remoteAddress: '127.0.0.1' },
+      get: jest.fn().mockReturnValue('mock-agent'),
     };
     res = {
       status: jest.fn().mockReturnThis(),
@@ -26,7 +29,12 @@ describe('Auth Controller', () => {
 
   describe('signup', () => {
     it('should call authService.signupUser, set cookie, and return 201 with data', async () => {
-      req.body = { email: 'test@example.com', password: 'password123', role: 'manager' };
+      req.body = {
+        email: 'test@example.com',
+        password: 'password123',
+        role: 'manager',
+        token: 'mock-token',
+      };
       const mockResult = {
         user: { _id: 'user123', email: req.body.email, role: req.body.role },
         accessToken: 'access-token',

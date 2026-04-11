@@ -4,6 +4,7 @@ import User from '../../models/user.model';
 import Session from '../../models/session.model';
 import ActivityLog from '../../models/activity-log.model';
 import jwt from 'jsonwebtoken';
+import { validateInvitation, markInvitationAsUsed } from '../invitation.service';
 import { AppError } from '../../utils/AppError';
 
 // Mock dependencies
@@ -11,6 +12,7 @@ jest.mock('../../models/user.model');
 jest.mock('../../models/session.model');
 jest.mock('../../models/activity-log.model');
 jest.mock('jsonwebtoken');
+jest.mock('../invitation.service');
 jest.mock('bcryptjs', () => ({
   genSalt: jest.fn().mockResolvedValue('salt'),
   hash: jest.fn().mockResolvedValue('hashed_password'),
@@ -35,11 +37,14 @@ describe('Auth Service', () => {
       email: 'test@example.com',
       password: 'password123',
       role: 'manager' as any,
+      token: 'valid-token',
     };
 
     it('should successfully create a new user, create a session, and return tokens', async () => {
       (User.findOne as jest.Mock).mockResolvedValue(null);
       const mockUser = { _id: 'user123', email: signupData.email, role: signupData.role };
+      const mockInvitation = { _id: 'invite123', role: signupData.role };
+      (validateInvitation as jest.Mock).mockResolvedValue(mockInvitation);
       (User.create as jest.Mock).mockResolvedValue(mockUser);
       (jwt.sign as jest.Mock).mockReturnValue('mock-token');
       (Session.create as jest.Mock).mockResolvedValue({});
@@ -47,11 +52,13 @@ describe('Auth Service', () => {
       const result = await signupUser(signupData);
 
       expect(User.findOne).toHaveBeenCalledWith({ email: signupData.email });
+      expect(validateInvitation).toHaveBeenCalledWith(signupData.email, signupData.token);
       expect(User.create).toHaveBeenCalledWith({
         email: signupData.email,
         password_hash: signupData.password,
         role: signupData.role,
       });
+      expect(markInvitationAsUsed).toHaveBeenCalledWith('invite123');
       expect(Session.create).toHaveBeenCalled();
       expect(result).toHaveProperty('accessToken', 'mock-token');
       expect(result).toHaveProperty('refreshToken', 'mock-token');

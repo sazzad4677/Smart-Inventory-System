@@ -27,6 +27,7 @@ export interface FieldConfig<T extends FieldValues = any> {
   icon?: LucideIcon;
   options?: { label: string; value: string; disabled?: boolean }[];
   autoComplete?: string;
+  disabled?: boolean;
   render?: (form: UseFormReturn<T>) => ReactNode;
 }
 
@@ -77,6 +78,7 @@ export function DynamicForm<T extends FieldValues>({
               icon={field.icon}
               options={field.options}
               autoComplete={field.autoComplete || "off"}
+              disabled={field.disabled}
             />
           );
         })}

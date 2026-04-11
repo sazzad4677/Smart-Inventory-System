@@ -59,20 +59,27 @@ const setupUserSession = async (user: IUserDocument): Promise<TokenPair> => {
 };
 
 // ─── POST /api/auth/signup ─────────────────────────────────────────────────────
+import { validateInvitation, markInvitationAsUsed } from './invitation.service';
 
 export const signupUser = async (
-  data: SignupInput,
+  data: SignupInput & { token: string },
 ): Promise<{ user: IUserDocument; accessToken: string; refreshToken: string }> => {
   const existing = await User.findOne({ email: data.email });
   if (existing) {
     throw new AppError('An account with this email already exists.', 409);
   }
 
+  // Validate Invitation
+  const invitation = await validateInvitation(data.email, data.token);
+
   const user = await User.create({
     email: data.email,
     password_hash: data.password,
-    role: data.role,
+    role: invitation.role, // Always take role from invitation
   });
+
+  // Mark invitation as used
+  await markInvitationAsUsed(invitation._id as Types.ObjectId);
 
   const { accessToken, refreshToken } = await setupUserSession(user);
 

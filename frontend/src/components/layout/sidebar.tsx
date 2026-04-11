@@ -13,6 +13,8 @@ import {
   X,
   History,
   ClipboardList,
+  UserPlus,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -24,6 +26,18 @@ const navigation = [
   { name: "Inventory", href: "/inventory", icon: Package },
   { name: "Restock Queue", href: "/restock-queue", icon: ClipboardList },
   { name: "Orders", href: "/orders", icon: ShoppingCart },
+  {
+    name: "Invitations",
+    href: "/invitations",
+    icon: UserPlus,
+    adminOnly: true,
+  },
+  {
+    name: "Users",
+    href: "/users",
+    icon: Users,
+    adminOnly: true,
+  },
   { name: "Activity", href: "/activity", icon: History, adminOnly: true },
 ];
 

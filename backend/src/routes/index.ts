@@ -8,6 +8,8 @@ import restockRouter from './restock.route';
 import activityLogRouter from './activity-log.route';
 import analyticsRouter from './analytics.route';
 import aiRouter from './ai.route';
+import invitationRouter from './invitation.route';
+import userRouter from './user.route';
 
 const router: Router = Router();
 
@@ -19,8 +21,10 @@ const moduleRoutes = [
   { path: '/restock-queue', route: restockRouter },
   { path: '/activity-logs', route: activityLogRouter },
   { path: '/analytics', route: analyticsRouter },
-  { path: '/ai', route: aiRouter },
   { path: '/', route: dashboardRouter },
+  { path: '/ai', route: aiRouter },
+  { path: '/invitations', route: invitationRouter },
+  { path: '/users', route: userRouter },
 ];
 
 moduleRoutes.forEach((route) => {

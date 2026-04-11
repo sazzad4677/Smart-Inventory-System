@@ -24,6 +24,7 @@ interface AppSelectProps {
   placeholder?: string;
   className?: string;
   triggerClassName?: string;
+  disabled?: boolean;
 }
 
 export function AppSelect({
@@ -33,6 +34,7 @@ export function AppSelect({
   onValueChange,
   placeholder = "Select an option",
   triggerClassName,
+  disabled,
 }: AppSelectProps) {
   const handleValueChange = (val: string | null) => {
     if (onValueChange && val !== null) {
@@ -48,6 +50,7 @@ export function AppSelect({
       value={value}
       defaultValue={defaultValue}
       onValueChange={handleValueChange}
+      disabled={disabled}
     >
       <SelectTrigger
         size="dashboard"
