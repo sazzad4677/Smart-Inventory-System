@@ -31,7 +31,7 @@ A high-performance, enterprise-grade inventory management solution designed for 
 
 ## 🎬 Project Demo
 
-![Project Demo](docs/media/demo_video.webm)
+![Project Demo](docs/media/demo_video.gif)
 
 ---
 
@@ -372,6 +372,7 @@ docker compose up --build
 
 For a detailed guide on moving this project to production, covering **MongoDB Replica Sets**, **Redis Scaling**, and **CI/CD Pipelines**, please refer to our:
 
+👉 **[Technical Architecture Deep-Dive](./docs/ARCHITECTURE_GUIDE.md)**
 👉 **[Deployment & Infrastructure Guide](./docs/DEPLOYMENT.md)**
 
 ---
