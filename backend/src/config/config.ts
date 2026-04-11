@@ -30,4 +30,14 @@ export const config = {
   redis: {
     uri: process.env.REDIS_URI || 'redis://localhost:6379',
   },
+  email: {
+    host: process.env.SMTP_HOST,
+    port: parseInt(process.env.SMTP_PORT || '587'),
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+    secure: process.env.SMTP_SECURE === 'true',
+  },
+  invitation: {
+    expiresIn: process.env.INVITE_TOKEN_EXPIRES_IN || '1h',
+  },
 } as const;

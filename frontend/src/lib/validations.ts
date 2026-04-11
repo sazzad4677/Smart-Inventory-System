@@ -22,9 +22,8 @@ export const UserSignupSchema = z.object({
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/,
       "Password must contain at least one uppercase letter, one lowercase letter, and one number",
     ),
-  role: z.enum([UserRole.Admin, UserRole.Manager], {
-    message: "Role must be Admin or Manager",
-  }),
+  role: z.enum(UserRole).optional(),
+  token: z.string().min(1, "Invitation token is required"),
 });
 
 export type UserLoginInput = z.infer<typeof UserLoginSchema>;
