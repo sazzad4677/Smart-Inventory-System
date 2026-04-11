@@ -29,7 +29,8 @@ const io = new Server(server, {
   },
 });
 
-// Attach Socket.io instance to app for use in controllers
+// Trust proxy for Render/Cloud environments
+app.set('trust proxy', 1);
 app.set('io', io);
 
 // Middleware
