@@ -29,6 +29,12 @@ A high-performance, enterprise-grade inventory management solution designed for 
 
 ---
 
+## 🎬 Project Demo
+
+![Project Demo](docs/media/demo_video.webm)
+
+---
+
 ## ✨ Features
 
 ### 🛡️ Advanced Security
