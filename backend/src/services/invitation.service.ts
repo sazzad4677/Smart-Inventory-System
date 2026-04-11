@@ -5,6 +5,7 @@ import { AppError } from '../utils/AppError';
 import { sendInvitationEmail } from '../utils/email';
 import { UserRole } from '../types';
 import { Types } from 'mongoose';
+import { logger } from '../utils/logger';
 import { config } from '../config/config';
 
 export const createInvitation = async (
@@ -35,8 +36,10 @@ export const createInvitation = async (
     invitedBy,
   });
 
-  // Send email
-  await sendInvitationEmail(email, token);
+  // Send email in background (non-blocking)
+  sendInvitationEmail(email, token).catch((err) => {
+    logger.error(`Background email sending failed: ${err.message}`);
+  });
 
   return invitation;
 };

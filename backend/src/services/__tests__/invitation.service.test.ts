@@ -15,6 +15,7 @@ describe('Invitation Service Unit Tests', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (emailUtils.sendInvitationEmail as jest.Mock).mockResolvedValue(undefined);
   });
 
   describe('createInvitation', () => {
