@@ -14,6 +14,7 @@ import {
   History,
   ClipboardList,
   UserPlus,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,12 @@ const navigation = [
     name: "Invitations",
     href: "/invitations",
     icon: UserPlus,
+    adminOnly: true,
+  },
+  {
+    name: "Users",
+    href: "/users",
+    icon: Users,
     adminOnly: true,
   },
   { name: "Activity", href: "/activity", icon: History, adminOnly: true },

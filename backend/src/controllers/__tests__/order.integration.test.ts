@@ -20,8 +20,12 @@ describe('Order API Integration', () => {
   };
 
   beforeEach(async () => {
-    // 1. Create a dummy test User via signup API
-    await request(app).post('/api/auth/signup').send(testUser);
+    // 1. Create a dummy test User directly in DB
+    await User.create({
+      email: testUser.email,
+      password_hash: testUser.password,
+      role: testUser.role,
+    });
 
     // 2. Login to get accessToken
     const loginRes = await request(app).post('/api/auth/login').send({
