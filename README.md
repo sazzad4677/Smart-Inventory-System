@@ -11,6 +11,8 @@ A high-performance, enterprise-grade inventory management solution designed for 
 
 ---
 
+---
+
 ## 🌐 Live Deployment
 
 | Service               | URL                                                                                                  |
@@ -93,31 +95,161 @@ A high-performance, enterprise-grade inventory management solution designed for 
 
 Shows the Docker service orchestration, internal networking, and the relationship between the Frontend, Backend, Redis, and MongoDB Replica Set.
 
-![Architecture Diagram](./docs/media/architecture_diagram.png)
+```mermaid
+graph TD
+    subgraph Public_Internet [Public Access]
+        User((Admin / User))
+        Browser[[Web Browser / Client]]
+    end
+
+    subgraph Docker_Network [Internal Docker Network]
+        direction TB
+
+        subgraph App_Layer [Application Layer]
+            Frontend[Next.js App Router]
+            Backend[Express.js Node Server]
+        end
+
+        subgraph Realtime_Layer [Real-Time Support]
+            SocketIO{Socket.io Engine}
+        end
+
+        subgraph Storage_Layer [Persistence & Caching]
+            Redis[(Redis Cache & Rate Limit)]
+            MongoDB[(MongoDB Replica Set)]
+        end
+    end
+
+    %% Communications
+    User -->|Browser Actions| Browser
+    Browser -->|Port 3000: UI & Auth| Frontend
+    Browser -->|Port 5000: API & Docs| Backend
+
+    Frontend <-->|Socket.io: Live Updates| SocketIO
+    Backend <-->|Socket.io: Live Updates| SocketIO
+
+    Frontend -->|Internal API Requests| Backend
+    Backend -->|Refresh Tokens| Redis
+    Backend -->|ACID Transactions| MongoDB
+
+    %% Styling
+    style Frontend fill:#111,stroke:#333,stroke-width:2px,color:#fff
+    style Backend fill:#111,stroke:#333,stroke-width:2px,color:#fff
+    style Redis fill:#221,stroke:#d32,stroke-width:2px,color:#fff
+    style MongoDB fill:#121,stroke:#4a4,stroke-width:2px,color:#fff
+    style SocketIO fill:#333,stroke:#666,color:#fff
+```
 
 ### 🗄️ Entity Relationship Diagram (ERD)
 
 The database schema is designed for high data integrity and efficient auditing. It features a normalized structure for products and categories with a robust link to activity logs for real-time auditing.
 
-![ERD Diagram](./docs/media/erd_diagram.png)
+```mermaid
+erDiagram
+    User ||--o{ Invitation : "invites"
+    User ||--o{ Session : "has active"
+    User ||--o{ Product : "creates"
+    User ||--o{ ActivityLog : "performs"
+    User ||--o{ Order : "places"
 
-### 🔄 System Flow Chart
+    Category ||--o{ Product : "categorizes"
+    Product ||--o{ OrderItem : "included in"
+    Order ||--|{ OrderItem : "contains"
 
-The application follows a clean, event-driven architecture using Socket.io for real-time updates and a modern "Auth-Proxy" layer for secure session management.
+    User {
+        string email
+        string password_hash
+        string role
+        date createdAt
+    }
 
-![Flow Chart](./docs/media/flow_chart.png)
+    Invitation {
+        string email
+        string token
+        string role
+        date expiresAt
+        boolean used
+        objectId invitedBy
+    }
+
+    Session {
+        objectId userId
+        string refreshToken
+        date expiresAt
+        string userAgent
+        string ipAddress
+    }
+```
 
 ### 🔐 Authentication & Token Rotation
 
 A detailed sequence showing how the Next.js Middleware and Auth Proxy layer handle JWT rotation and session persistence securely.
 
-![Auth Sequence](./docs/media/auth_sequence.png)
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Backend
+    participant AuthProxy
+    participant DB
+
+    Note over User, DB: Registration Flow (Invite-Only)
+
+    Admin->>Backend: POST /api/invitations (Email, Role)
+    Backend->>DB: Save Invitation (expiresAt: 1h)
+    Backend-->>User: Send Email with Invitation Token
+
+    User->>Frontend: Clicks Invite Link (?token=xyz)
+    Frontend->>Backend: GET /api/invitations/verify/:token
+    Backend->>DB: Check token validity
+    DB-->>Backend: Valid + Invited Email
+    Backend-->>Frontend: Token Valid (Proceed to Signup)
+
+    User->>Frontend: Submits Signup Form
+    Frontend->>Backend: POST /api/signup (Data + Token)
+    Backend->>DB: Final Validation & Create User
+    Backend->>DB: Mark Invitation as Used
+    Backend-->>User: Account Created!
+```
 
 ### 👥 Role-Based Access Control (RBAC)
 
 Visualizes the permission hierarchy (Staff → Manager → Admin) and the specific system actions available to each user role.
 
-![Use Case Diagram](./docs/media/use-case-diagram.png)
+```mermaid
+graph LR
+    Admin((Admin))
+    Manager((Manager))
+    Staff((Staff))
+    Guest((Guest / New User))
+
+    subgraph "Smart Inventory System"
+        UC1[Invite New User]
+        UC2[Signup -Requires Invitation-]
+        UC3[Login / Session Management]
+        UC4[Revoke Other Sessions]
+        UC5[Manage Inventory]
+        UC6[Process Orders]
+        UC7[View Analytics]
+    end
+
+    Admin --- UC1
+    Admin --- UC3
+    Admin --- UC4
+    Admin --- UC5
+    Admin --- UC6
+    Admin --- UC7
+
+    Manager --- UC3
+    Manager --- UC5
+    Manager --- UC6
+
+    Staff --- UC3
+    Staff --- UC6
+
+    Guest --- UC2
+    UC1 -.-> UC2
+```
 
 ---
 
@@ -235,6 +367,22 @@ docker compose up --build
 For a detailed guide on moving this project to production, covering **MongoDB Replica Sets**, **Redis Scaling**, and **CI/CD Pipelines**, please refer to our:
 
 👉 **[Deployment & Infrastructure Guide](./docs/DEPLOYMENT.md)**
+
+---
+
+## 🚀 Production Deployment
+
+To run the optimized production build locally:
+
+```bash
+docker compose -f docker-compose.prod.yml up --build -d
+```
+
+### Features of Production Build
+
+- **Optimized Frontend**: Next.js standalone mode with minified assets.
+- **Compiled Backend**: TypeScript source compiled to optimized JavaScript.
+- **Enhanced Security**: Auth.js strict host verification and session monitoring enabled.
 
 ---
 
