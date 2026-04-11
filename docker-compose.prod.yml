@@ -1,0 +1,77 @@
+services:
+  mongodb:
+    image: mongo:6.0
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mongodb-setup:
+    image: mongo:6.0
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    command: >
+      mongosh --host mongodb:27017 --eval '
+        try {
+          if (!rs.status().ok) {
+            rs.initiate({
+              _id: "rs0",
+              members: [{ _id: 0, host: "mongodb:27017" }]
+            })
+          }
+        } catch (e) {
+          rs.initiate({
+            _id: "rs0",
+            members: [{ _id: 0, host: "mongodb:27017" }]
+          })
+        }
+      '
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - REDIS_URI=redis://redis:6379
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017/smart_inventory}
+    env_file:
+      - ./backend/.env.local
+    depends_on:
+      - mongodb
+      - redis
+    volumes:
+      - ./backend/logs:/usr/src/app/backend/logs
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      target: runner
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - INTERNAL_API_URL=http://backend:5000/api
+      - AUTH_TRUST_HOST=true
+      - AUTH_URL=http://localhost:3000
+    env_file:
+      - ./frontend/.env.local
+
+volumes:
+  mongodb_data:
