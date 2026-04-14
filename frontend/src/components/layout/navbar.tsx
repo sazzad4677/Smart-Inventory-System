@@ -13,29 +13,32 @@ import {
 } from "@/components/ui/dropdown-menu";
 import NotificationBell from "./notification-bell";
 import { toast } from "sonner";
-import { useSession } from "next-auth/react";
+import { getSession, signOut, useSession } from "next-auth/react";
 import { logoutAction } from "@/actions/auth.actions";
 import { isRedirectError } from "@/lib/api";
 import { useAuthStore } from "@/store/auth-store";
 import { User as UserType } from "@/lib/types";
+import { useRouter } from "next/navigation";
 
 export function Navbar({ user: initialUser }: { user?: UserType | null }) {
   const { data: session } = useSession();
   const { user: storeUser } = useAuthStore();
   const user = initialUser || storeUser || session?.user;
-
+  const router = useRouter();
   const logout = async () => {
     try {
-      const result = await logoutAction();
-
-      if (result && !result.success) {
-        toast.error(result.error || "Logout failed. Please try again.");
+      const session = await getSession();
+      const token = session?.accessToken as string | undefined;
+      await signOut({ redirect: false });
+      if (token) {
+        logoutAction(token).catch(console.warn);
       }
+
+      router.push("/login");
     } catch (error) {
       if (isRedirectError(error)) throw error;
-
       console.error("Logout failed:", error);
-      toast.error("Logout failed. Please check your connection and try again.");
+      toast.error("Logout failed. Please try again.");
     }
   };
 

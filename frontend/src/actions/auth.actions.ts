@@ -1,6 +1,6 @@
 "use server";
 
-import { signIn, signOut } from "@/auth";
+import { signIn } from "@/auth";
 import { apiFetch } from "@/lib/api";
 import { runAction } from "@/lib/error-utils";
 import { UserLoginInput, UserSignupInput } from "@/lib/validations";
@@ -40,17 +40,9 @@ export async function signupAction(data: UserSignupInput) {
   }, "Signup failed");
 }
 
-export async function logoutAction(): Promise<ActionResult> {
+export async function logoutAction(token: string): Promise<ActionResult> {
   return runAction(async () => {
-    try {
-      await apiFetch("/auth/logout", { method: "POST" });
-    } catch (error) {
-      console.warn(
-        "Backend logout failed, continuing with client logout:",
-        error,
-      );
-    }
-    await signOut({ redirect: true, redirectTo: "/login" });
+    await apiFetch("/auth/logout", { method: "POST" }, token);
   }, "Logout failed");
 }
 

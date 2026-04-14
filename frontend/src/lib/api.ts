@@ -18,13 +18,25 @@ export class ApiError extends Error {
 export async function apiFetch(
   endpoint: string,
   options: RequestInit = {},
+  explicitToken?: string,
 ): Promise<Response> {
-  const session = await auth();
-  if (session?.error === "RefreshAccessTokenError") {
-    await signOut({ redirect: false });
-    redirect("/login");
+  let token: string | undefined;
+
+  if (explicitToken) {
+    token = explicitToken;
+  } else {
+    const session = await auth();
+    if (!session) {
+      throw new ApiError("No active session", 401);
+    }
+
+    if (session?.error === "RefreshAccessTokenError") {
+      await signOut({ redirect: false });
+      redirect("/login");
+    }
+
+    token = session?.accessToken as string | undefined;
   }
-  const token = session?.accessToken as string | undefined;
 
   const url = endpoint.startsWith("/")
     ? `${API_URL}${endpoint}`
