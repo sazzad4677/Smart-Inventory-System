@@ -8,7 +8,7 @@ export const getDashboardAIInsights = catchAsync(async (req: Request, res: Respo
   // Get current dashboard data
   const stats = await getDashboardStatsFromDB();
 
-  // Generate insights using Gemini
+  // Generate insights
   const insights = await aiService.generateDashboardInsights(stats);
 
   sendResponse(res, {

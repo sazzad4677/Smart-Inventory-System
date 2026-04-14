@@ -5,6 +5,6 @@ import { aiRateLimiter } from '../middlewares/ai-rate-limiter.middleware';
 
 const router: Router = Router();
 
-router.get('/dashboard-insights', protect, aiRateLimiter, getDashboardAIInsights);
+router.get('/dashboard-insights', protect, getDashboardAIInsights);
 
 export default router;

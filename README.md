@@ -58,6 +58,7 @@ A high-performance, enterprise-grade inventory management solution designed for 
 - **Inventory Management**: Comprehensive CRUD for products with multi-attribute tracking, image support, and bulk operations.
 - **Deletion Safeguards**: Intelligent business logic prevents the deletion of products that are linked to existing order history.
 - **Order Lifecycle**: End-to-end tracking from pending to delivery with automated stock adjustments and real-time status updates.
+- **AI Analytics**: Intelligent dashboard insights and "Magic Tips" using **OpenRouter** for proactive inventory management.
 - **Swagger UI**: Interactive API documentation for seamless integration.
 
 ### 🎨 Modern UI/UX
@@ -91,6 +92,7 @@ A high-performance, enterprise-grade inventory management solution designed for 
 - **Docs**: Swagger UI (OpenAPI 3.0)
 - **Logging**: Winston, Morgan
 - **Real-time**: Socket.io
+- **AI Provider**: OpenRouter
 - **Validation**: Zod (Shared schemas)
 
 ---

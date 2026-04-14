@@ -18,7 +18,7 @@ const robustSendCommand = async (...args: string[]) => {
   }
 };
 
-// AI-specific rate limiter (10 requests per minute to stay in Gemini safe zone)
+// AI-specific rate limiter (10 requests per minute to stay in safe zone)
 export const aiRateLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 10,

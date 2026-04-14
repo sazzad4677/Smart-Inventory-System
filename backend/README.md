@@ -10,6 +10,7 @@ This is the backend server for the Smart Inventory Management System, providing 
 - **Language**: TypeScript
 - **Authentication**: JWT (JSON Web Tokens)
 - **Validation**: Zod
+- **AI Integration**: OpenRouter via OpenAI SDK
 - **Security**: Helmet, CORS, BcryptJS
 
 ## 📂 Folder Structure
