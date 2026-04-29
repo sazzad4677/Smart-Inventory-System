@@ -20,13 +20,16 @@ export default auth((req) => {
     `[Proxy] Path: ${pathname}, LoggedIn: ${isLoggedIn}, Error: ${sessionError}`,
   );
 
-  // 1. Authenticated user on an auth route OR root -> redirect to dashboard
-  if (isAuthenticated && (isAuthRoute || pathname === "/")) {
+  // 1. Authenticated user on auth routes should go to dashboard
+  if (isAuthenticated && isAuthRoute) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
   // 2. Unauthenticated user OR expired token on a protected route -> redirect to login
-  if (!isAuthenticated && !isAuthRoute && !isPublicRoute) {
+  const isLandingRoute = pathname === "/";
+
+  // 2. Unauthenticated user OR expired token on protected routes -> redirect to login
+  if (!isAuthenticated && !isAuthRoute && !isPublicRoute && !isLandingRoute) {
     if (req.method === "POST") {
       return NextResponse.next();
     }
