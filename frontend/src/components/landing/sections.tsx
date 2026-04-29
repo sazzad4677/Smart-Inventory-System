@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import {
   BarChart3,
   Box,
@@ -14,13 +13,6 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-
-const fade = {
-  initial: { opacity: 0, y: 20 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, amount: 0.2 },
-  transition: { duration: 0.6, ease: "easeOut" },
-};
 
 export function Navbar() {
   return (
@@ -49,10 +41,7 @@ export function Navbar() {
 
 export function Hero() {
   return (
-    <motion.section
-      {...fade}
-      className="mx-auto grid max-w-7xl gap-12 px-6 pt-16 md:grid-cols-2"
-    >
+    <section className="mx-auto grid max-w-7xl gap-12 px-6 pt-16 md:grid-cols-2">
       <div className="space-y-7">
         <Badge>
           <Sparkles className="h-3 w-3" />
@@ -84,11 +73,7 @@ export function Hero() {
         </div>
       </div>
       <div className="relative">
-        <motion.div
-          animate={{ y: [0, -10, 0] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          className="relative overflow-hidden rounded-2xl border border-purple-400/40 bg-slate-900 p-3 shadow-[0_0_90px_rgba(117,84,255,0.35)]"
-        >
+        <div className="relative overflow-hidden rounded-2xl border border-purple-400/40 bg-slate-900 p-3 shadow-[0_0_90px_rgba(117,84,255,0.35)] animate-[float_6s_ease-in-out_infinite]">
           <div className="h-[370px] rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-6">
             <div className="grid grid-cols-3 gap-4">
               {["1,240", "24,560", "$56,430"].map((x) => (
@@ -100,10 +85,10 @@ export function Hero() {
             </div>
             <div className="mt-4 h-56 rounded-xl border border-white/5 bg-slate-950/80" />
           </div>
-        </motion.div>
+        </div>
         <div className="absolute inset-0 -z-10 bg-gradient-to-r from-blue-600/30 to-purple-600/30 blur-3xl" />
       </div>
-    </motion.section>
+    </section>
   );
 }
 
@@ -115,21 +100,21 @@ export function Stats() {
     "100% Secure",
   ];
   return (
-    <motion.section
-      {...fade}
-      className="mx-auto mt-14 grid max-w-7xl gap-4 px-6 md:grid-cols-4"
-    >
+    <section className="mx-auto mt-14 grid max-w-7xl gap-4 px-6 md:grid-cols-4">
       {stats.map((s) => (
-        <motion.div whileHover={{ y: -6 }} key={s}>
+        <div
+          key={s}
+          className="transition-transform duration-300 hover:-translate-y-1.5"
+        >
           <Card className="p-6">
             <p className="text-3xl font-bold">{s.split(" ")[0]}</p>
             <p className="mt-1 text-slate-300">
               {s.replace(s.split(" ")[0] + " ", "")}
             </p>
           </Card>
-        </motion.div>
+        </div>
       ))}
-    </motion.section>
+    </section>
   );
 }
 
@@ -143,11 +128,7 @@ export function Features() {
     "Secure & Reliable",
   ];
   return (
-    <motion.section
-      id="features"
-      {...fade}
-      className="mx-auto max-w-7xl px-6 py-20"
-    >
+    <section id="features" className="mx-auto max-w-7xl px-6 py-20">
       <div className="text-center">
         <Badge>Features</Badge>
         <h2 className="mt-5 text-4xl font-bold">
@@ -157,7 +138,10 @@ export function Features() {
       </div>
       <div className="mt-10 grid gap-4 md:grid-cols-3">
         {f.map((x, i) => (
-          <motion.div key={x} whileHover={{ y: -6, scale: 1.01 }}>
+          <div
+            key={x}
+            className="transition-transform duration-300 hover:-translate-y-1.5 hover:scale-[1.01]"
+          >
             <Card
               className={`p-6 ${i === 1 ? "border-purple-400/40 bg-purple-500/10" : ""}`}
             >
@@ -167,10 +151,10 @@ export function Features() {
                 controls.
               </p>
             </Card>
-          </motion.div>
+          </div>
         ))}
       </div>
-    </motion.section>
+    </section>
   );
 }
 
@@ -182,11 +166,7 @@ export function Screenshots() {
   ];
   const [idx, setIdx] = useState(0);
   return (
-    <motion.section
-      id="screenshots"
-      {...fade}
-      className="border-y border-white/5 py-18"
-    >
+    <section id="screenshots" className="border-y border-white/5 py-18">
       <div className="mx-auto max-w-7xl px-6">
         <div className="text-center">
           <Badge>Screenshots</Badge>
@@ -200,23 +180,18 @@ export function Screenshots() {
           >
             <ChevronLeft />
           </button>
-          <motion.div
-            key={idx}
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="flex-1"
-          >
+          <div key={idx} className="flex-1 transition-all duration-500">
             <Card className="p-3">
               <div className="h-72 rounded-xl border border-purple-300/30 bg-slate-950" />
               <p className="mt-4 text-center font-semibold">{shots[idx]}</p>
             </Card>
-          </motion.div>
+          </div>
           <button onClick={() => setIdx((idx + 1) % shots.length)}>
             <ChevronRight />
           </button>
         </div>
       </div>
-    </motion.section>
+    </section>
   );
 }
 
@@ -227,11 +202,7 @@ export function HowItWorks() {
     [BarChart3, "Start Managing"],
   ] as const;
   return (
-    <motion.section
-      id="how-it-works"
-      {...fade}
-      className="mx-auto max-w-7xl px-6 py-20"
-    >
+    <section id="how-it-works" className="mx-auto max-w-7xl px-6 py-20">
       <div className="text-center">
         <Badge>How It Works</Badge>
         <h2 className="mt-4 text-4xl font-bold">
@@ -251,7 +222,7 @@ export function HowItWorks() {
           </Card>
         ))}
       </div>
-    </motion.section>
+    </section>
   );
 }
 

@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { ButtonHTMLAttributes } from "react";
 
@@ -24,12 +23,9 @@ export function Button({
   ...props
 }: ButtonProps) {
   return (
-    <motion.button
-      whileHover={{ scale: 1.03 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ type: "spring", stiffness: 320, damping: 18 }}
+    <button
       className={cn(
-        "inline-flex items-center justify-center rounded-xl px-6 py-3 text-base font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex items-center justify-center rounded-xl px-6 py-3 text-base font-semibold transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/70 disabled:pointer-events-none disabled:opacity-50",
         styles[variant],
         className,
       )}
