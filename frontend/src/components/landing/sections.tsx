@@ -10,9 +10,9 @@ import {
   UserPlus,
 } from "lucide-react";
 import { useState } from "react";
-import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 export function Navbar() {
   return (
@@ -29,10 +29,15 @@ export function Navbar() {
           )}
         </nav>
         <div className="flex items-center gap-3">
-          <Button variant="ghost" className="px-4 py-2 text-sm">
+          <Button
+            variant="ghost"
+            className="px-4 py-2 text-sm text-slate-200 hover:text-white hover:bg-white/5"
+          >
             Login
           </Button>
-          <Button className="px-5 py-2 text-sm">Get Started</Button>
+          <Button className="px-5 py-2 text-sm bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white border border-white/10 hover:brightness-110">
+            Get Started
+          </Button>
         </div>
       </div>
     </header>
@@ -43,7 +48,7 @@ export function Hero() {
   return (
     <section className="mx-auto grid max-w-7xl gap-12 px-6 pt-16 md:grid-cols-2">
       <div className="space-y-7">
-        <Badge>
+        <Badge className="rounded-full border-white/10 bg-white/5 text-slate-300">
           <Sparkles className="h-3 w-3" />
           Smart. Simple. Powerful.
         </Badge>
@@ -58,8 +63,13 @@ export function Hero() {
           dashboard built for modern teams.
         </p>
         <div className="flex flex-wrap gap-4">
-          <Button className="min-w-44">Get Started Free</Button>
-          <Button variant="secondary" className="min-w-40">
+          <Button className="min-w-44 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white border border-white/10 hover:brightness-110">
+            Get Started Free
+          </Button>
+          <Button
+            variant="outline"
+            className="min-w-40 border-white/25 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+          >
             Live Demo
           </Button>
         </div>
@@ -130,7 +140,9 @@ export function Features() {
   return (
     <section id="features" className="mx-auto max-w-7xl px-6 py-20">
       <div className="text-center">
-        <Badge>Features</Badge>
+        <Badge className="rounded-full border-white/10 bg-white/5 text-slate-300">
+          Features
+        </Badge>
         <h2 className="mt-5 text-4xl font-bold">
           Everything You Need to Manage Inventory{" "}
           <span className="text-blue-400">Effortlessly</span>
@@ -169,7 +181,9 @@ export function Screenshots() {
     <section id="screenshots" className="border-y border-white/5 py-18">
       <div className="mx-auto max-w-7xl px-6">
         <div className="text-center">
-          <Badge>Screenshots</Badge>
+          <Badge className="rounded-full border-white/10 bg-white/5 text-slate-300">
+            Screenshots
+          </Badge>
           <h2 className="mt-4 text-4xl font-bold">
             A Clean & Modern Interface
           </h2>
@@ -204,7 +218,9 @@ export function HowItWorks() {
   return (
     <section id="how-it-works" className="mx-auto max-w-7xl px-6 py-20">
       <div className="text-center">
-        <Badge>How It Works</Badge>
+        <Badge className="rounded-full border-white/10 bg-white/5 text-slate-300">
+          How It Works
+        </Badge>
         <h2 className="mt-4 text-4xl font-bold">
           Get Started in 3 Simple Steps
         </h2>
@@ -237,7 +253,12 @@ export function CTA() {
           <Button className="bg-white text-indigo-700 hover:bg-white/90">
             Get Started Free
           </Button>
-          <Button variant="secondary">Live Demo</Button>
+          <Button
+            variant="outline"
+            className="border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white"
+          >
+            Live Demo
+          </Button>
         </div>
       </div>
     </section>
