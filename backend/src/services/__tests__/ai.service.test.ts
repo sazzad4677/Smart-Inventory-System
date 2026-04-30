@@ -18,7 +18,7 @@ jest.mock('openai', () => {
   }));
 });
 
-jest.mock('../utils/logger', () => ({
+jest.mock('../../utils/logger', () => ({
   logger: {
     error: jest.fn(),
     warn: jest.fn(),
