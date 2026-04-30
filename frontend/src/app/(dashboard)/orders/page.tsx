@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Download, ShoppingCart } from "lucide-react";
@@ -10,6 +11,7 @@ import { OrderStatus } from "@/lib/validations";
 import { Pagination } from "@/components/shared/pagination";
 import { ErrorAlert } from "@/components/shared/error-alert";
 import { getCurrentUser } from "@/actions/auth.actions";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface OrdersPageProps {
   searchParams: Promise<{
@@ -34,7 +36,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
     searchTerm,
   } = params;
 
-  const result = await getOrdersAction({
+  const ordersPromise = getOrdersAction({
     page,
     limit,
     status,
@@ -42,11 +44,6 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
     endDate,
     searchTerm,
   });
-
-  const data = result.success ? result.data.data : [];
-  const meta = result.success
-    ? result.data.meta
-    : { page: 1, limit: 10, total: 0, totalPage: 0 };
 
   const filters: FilterField[] = [
     {
@@ -106,24 +103,62 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
 
       <FilterBar filters={filters} />
 
-      {!result.success ? (
-        <ErrorAlert
-          error={
-            result.error || "Failed to load orders. Please try again later."
-          }
-        />
-      ) : data.length > 0 ? (
-        <div className="flex flex-col gap-6">
-          <OrderTable orders={data} userRole={user?.role} />
-          <Pagination meta={meta} itemLabel="orders" />
+      <Suspense fallback={<OrdersTableSkeleton />}>
+        <OrdersTableAsync promise={ordersPromise} userRole={user?.role} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function OrdersTableAsync({
+  promise,
+  userRole,
+}: {
+  promise: ReturnType<typeof getOrdersAction>;
+  userRole?: string;
+}) {
+  const result = await promise;
+
+  if (!result.success) {
+    return (
+      <ErrorAlert
+        error={result.error || "Failed to load orders. Please try again later."}
+      />
+    );
+  }
+
+  const data = result.data.data;
+  const meta = result.data.meta;
+
+  if (data.length === 0) {
+    return (
+      <EmptyState
+        icon={<ShoppingCart className="h-12 w-12 text-slate-500" />}
+        title="No orders yet"
+        description="You haven't received any orders yet. Once customers start buying, you'll see them here."
+      />
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <OrderTable orders={data} userRole={userRole} />
+      <Pagination meta={meta} itemLabel="orders" />
+    </div>
+  );
+}
+
+function OrdersTableSkeleton() {
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="rounded-xl border border-white/5 bg-slate-900/40 backdrop-blur-xl p-6 min-h-[400px]">
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-full bg-white/5" />
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-16 w-full bg-white/5" />
+          ))}
         </div>
-      ) : (
-        <EmptyState
-          icon={<ShoppingCart className="h-12 w-12 text-slate-500" />}
-          title="No orders yet"
-          description="You haven't received any orders yet. Once customers start buying, you'll see them here."
-        />
-      )}
+      </div>
     </div>
   );
 }

@@ -55,7 +55,6 @@ export default function LoginPage() {
       if (result.success) {
         toast.success("Logged in successfully!");
         router.push(callbackUrl);
-        router.refresh();
       } else {
         const errorMessage = result.error || "Login failed";
         setError(errorMessage);

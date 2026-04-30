@@ -6,7 +6,7 @@ const requiredEnvVars = [
   'MONGODB_URI',
   'JWT_SECRET',
   'JWT_REFRESH_SECRET',
-  'GOOGLE_API_KEY',
+  'OPENROUTER_API_KEY',
 ] as const;
 
 for (const envVar of requiredEnvVars) {
@@ -46,7 +46,8 @@ export const config = {
     expiresIn: process.env.INVITE_TOKEN_EXPIRES_IN || '1h',
   },
   ai: {
-    googleKey: process.env.GOOGLE_API_KEY as string,
-    model: process.env.AI_MODEL || 'gemini-flash-latest',
+    openrouterKey: process.env.OPENROUTER_API_KEY as string,
+    model: (process.env.AI_MODEL || 'openai/gpt-oss-120b:free') as string,
+    baseURL: (process.env.AI_BASE_URL || 'https://openrouter.ai/api/v1') as string,
   },
 } as const;
