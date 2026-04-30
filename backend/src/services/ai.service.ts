@@ -135,7 +135,7 @@ export const generateDashboardInsights = async (
     const openai = getClient();
 
     const response = await openai.chat.completions.create({
-      model: 'minimax/minimax-m2.5:free',
+      model: config.ai.model,
       messages: [
         { role: 'system', content: 'You are an inventory analysis assistant.' },
         { role: 'user', content: prompt },
@@ -152,21 +152,19 @@ export const generateDashboardInsights = async (
 
     return text.trim();
   } catch (error: unknown) {
-    // Re-throw errors we've already wrapped (from handleAIError or the empty check above)
-    if (
-      error instanceof Error &&
-      error.message !== 'AI returned an empty response. Please try again.'
-    ) {
-      // Check if it's already a handled error (our own messages)
-      const isHandledMessage =
+    if (error instanceof Error) {
+      // Re-throw if it's already one of our custom error messages
+      const isCustomError =
+        error.message === 'AI returned an empty response. Please try again.' ||
+        error.message === 'Dashboard stats are required to generate insights.' ||
         Object.values(AI_ERRORS).includes(error.message) ||
-        error.message === 'Failed to generate AI insights. Please try again later.' ||
-        error.message === 'Dashboard stats are required to generate insights.';
+        error.message === 'Failed to generate AI insights. Please try again later.';
 
-      if (!isHandledMessage) {
-        return handleAIError(error);
+      if (isCustomError) {
+        throw error;
       }
     }
-    throw error;
+
+    return handleAIError(error);
   }
 };

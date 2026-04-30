@@ -1,3 +1,4 @@
+import { config } from '../../config/config';
 import {
   generateDashboardInsights,
   buildInsightPrompt,
@@ -78,7 +79,7 @@ describe('AI Service - generateDashboardInsights', () => {
 
       expect(mockCreateCompletion).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: 'openai/gpt-oss-120b:free',
+          model: config.ai.model,
           temperature: 0.4,
           max_tokens: 512,
           messages: expect.arrayContaining([
