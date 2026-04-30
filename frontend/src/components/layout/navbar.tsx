@@ -27,14 +27,15 @@ export function Navbar({ user: initialUser }: { user?: UserType | null }) {
   const router = useRouter();
   const logout = async () => {
     try {
-      const session = await getSession();
-      const token = session?.accessToken as string | undefined;
-      await signOut({ redirect: false });
+      const token = session?.accessToken;
+
       if (token) {
-        logoutAction(token).catch(console.warn);
+        logoutAction(token).catch((err) =>
+          console.warn("Backend logout failed:", err),
+        );
       }
 
-      router.push("/login");
+      await signOut({ callbackUrl: "/login" });
     } catch (error) {
       if (isRedirectError(error)) throw error;
       console.error("Logout failed:", error);
