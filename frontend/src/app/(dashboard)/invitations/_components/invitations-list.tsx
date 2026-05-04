@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Invitation {
-  _id: string;
+  id: string;
   email: string;
   role: string;
   expiresAt: string;

@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/card";
 
 export interface UserWithSessions {
-  _id: string;
+  id: string;
   email: string;
   role: string;
   createdAt: string;

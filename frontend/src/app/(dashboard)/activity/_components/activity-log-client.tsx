@@ -53,7 +53,7 @@ export function ActivityLogClient({
       if (filterType !== "all" && activity.type !== filterType) return;
       if (
         filterRole !== "all" &&
-        activity.user.role?.toLowerCase() !== filterRole.toLowerCase()
+        activity.user?.role?.toLowerCase() !== filterRole.toLowerCase()
       )
         return;
       if (filterResource !== "all" && activity.resource !== filterResource)
@@ -136,10 +136,10 @@ export function ActivityLogClient({
           </div>
           <div className="flex flex-col">
             <span className="font-medium text-slate-200">
-              {activity.user.email || "Unknown User"}
+              {activity.user?.email || "Unknown User"}
             </span>
             <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
-              ID: {activity.user.id?.slice(-6) || "N/A"}
+              ID: {activity.user?.id?.slice(-6) || "N/A"}
             </span>
           </div>
         </div>
@@ -190,14 +190,14 @@ export function ActivityLogClient({
           variant="outline"
           className={cn(
             "font-medium shadow-sm transition-all border-none ring-1 ring-inset",
-            activity.user.role === "Admin"
+            activity.user?.role === "Admin"
               ? "bg-rose-500/10 text-rose-400 ring-rose-500/20"
-              : activity.user.role === "Manager"
+              : activity.user?.role === "Manager"
                 ? "bg-amber-500/10 text-amber-400 ring-amber-500/20"
                 : "bg-emerald-500/10 text-emerald-400 ring-emerald-500/20",
           )}
         >
-          {activity.user.role || "User"}
+          {activity.user?.role || "User"}
         </Badge>
       ),
     },

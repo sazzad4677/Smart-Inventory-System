@@ -20,7 +20,7 @@ export function RestockClient({ initialProducts }: RestockClientProps) {
 
   const [optimisticProducts, addOptimisticRestock] = useOptimistic(
     initialProducts,
-    (state: Product[], update: { _id: string; amount: number }) => {
+    (state: Product[], update: { id: string; amount: number }) => {
       return state.map((p) =>
         p.id === update.id
           ? { ...p, stock_quantity: p.stock_quantity + update.amount }
@@ -32,7 +32,7 @@ export function RestockClient({ initialProducts }: RestockClientProps) {
   const handleRestock = async (productId: string, amount: number) => {
     startTransition(async () => {
       // Optimistic update
-      addOptimisticRestock({ _id: productId, amount });
+      addOptimisticRestock({ id: productId, amount });
 
       const result = await restockProductAction(productId, amount);
       if (!result.success) {

@@ -7,7 +7,7 @@ import { useSocket } from "@/hooks/use-socket";
 const STORAGE_KEY = "inventory_notifications";
 
 interface Notification {
-  _id: string;
+  id: string;
   productName: string;
   currentStock: number;
   message: string;
@@ -49,9 +49,9 @@ const NotificationBell = () => {
     socket.on("low_stock_alert", handleAlert);
     socket.on(
       "new_activity",
-      (data: { _id: string; message: string; timestamp: string }) => {
+      (data: { id: string; message: string; timestamp: string }) => {
         handleAlert({
-          _id: data.id,
+          id: data.id,
           productName: "Activity",
           currentStock: 0,
           message: data.message,

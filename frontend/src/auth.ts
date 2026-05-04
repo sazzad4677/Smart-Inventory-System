@@ -5,7 +5,7 @@ import { User as UserType } from "@/lib/types";
 
 declare module "next-auth" {
   interface User {
-    _id?: string;
+    id?: string;
     name?: string | null;
     email?: string | null;
     role?: string;
@@ -27,7 +27,7 @@ declare module "next-auth/jwt" {
     refreshToken?: string;
     accessTokenExpires?: number;
     user?: {
-      _id?: string;
+      id?: string;
       name?: string | null;
       email?: string | null;
       role?: string;
@@ -64,7 +64,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           if (res.ok && result.success && result.data) {
             return {
-              _id: result.data.user.id,
+              id: result.data.user.id,
               email: result.data.user.email,
               role: result.data.user.role as UserType["role"],
               accessToken: result.data.accessToken,
@@ -88,7 +88,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           accessToken: user.accessToken,
           refreshToken: user.refreshToken,
           user: {
-            _id: user.id,
+            id: user.id,
             email: user.email,
             role: user.role,
           },

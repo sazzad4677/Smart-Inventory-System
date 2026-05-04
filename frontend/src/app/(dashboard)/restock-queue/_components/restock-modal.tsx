@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 interface RestockModalProps {
   product: {
-    _id: string;
+    id: string;
     name: string;
     stock_quantity: number;
     min_threshold: number;
