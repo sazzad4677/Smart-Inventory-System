@@ -17,7 +17,7 @@ FROM deps AS builder
 WORKDIR /usr/src/app
 # Copy prisma schema first for caching
 COPY backend/prisma ./backend/prisma
-RUN pnpm --filter backend exec prisma generate
+RUN DATABASE_URL="postgresql://postgres:postgres@localhost:5432/db" pnpm --filter backend exec prisma generate
 
 # Copy the rest of the source
 COPY . .
