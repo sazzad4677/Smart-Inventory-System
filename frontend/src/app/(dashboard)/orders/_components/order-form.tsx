@@ -23,7 +23,7 @@ export function OrderForm({ onSuccess }: OrderFormProps) {
     setSelectedProductsMap((prev) => {
       const newMap = { ...prev };
       products.forEach((p) => {
-        newMap[p._id] = p;
+        newMap[p.id] = p;
       });
       return newMap;
     });

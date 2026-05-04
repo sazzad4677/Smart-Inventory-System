@@ -1,6 +1,5 @@
-import Product from '../models/product.model';
-import Order from '../models/order.model';
-import ActivityLog from '../models/activity-log.model';
+import { Prisma, OrderStatus, UserRole } from '@prisma/client';
+import prisma from '../config/prisma';
 
 // ─── GET /api/dashboard/dashboard (Permissions: Admin, Manager) ──────────────
 export const getDashboardStatsFromDB = async () => {
@@ -8,110 +7,132 @@ export const getDashboardStatsFromDB = async () => {
   startToday.setHours(0, 0, 0, 0);
 
   // 1. Total orders today
-  const totalOrdersToday = await Order.countDocuments({
-    created_at: { $gte: startToday },
+  const totalOrdersToday = await prisma.order.count({
+    where: {
+      createdAt: { gte: startToday },
+    },
   });
 
   // 2. Pending vs Completed orders (for today)
-  const orderStats = await Order.aggregate([
-    { $match: { created_at: { $gte: startToday } } },
-    { $group: { _id: '$status', count: { $sum: 1 } } },
-  ]);
+  const orderStats = await prisma.order.groupBy({
+    by: ['status'],
+    where: {
+      createdAt: { gte: startToday },
+    },
+    _count: {
+      status: true,
+    },
+  });
 
   const pendingVsCompleted = {
-    Pending: orderStats.find((s) => s._id === 'Pending')?.count || 0,
-    Completed:
-      (orderStats.find((s) => s._id === 'Confirmed')?.count || 0) +
-      (orderStats.find((s) => s._id === 'Shipped')?.count || 0) +
-      (orderStats.find((s) => s._id === 'Delivered')?.count || 0),
+    Pending: orderStats.find((s) => s.status === OrderStatus.Pending)?._count.status || 0,
+    Completed: orderStats
+      .filter((s) =>
+        (
+          [OrderStatus.Confirmed, OrderStatus.Shipped, OrderStatus.Delivered] as OrderStatus[]
+        ).includes(s.status),
+      )
+      .reduce((acc, curr) => acc + curr._count.status, 0),
   };
 
   // 3. Low stock count
-  const lowStockCount = await Product.countDocuments({
-    $expr: { $lte: ['$stock_quantity', '$min_threshold'] },
+  // Prisma doesn't support comparing two columns directly in where easily without raw query or computed field
+  // But we can use findMany and filter or a raw query.
+  // For better performance, we'll use a raw query here.
+  const lowStockCount = await prisma.product.count({
+    where: {
+      is_restock_required: true,
+    },
   });
 
   // 4. Revenue today
-  const revenueTodayResult = await Order.aggregate([
-    {
-      $match: {
-        created_at: { $gte: startToday },
-        status: { $nin: ['Cancelled'] }, // Count only non-cancelled orders for revenue
-      },
+  const revenueTodayResult = await prisma.order.aggregate({
+    where: {
+      createdAt: { gte: startToday },
+      status: { not: OrderStatus.Cancelled },
     },
-    { $group: { _id: null, total: { $sum: '$total_price' } } },
-  ]);
+    _sum: {
+      total_price: true,
+    },
+  });
 
-  const revenueToday = revenueTodayResult.length > 0 ? revenueTodayResult[0].total : 0;
+  const revenueToday = revenueTodayResult._sum.total_price || 0;
 
   // 5. Total Products
-  const totalProducts = await Product.countDocuments();
+  const totalProducts = await prisma.product.count();
 
   // 6. Category Distribution
-  const categoryDistribution = await Product.aggregate([
-    {
-      $group: {
-        _id: '$category_id',
-        value: { $sum: 1 },
-      },
+  const categoryDistributionRaw = await prisma.product.groupBy({
+    by: ['category_id'],
+    _count: {
+      id: true,
     },
-    {
-      $lookup: {
-        from: 'categories',
-        localField: '_id',
-        foreignField: '_id',
-        as: 'category',
-      },
+  });
+
+  // Fetch category names
+  const categories = await prisma.category.findMany({
+    where: {
+      id: { in: categoryDistributionRaw.map((c) => c.category_id) },
     },
-    { $unwind: '$category' },
-    {
-      $project: {
-        _id: 0,
-        name: '$category.name',
-        value: 1,
-      },
-    },
-  ]);
+  });
+
+  const categoryDistribution = categoryDistributionRaw.map((item) => ({
+    name: categories.find((c) => c.id === item.category_id)?.name || 'Unknown',
+    value: item._count.id,
+  }));
 
   // 7. Order Trends (Last 7 Days)
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   sevenDaysAgo.setHours(0, 0, 0, 0);
 
-  const orderTrendsRaw = await Order.aggregate([
-    { $match: { created_at: { $gte: sevenDaysAgo } } },
-    {
-      $group: {
-        _id: { $dateToString: { format: '%Y-%m-%d', date: '$created_at' } },
-        count: { $sum: 1 },
-        revenue: { $sum: '$total_price' },
-      },
+  // We'll fetch all orders from the last 7 days and process them in JS for easier date formatting
+  const ordersLast7Days = await prisma.order.findMany({
+    where: {
+      createdAt: { gte: sevenDaysAgo },
     },
-    { $sort: { _id: 1 } },
-  ]);
+    select: {
+      createdAt: true,
+      total_price: true,
+    },
+  });
 
-  // Fill in missing days for the chart
+  const trendsMap = new Map<string, { count: number; revenue: number }>();
+  ordersLast7Days.forEach((order) => {
+    const dateStr = order.createdAt.toISOString().split('T')[0]!;
+    const current = trendsMap.get(dateStr) || { count: 0, revenue: 0 };
+    trendsMap.set(dateStr, {
+      count: current.count + 1,
+      revenue: current.revenue + order.total_price,
+    });
+  });
+
   const orderTrends = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
-    const dateStr = d.toISOString().split('T')[0];
-    const dayData = orderTrendsRaw.find((t) => t._id === dateStr);
+    const dateStr = d.toISOString().split('T')[0]!;
+    const dayData = trendsMap.get(dateStr) || { count: 0, revenue: 0 };
     orderTrends.push({
       date: dateStr,
-      count: dayData ? dayData.count : 0,
-      revenue: dayData ? dayData.revenue : 0,
+      count: dayData.count,
+      revenue: dayData.revenue,
     });
   }
 
   // 8. Product Summary (Prioritize Low Stock Items)
-  const products = await Product.find().sort({ stock_quantity: 1, createdAt: -1 }).limit(10);
+  const products = await prisma.product.findMany({
+    orderBy: [{ stock_quantity: 'asc' }, { createdAt: 'desc' }],
+    take: 10,
+  });
 
-  const productSummary = products.map((p) => ({
-    name: p.name,
-    stock_quantity: p.stock_quantity,
-    status: p.stock_quantity <= p.min_threshold ? 'Low Stock' : 'OK',
-  }));
+  const productSummary: { name: string; stock_quantity: number; status: string }[] = products.map(
+    (p) => ({
+      name: p.name,
+      stock_quantity: p.stock_quantity,
+      status: p.stock_quantity <= p.min_threshold ? 'Low Stock' : 'OK',
+    }),
+  );
 
   return {
     totalOrdersToday,
@@ -126,17 +147,29 @@ export const getDashboardStatsFromDB = async () => {
 };
 
 // ─── GET /api/dashboard/activities (Permissions: All Logged In Users) ───────────────────
-export const getLatestActivitiesFromDB = async (requestingUser?: { _id: string; role: string }) => {
-  const query: any = {};
+export const getLatestActivitiesFromDB = async (requestingUser?: {
+  id: string;
+  role: UserRole | string;
+}) => {
+  const where: Prisma.ActivityLogWhereInput = {};
 
-  if (requestingUser && requestingUser.role !== 'Admin') {
-    query.user_id = requestingUser._id;
+  if (requestingUser && requestingUser.role !== UserRole.Admin) {
+    where.user_id = requestingUser.id;
   }
 
-  const activities = await ActivityLog.find(query)
-    .sort({ timestamp: -1 })
-    .limit(10)
-    .populate('user_id', 'email role');
+  const activities = await prisma.activityLog.findMany({
+    where,
+    orderBy: { timestamp: 'desc' },
+    take: 10,
+    include: {
+      user: {
+        select: {
+          email: true,
+          role: true,
+        },
+      },
+    },
+  });
 
   return activities;
 };

@@ -157,7 +157,7 @@ export function InvitationsList({ refreshTrigger }: InvitationsListProps) {
               const isExpired = new Date(invite.expiresAt) < new Date();
               return (
                 <div
-                  key={invite._id}
+                  key={invite.id}
                   className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-indigo-500/30 transition-all hover:shadow-lg hover:shadow-indigo-500/5"
                 >
                   <div className="flex items-center gap-4">
@@ -228,9 +228,9 @@ export function InvitationsList({ refreshTrigger }: InvitationsListProps) {
                       <ActionModal
                         title="Revoke Invitation"
                         description={`Are you sure you want to revoke the invitation for ${invite.email}? This action cannot be undone.`}
-                        isOpen={revokingId === invite._id}
+                        isOpen={revokingId === invite.id}
                         onOpenChange={(open) =>
-                          setRevokingId(open ? invite._id : null)
+                          setRevokingId(open ? invite.id : null)
                         }
                         trigger={
                           <Button

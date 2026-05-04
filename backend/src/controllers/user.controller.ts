@@ -26,11 +26,11 @@ export const revokeSessions = catchAsync(async (req: AuthenticatedRequest, res: 
   await userService.revokeUserSessions(userId);
 
   await captureActivity(req, {
-    type: ActivityType.Update,
+    type: ActivityType.UPDATE,
     resource: 'USER',
     action_text: `Admin ${req.user!.email} revoked all sessions for user ${userId}.`,
     details: { userId },
-    userId: req.user!._id,
+    userId: req.user!.id,
   });
 
   sendResponse(res, {

@@ -13,7 +13,7 @@ interface AnalyticsEvent {
   eventName: string;
   url: string;
   properties?: Record<string, unknown>;
-  created_at: string;
+  createdAt: string;
 }
 
 interface AnalyticsContextType {
@@ -36,7 +36,7 @@ export const AnalyticsProvider: React.FC<{ children: React.ReactNode }> = ({
         eventName,
         url: window.location.href,
         properties,
-        created_at: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       };
       eventsQueue.current.push(event);
     },

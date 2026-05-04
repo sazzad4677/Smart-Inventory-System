@@ -88,7 +88,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           accessToken: user.accessToken,
           refreshToken: user.refreshToken,
           user: {
-            _id: user._id,
+            _id: user.id,
             email: user.email,
             role: user.role,
           },
@@ -111,7 +111,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       if (token.user) {
-        session.user._id = token.user._id as string;
+        session.user.id = token.user.id as string;
         session.user.role = token.user.role as UserType["role"];
         session.user.email = token.user.email as string;
         session.user.name = (token.user.name ?? undefined) as

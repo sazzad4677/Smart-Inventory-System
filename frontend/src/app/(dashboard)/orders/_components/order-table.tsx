@@ -41,7 +41,7 @@ export function OrderTable({ orders, userRole }: OrderTableProps) {
       if (page !== "1") return;
 
       setStateOrders((prev) => {
-        if (prev.some((o) => o._id === newOrder._id)) return prev;
+        if (prev.some((o) => o.id === newOrder.id)) return prev;
         const updated = [newOrder, ...prev];
         const limit = parseInt(searchParams.get("limit") || "10");
         return updated.slice(0, limit);
@@ -50,12 +50,12 @@ export function OrderTable({ orders, userRole }: OrderTableProps) {
 
     const handleOrderUpdated = (updatedOrder: Order) => {
       setStateOrders((prev) =>
-        prev.map((o) => (o._id === updatedOrder._id ? updatedOrder : o)),
+        prev.map((o) => (o.id === updatedOrder.id ? updatedOrder : o)),
       );
     };
 
     const handleOrderDeleted = (deletedId: string) => {
-      setStateOrders((prev) => prev.filter((o) => o._id !== deletedId));
+      setStateOrders((prev) => prev.filter((o) => o.id !== deletedId));
     };
 
     socketInstance.on("order_created", handleOrderCreated);
@@ -111,14 +111,14 @@ export function OrderTable({ orders, userRole }: OrderTableProps) {
     },
     {
       header: "Date",
-      accessorKey: "created_at",
+      accessorKey: "createdAt",
       cell: (order) => (
         <span className="text-slate-400">
           {new Intl.DateTimeFormat("en-US", {
             month: "short",
             day: "numeric",
             year: "numeric",
-          }).format(new Date(order.created_at))}
+          }).format(new Date(order.createdAt))}
         </span>
       ),
     },
@@ -127,7 +127,7 @@ export function OrderTable({ orders, userRole }: OrderTableProps) {
   if (userRole === "Admin") {
     columns.push({
       header: "Actions",
-      accessorKey: "_id",
+      accessorKey: "id",
       cell: (order) => (
         <div
           className="flex justify-end"
@@ -137,7 +137,7 @@ export function OrderTable({ orders, userRole }: OrderTableProps) {
             variant="ghost"
             size="icon"
             className="h-8 w-8 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-            onClick={() => setDeletingId(order._id)}
+            onClick={() => setDeletingId(order.id)}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -151,7 +151,7 @@ export function OrderTable({ orders, userRole }: OrderTableProps) {
       <DataTable
         data={stateOrders}
         columns={columns}
-        onRowClick={(order) => router.push(`/orders/${order._id}`)}
+        onRowClick={(order) => router.push(`/orders/${order.id}`)}
       />
 
       <ActionModal

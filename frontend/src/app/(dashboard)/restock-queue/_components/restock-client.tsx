@@ -22,7 +22,7 @@ export function RestockClient({ initialProducts }: RestockClientProps) {
     initialProducts,
     (state: Product[], update: { _id: string; amount: number }) => {
       return state.map((p) =>
-        p._id === update._id
+        p.id === update.id
           ? { ...p, stock_quantity: p.stock_quantity + update.amount }
           : p,
       );

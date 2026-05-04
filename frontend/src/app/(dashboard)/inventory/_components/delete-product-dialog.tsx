@@ -22,7 +22,7 @@ export function DeleteProductDialog({
 
   const handleDelete = () => {
     startTransition(async () => {
-      const result = await deleteProductAction(product._id);
+      const result = await deleteProductAction(product.id);
       if (result.success) {
         onOpenChange(false);
         toast.success("Product deleted successfully");

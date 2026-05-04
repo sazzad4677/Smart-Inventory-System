@@ -1,40 +1,31 @@
-# Stage 1: Build
-FROM node:20-alpine AS builder
-
-# Enable pnpm
+# Stage 1: Base
+FROM node:20-alpine AS base
 RUN npm install -g pnpm
 
+# Stage 2: Deps
+FROM base AS deps
 WORKDIR /usr/src/app
-
-# Copy workspace files
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY backend/package.json ./backend/
-
-# Install all dependencies (needed for build)
+COPY frontend/package.json ./frontend/
 RUN pnpm install --frozen-lockfile
 
-# Copy source code
+# Stage 3: Development
+FROM deps AS development
+WORKDIR /usr/src/app
+# Copy the rest of the files for Prisma generation (need schema.prisma)
 COPY . .
+RUN pnpm --filter backend exec prisma generate
 
-# Build the application
+# Stage 4: Builder (Production build)
+FROM development AS builder
 RUN pnpm --filter backend build
-
-# Deploy the backend to a standalone folder for production
 RUN pnpm --filter backend --prod deploy /usr/src/app/deployed --legacy
 
-# Stage 2: Production
-FROM node:20-alpine
-
+# Stage 5: Production
+FROM node:20-alpine AS production
 WORKDIR /usr/src/app
-
-# Copy the deployed standalone folder from builder
 COPY --from=builder /usr/src/app/deployed ./
-
-# Expose backend port
 EXPOSE 5000
-
-# Set environment variable for production
 ENV NODE_ENV=production
-
-# Run the production server
 CMD ["node", "dist/index.js"]

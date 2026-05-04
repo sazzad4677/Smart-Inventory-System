@@ -51,7 +51,7 @@ const NotificationBell = () => {
       "new_activity",
       (data: { _id: string; message: string; timestamp: string }) => {
         handleAlert({
-          _id: data._id,
+          _id: data.id,
           productName: "Activity",
           currentStock: 0,
           message: data.message,
@@ -134,7 +134,7 @@ const NotificationBell = () => {
               <div className="divide-y divide-gray-50">
                 {notifications.map((notification) => (
                   <div
-                    key={notification._id}
+                    key={notification.id}
                     className="p-4 hover:bg-gray-50 transition-colors"
                   >
                     <p className="text-sm text-gray-800 leading-tight mb-1">

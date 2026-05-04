@@ -1,53 +1,31 @@
-// ─── Enums ────────────────────────────────────────────────────────────────────
+import { Request } from 'express';
+import { UserRole, ProductStatus, OrderStatus, ActivityType } from '@prisma/client';
 
-import { Types } from 'mongoose';
-
-export enum UserRole {
-  Admin = 'Admin',
-  Manager = 'Manager',
-  Staff = 'Staff',
-}
-
-export enum ProductStatus {
-  Active = 'Active',
-  OutOfStock = 'Out of Stock',
-}
-
-export enum OrderStatus {
-  Pending = 'Pending',
-  Confirmed = 'Confirmed',
-  Shipped = 'Shipped',
-  Delivered = 'Delivered',
-  Cancelled = 'Cancelled',
-}
-
-export enum ActivityType {
-  Create = 'CREATE',
-  Update = 'UPDATE',
-  Delete = 'DELETE',
-  Login = 'LOGIN',
-  Logout = 'LOGOUT',
-  Restock = 'RESTOCK',
-  System = 'SYSTEM',
-}
+export { UserRole, ProductStatus, OrderStatus, ActivityType };
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
 export interface IUser {
-  _id: Types.ObjectId;
+  id: string;
   email: string;
   password_hash: string;
   role: UserRole;
 }
 
+export interface AuthenticatedRequest extends Request {
+  user?: IUser;
+}
+
 export interface ICategory {
+  id: string;
   name: string;
 }
 
 export interface IProduct {
+  id: string;
   product_id: string;
   name: string;
-  category_id: import('mongoose').Types.ObjectId;
+  category_id: string;
   price: number;
   stock_quantity: number;
   min_threshold: number;
@@ -57,6 +35,7 @@ export interface IProduct {
 }
 
 export interface IOrder {
+  id: string;
   order_id: string;
   customer_name: string;
   total_price: number;
@@ -66,13 +45,15 @@ export interface IOrder {
 }
 
 export interface IOrderItem {
-  order_id: import('mongoose').Types.ObjectId;
-  product_id: import('mongoose').Types.ObjectId;
+  id: string;
+  order_id: string;
+  product_id: string;
   quantity: number;
   unit_price: number;
 }
 
 export interface IActivityLog {
+  id: string;
   action_text: string;
   type: ActivityType;
   resource?: string;
@@ -81,6 +62,6 @@ export interface IActivityLog {
   ip_address?: string;
   user_agent?: string;
   timestamp: Date;
-  user_id: import('mongoose').Types.ObjectId;
+  user_id: string;
   is_undone?: boolean;
 }

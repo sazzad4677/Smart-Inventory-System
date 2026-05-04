@@ -53,7 +53,7 @@ export function ActivityLogClient({
       if (filterType !== "all" && activity.type !== filterType) return;
       if (
         filterRole !== "all" &&
-        activity.user_id?.role?.toLowerCase() !== filterRole.toLowerCase()
+        activity.user.role?.toLowerCase() !== filterRole.toLowerCase()
       )
         return;
       if (filterResource !== "all" && activity.resource !== filterResource)
@@ -62,7 +62,7 @@ export function ActivityLogClient({
       // Prepend to list
       setStateActivities((prev) => {
         // Avoid duplicates (e.g. if event loop triggers twice)
-        if (prev.some((a) => a._id === activity._id)) return prev;
+        if (prev.some((a) => a.id === activity.id)) return prev;
 
         const updated = [activity, ...prev];
         // Keep to the current limit to avoid page growing indefinitely
@@ -136,10 +136,10 @@ export function ActivityLogClient({
           </div>
           <div className="flex flex-col">
             <span className="font-medium text-slate-200">
-              {activity.user_id?.email || "Unknown User"}
+              {activity.user.email || "Unknown User"}
             </span>
             <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
-              ID: {activity.user_id?._id?.slice(-6) || "N/A"}
+              ID: {activity.user.id?.slice(-6) || "N/A"}
             </span>
           </div>
         </div>
@@ -190,21 +190,21 @@ export function ActivityLogClient({
           variant="outline"
           className={cn(
             "font-medium shadow-sm transition-all border-none ring-1 ring-inset",
-            activity.user_id?.role === "Admin"
+            activity.user.role === "Admin"
               ? "bg-rose-500/10 text-rose-400 ring-rose-500/20"
-              : activity.user_id?.role === "Manager"
+              : activity.user.role === "Manager"
                 ? "bg-amber-500/10 text-amber-400 ring-amber-500/20"
                 : "bg-emerald-500/10 text-emerald-400 ring-emerald-500/20",
           )}
         >
-          {activity.user_id?.role || "User"}
+          {activity.user.role || "User"}
         </Badge>
       ),
     },
     {
       header: "Timestamp",
       cell: (activity) => {
-        const date = new Date(activity.timestamp || activity.created_at);
+        const date = new Date(activity.timestamp || activity.createdAt);
         return (
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-1.5 text-slate-400">
@@ -239,14 +239,14 @@ export function ActivityLogClient({
 
         const handleToggle = async () => {
           if (activity.is_undone) {
-            const result = await redoActivityAction(activity._id);
+            const result = await redoActivityAction(activity.id);
             if (result.success) {
               toast.success("Action redone: Product deleted again.");
             } else {
               toast.error(result.error);
             }
           } else {
-            const result = await undoActivityAction(activity._id);
+            const result = await undoActivityAction(activity.id);
             if (result.success) {
               toast.success("Action undone: Product restored successfully!");
             } else {

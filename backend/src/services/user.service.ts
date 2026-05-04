@@ -1,37 +1,38 @@
-import User from '../models/user.model';
-import Session from '../models/session.model';
-import { Types } from 'mongoose';
+import prisma from '../config/prisma';
 
 export const getAllUsersWithSessions = async (): Promise<any[]> => {
-  return User.aggregate([
-    {
-      $lookup: {
-        from: 'sessions',
-        let: { userId: '$_id' },
-        pipeline: [
-          {
-            $match: {
-              $expr: { $eq: ['$userId', '$$userId'] },
-              expiresAt: { $gt: new Date() },
-            },
-          },
-        ],
-        as: 'activeSessions',
+  const users = await prisma.user.findMany({
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      createdAt: true,
+      sessions: {
+        where: {
+          expiresAt: { gt: new Date() },
+        },
+        select: {
+          updatedAt: true,
+        },
       },
     },
-    {
-      $project: {
-        email: 1,
-        role: 1,
-        createdAt: 1,
-        activeSessionCount: { $size: '$activeSessions' },
-        lastActivity: { $max: '$activeSessions.updatedAt' },
-      },
+    orderBy: {
+      createdAt: 'desc',
     },
-    { $sort: { createdAt: -1 } },
-  ]);
+  });
+
+  return users.map((user) => ({
+    ...user,
+    activeSessionCount: user.sessions.length,
+    lastActivity:
+      user.sessions.length > 0
+        ? new Date(Math.max(...user.sessions.map((s) => s.updatedAt.getTime())))
+        : null,
+  }));
 };
 
 export const revokeUserSessions = async (userId: string): Promise<any> => {
-  return Session.deleteMany({ userId: new Types.ObjectId(userId) });
+  return prisma.session.deleteMany({
+    where: { userId },
+  });
 };

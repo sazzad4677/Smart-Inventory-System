@@ -1,17 +1,18 @@
-import mongoose, { Types } from 'mongoose';
-import Order from '../models/order.model';
-import OrderItem from '../models/order-item.model';
-import Product from '../models/product.model';
-import ActivityLog from '../models/activity-log.model';
+import { Prisma } from '@prisma/client';
+import prisma from '../config/prisma';
 import { CreateOrderInput } from '../validators/order.validator';
 import { AppError } from '../utils/AppError';
 import { OrderStatus, ProductStatus } from '../types';
-import QueryBuilder from '../builders/QueryBuilder';
-import { formatOrderId } from '../utils/formatOrderId';
 import { generateNextId } from '../utils/id.utils';
 import { captureActivity } from '../utils/activity-logger';
 import { ActivityType } from '../types';
 import { Request } from 'express';
+
+interface LowStockProduct {
+  id: string;
+  name: string;
+  stock: number;
+}
 
 // ─── POST /api/order (Permissions: Private) ──────────────────────────────────
 export const createOrderInDB = async (req: Request, userId: string, payload: CreateOrderInput) => {
@@ -26,22 +27,21 @@ export const createOrderInDB = async (req: Request, userId: string, payload: Cre
     throw new AppError('Duplicate products found in the order.', 400);
   }
 
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
+  return await prisma.$transaction(async (tx) => {
     let totalPrice = 0;
-    const orderItemsData = [];
-    const lowStockProducts: any[] = [];
+    const lowStockProducts: LowStockProduct[] = [];
+    const orderItemsToCreate: Prisma.OrderItemUncheckedCreateWithoutOrderInput[] = [];
 
     for (const item of items) {
-      const product = await Product.findById(item.product_id).session(session);
+      const product = await tx.product.findUnique({
+        where: { id: item.product_id },
+      });
 
       if (!product) {
         throw new AppError(`Product with ID ${item.product_id} not found`, 404);
       }
 
-      // 3. Check if product.status is Active
+      // Check if product is Active
       if (product.status !== ProductStatus.Active) {
         throw new AppError(
           `Conflict Detection: Product "${product.name}" is not Active (${product.status})`,
@@ -49,7 +49,7 @@ export const createOrderInDB = async (req: Request, userId: string, payload: Cre
         );
       }
 
-      // 4. Check if requested_qty > stock_quantity
+      // Check if requested_qty > stock_quantity
       if (item.quantity > product.stock_quantity) {
         throw new AppError(
           `Only ${product.stock_quantity} items available for "${product.name}"`,
@@ -57,123 +57,141 @@ export const createOrderInDB = async (req: Request, userId: string, payload: Cre
         );
       }
 
-      // 5. Update stock and handle Trigger B
-      product.stock_quantity -= item.quantity;
+      const newStockQuantity = product.stock_quantity - item.quantity;
+      const isRestockRequired = newStockQuantity <= product.min_threshold;
+      const newStatus = newStockQuantity <= 0 ? ProductStatus.OutOfStock : ProductStatus.Active;
 
-      // If stock <= min_threshold, flag for Restock Queue and notify
-      if (product.stock_quantity <= product.min_threshold) {
-        product.is_restock_required = true;
+      // Update product stock and flags
+      await tx.product.update({
+        where: { id: product.id },
+        data: {
+          stock_quantity: newStockQuantity,
+          is_restock_required: isRestockRequired,
+          status: newStatus,
+        },
+      });
+
+      if (isRestockRequired) {
         lowStockProducts.push({
-          id: product._id,
+          id: product.id,
           name: product.name,
-          stock: product.stock_quantity,
+          stock: newStockQuantity,
         });
       }
-
-      // Stock hits 0 -> status update handled by Product model pre-save hook
-      await product.save({ session });
 
       const itemTotalPrice = product.price * item.quantity;
       totalPrice += itemTotalPrice;
 
-      orderItemsData.push({
-        product_id: product._id,
+      orderItemsToCreate.push({
+        product_id: product.id,
         quantity: item.quantity,
         unit_price: product.price,
       });
     }
 
-    // 6. Create the Order
-    const [order] = await Order.create(
-      [
-        {
-          customer_name,
-          order_id,
-          total_price: totalPrice,
-          status: OrderStatus.Pending,
+    // Create the Order
+    const order = await tx.order.create({
+      data: {
+        customer_name,
+        order_id,
+        total_price: totalPrice,
+        status: OrderStatus.Pending,
+        orderItems: {
+          create: orderItemsToCreate,
         },
-      ],
-      { session },
-    );
-
-    if (!order) {
-      throw new AppError('Failed to create order', 500);
-    }
-
-    // 7. Create OrderItems
-    await OrderItem.create(
-      orderItemsData.map((item) => ({
-        ...item,
-        order_id: order._id,
-      })),
-      { session, ordered: true },
-    );
-
-    // 8. Create Activity Log entry
-    await captureActivity(req, {
-      type: ActivityType.Create,
-      resource: 'ORDER',
-      action_text: `Order ${formatOrderId(order._id)} created for ${customer_name}`,
-      userId: userId as any,
+      },
+      include: {
+        orderItems: true,
+      },
     });
 
-    await session.commitTransaction();
-    session.endSession();
+    // Activity Log
+    await captureActivity(req, {
+      type: ActivityType.CREATE,
+      resource: 'ORDER',
+      action_text: `Order ${order.order_id} created for ${customer_name}`,
+      userId,
+    });
 
     return { order, lowStockProducts };
-  } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    throw error;
-  }
+  });
 };
 
 // ─── GET /api/order (Permissions: Private) ───────────────────────────────────
 export const getAllOrdersFromDB = async (query: Record<string, unknown>) => {
-  const searchableFields = ['customer_name', 'order_id'];
-  const orderQuery = new QueryBuilder(Order.find(), query)
-    .search(searchableFields)
-    .filter()
-    .sort()
-    .paginate()
-    .fields();
+  const { searchTerm, page = 1, limit = 20, sort, ...filters } = query;
 
-  const result = await orderQuery.modelQuery;
-  const meta = await orderQuery.countTotal();
+  const skip = (Number(page) - 1) * Number(limit);
+  const take = Number(limit);
+
+  const where: Prisma.OrderWhereInput = {
+    is_deleted: false,
+    ...(filters as any),
+  };
+
+  if (searchTerm) {
+    where.OR = [
+      { customer_name: { contains: searchTerm as string, mode: 'insensitive' } },
+      { order_id: { contains: searchTerm as string, mode: 'insensitive' } },
+    ];
+  }
+
+  const result = await prisma.order.findMany({
+    where,
+    skip,
+    take,
+    orderBy: sort ? { [sort as string]: 'asc' } : { createdAt: 'desc' },
+  });
+
+  const total = await prisma.order.count({ where });
 
   return {
-    meta,
+    meta: {
+      page: Number(page),
+      limit: Number(limit),
+      total,
+      totalPage: Math.ceil(total / take),
+    },
     result,
   };
 };
 
 // ─── GET /api/order/:id (Permissions: Private) ───────────────────────────────
 export const getOrderByIdFromDB = async (orderId: string) => {
-  const order = await Order.findById(orderId);
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      orderItems: {
+        include: {
+          product: true,
+        },
+      },
+    },
+  });
+
   if (!order) {
     throw new AppError('Order not found', 404);
   }
 
-  const items = await OrderItem.find({ order_id: orderId }).populate('product_id');
-
   return {
     order,
-    items,
+    items: order.orderItems,
   };
 };
 
 // ─── PUT /api/order/:id/status (Permissions: Admin, Manager) ─────────────────
 export const updateOrderStatusInDB = async (
   req: Request,
-  userId: Types.ObjectId,
+  userId: string,
   orderId: string,
   status: OrderStatus,
 ) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  return await prisma.$transaction(async (tx) => {
+    const existingOrder = await tx.order.findUnique({
+      where: { id: orderId },
+      include: { orderItems: true },
+    });
 
-  try {
-    const existingOrder = await Order.findById(orderId).session(session);
     if (!existingOrder) {
       throw new AppError('Order not found', 404);
     }
@@ -183,71 +201,58 @@ export const updateOrderStatusInDB = async (
     }
 
     if (status === OrderStatus.Cancelled) {
-      const orderItems = await OrderItem.find({ order_id: orderId }).session(session);
+      for (const item of existingOrder.orderItems) {
+        const product = await tx.product.findUnique({
+          where: { id: item.product_id },
+        });
 
-      for (const item of orderItems) {
-        const product = await Product.findById(item.product_id).session(session);
         if (product) {
-          product.stock_quantity += item.quantity;
-          if (product.stock_quantity > product.min_threshold) {
-            product.is_restock_required = false;
-          }
-          await product.save({ session });
+          const newStockQuantity = product.stock_quantity + item.quantity;
+          await tx.product.update({
+            where: { id: product.id },
+            data: {
+              stock_quantity: newStockQuantity,
+              is_restock_required: newStockQuantity <= product.min_threshold,
+              status: newStockQuantity > 0 ? ProductStatus.Active : ProductStatus.OutOfStock,
+            },
+          });
         }
       }
     }
 
-    existingOrder.status = status;
-    await existingOrder.save({ session });
-
-    await captureActivity(req, {
-      type: ActivityType.Update,
-      resource: 'ORDER',
-      action_text: `Order ${formatOrderId(existingOrder._id)} status updated to ${status}`,
-      userId: userId,
+    const updatedOrder = await tx.order.update({
+      where: { id: orderId },
+      data: { status },
     });
 
-    await session.commitTransaction();
-    session.endSession();
+    await captureActivity(req, {
+      type: ActivityType.UPDATE,
+      resource: 'ORDER',
+      action_text: `Order ${updatedOrder.order_id} status updated to ${status}`,
+      userId,
+    });
 
-    return existingOrder;
-  } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    throw error;
-  }
+    return updatedOrder;
+  });
 };
 
 // ─── DELETE /api/order/:id (Permissions: Admin Only) ──────────────────────────
-export const deleteOrderFromDB = async (req: Request, userId: Types.ObjectId, orderId: string) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+export const deleteOrderFromDB = async (req: Request, userId: string, orderId: string) => {
+  const order = await prisma.order.update({
+    where: { id: orderId },
+    data: { is_deleted: true },
+  });
 
-  try {
-    const order = await Order.findByIdAndUpdate(
-      orderId,
-      { is_deleted: true },
-      { new: true, runValidators: true, session },
-    );
-
-    if (!order) {
-      throw new AppError('Order not found', 404);
-    }
-
-    await captureActivity(req, {
-      type: ActivityType.Delete,
-      resource: 'ORDER',
-      action_text: `Order ${formatOrderId(order._id)} deleted`,
-      userId: userId,
-    });
-
-    await session.commitTransaction();
-    session.endSession();
-
-    return order;
-  } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    throw error;
+  if (!order) {
+    throw new AppError('Order not found', 404);
   }
+
+  await captureActivity(req, {
+    type: ActivityType.DELETE,
+    resource: 'ORDER',
+    action_text: `Order ${order.order_id} deleted`,
+    userId,
+  });
+
+  return order;
 };

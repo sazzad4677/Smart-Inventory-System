@@ -1,4 +1,4 @@
-import Sequence from '../models/sequence.model';
+import prisma from '../config/prisma';
 
 /**
  * Increments the sequence in the database and returns a formatted ID string.
@@ -7,11 +7,11 @@ import Sequence from '../models/sequence.model';
  * @returns A formatted ID string like 'PRD-0001'
  */
 export const generateNextId = async (idName: string, prefix: string): Promise<string> => {
-  const sequence = await Sequence.findOneAndUpdate(
-    { id: idName },
-    { $inc: { seq: 1 } },
-    { new: true, upsert: true },
-  );
+  const sequence = await prisma.idSequence.upsert({
+    where: { id: idName },
+    update: { seq: { increment: 1 } },
+    create: { id: idName, seq: 1 },
+  });
 
   const paddedSeq = sequence.seq.toString().padStart(4, '0');
   return `${prefix}-${paddedSeq}`;

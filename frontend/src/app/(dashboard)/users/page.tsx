@@ -47,7 +47,7 @@ export default function UsersPage() {
 
   const handleRevokeClick = React.useCallback(
     (userId: string, email: string) => {
-      if (userId === currentUser?._id) {
+      if (userId === currentUser?.id) {
         return toast.error(
           "You cannot revoke your own sessions from here. Use Logout.",
         );
@@ -55,7 +55,7 @@ export default function UsersPage() {
       setUserToRevoke({ id: userId, email });
       setIsRevokeModalOpen(true);
     },
-    [currentUser?._id],
+    [currentUser?.id],
   );
 
   const confirmRevoke = async () => {

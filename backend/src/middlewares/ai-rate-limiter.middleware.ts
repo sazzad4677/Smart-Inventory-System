@@ -12,8 +12,9 @@ const robustSendCommand = async (...args: string[]) => {
     }
     if (!redisClient.isOpen) return null;
     return await redisClient.sendCommand(args);
-  } catch (error: any) {
-    console.error('❌ Redis Command Failed (AI Limiter):', error.message);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ Redis Command Failed (AI Limiter):', errorMessage);
     return null;
   }
 };

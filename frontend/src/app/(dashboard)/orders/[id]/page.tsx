@@ -44,7 +44,7 @@ export default async function OrderIdPage({ params }: OrderIdPageProps) {
         title={`Order Details`}
         description={`Viewing detailed information for Order ${order.order_id}`}
       >
-        <OrderStatusUpdate orderId={order._id} currentStatus={order.status} />
+        <OrderStatusUpdate orderId={order.id} currentStatus={order.status} />
       </PageHeader>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -86,7 +86,7 @@ export default async function OrderIdPage({ params }: OrderIdPageProps) {
                     {new Intl.DateTimeFormat("en-US", {
                       dateStyle: "medium",
                       timeStyle: "short",
-                    }).format(new Date(order.created_at))}
+                    }).format(new Date(order.createdAt))}
                   </div>
                 </div>
                 <div className="px-6 py-4 flex flex-col bg-indigo-500/5 group transition-colors duration-300">
@@ -126,16 +126,16 @@ export default async function OrderIdPage({ params }: OrderIdPageProps) {
                   <tbody className="divide-y divide-white/5">
                     {items.map((item) => (
                       <tr
-                        key={item._id}
+                        key={item.id}
                         className="text-sm hover:bg-white/[0.04] transition-colors group"
                       >
                         <td className="px-6 py-5">
                           <div className="flex flex-col gap-0.5">
                             <span className="font-semibold text-white group-hover:text-indigo-300 transition-colors">
-                              {item.product_id?.name || "Unknown Product"}
+                              {item.product?.name || "Unknown Product"}
                             </span>
                             <span className="text-[10px] font-mono text-slate-500">
-                              ID: {item.product_id?.product_id}
+                              ID: {item.product?.product_id}
                             </span>
                           </div>
                         </td>

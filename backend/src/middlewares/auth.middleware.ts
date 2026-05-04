@@ -2,13 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AppError } from '../utils/AppError';
 import { catchAsync } from '../utils/catchAsync';
-import User, { IUserDocument } from '../models/user.model';
-import Session from '../models/session.model';
+import prisma from '../config/prisma';
 import { config } from '../config/config';
-
-export interface AuthenticatedRequest extends Request {
-  user?: IUserDocument;
-}
+import { IUser, AuthenticatedRequest, UserRole } from '../types';
 
 const extractBearerToken = (req: Request): string | undefined => {
   if (req.headers.authorization?.startsWith('Bearer ')) {
@@ -37,12 +33,18 @@ export const protect = catchAsync(
     // Run database checks in parallel
     let sessionPromise = Promise.resolve(true);
     if (decoded.sessionId) {
-      sessionPromise = Session.findById(decoded.sessionId).then((s) => !!s);
+      sessionPromise = prisma.session
+        .findUnique({
+          where: { id: decoded.sessionId },
+        })
+        .then((s) => !!s);
     }
 
     const [sessionExists, currentUser] = await Promise.all([
       sessionPromise,
-      User.findById(decoded.id),
+      prisma.user.findUnique({
+        where: { id: decoded.id },
+      }),
     ]);
 
     if (!sessionExists) {
@@ -53,12 +55,12 @@ export const protect = catchAsync(
       return next(new AppError('The user belonging to this token no longer exists.', 401));
     }
 
-    req.user = currentUser;
+    req.user = currentUser as IUser;
     next();
   },
 );
 
-export const restrictTo = (...roles: string[]) => {
+export const restrictTo = (...roles: UserRole[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     const user = req.user;
     if (!user?.role) {

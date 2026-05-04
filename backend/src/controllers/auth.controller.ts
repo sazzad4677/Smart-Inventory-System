@@ -3,13 +3,12 @@ import { catchAsync } from '../utils/catchAsync';
 import { sendResponse } from '../utils/sendResponse';
 import { signupUser, loginUser, logoutUser, refreshAccessToken } from '../services/auth.service';
 import type { SignupInput, LoginInput } from '../validators/auth.validator';
-import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { config } from '../config/config';
 import ms from 'ms';
 import { captureActivity } from '../utils/activity-logger';
-import { ActivityType } from '../types';
+import { ActivityType, AuthenticatedRequest } from '../types';
 
-const refreshExpiresIn = ms(config.jwt.refreshExpiresIn as any);
+const refreshExpiresIn = ms(config.jwt.refreshExpiresIn as ms.StringValue);
 const cookieOptions = {
   httpOnly: true,
   secure: config.server.nodeEnv === 'production',
@@ -24,11 +23,11 @@ export const signup = catchAsync(async (req: Request, res: Response) => {
   res.cookie('refreshToken', refreshToken, cookieOptions);
 
   await captureActivity(req, {
-    type: ActivityType.Create,
+    type: ActivityType.CREATE,
     resource: 'USER',
     action_text: `New account created: ${user.email}`,
     details: { email: user.email, role: user.role },
-    userId: user._id,
+    userId: user.id,
   });
 
   sendResponse(res, {
@@ -38,7 +37,7 @@ export const signup = catchAsync(async (req: Request, res: Response) => {
     data: {
       accessToken,
       refreshToken,
-      user: { id: user._id, email: user.email, role: user.role },
+      user: { id: user.id, email: user.email, role: user.role },
     },
   });
 });
@@ -50,10 +49,10 @@ export const login = catchAsync(async (req: Request, res: Response) => {
   res.cookie('refreshToken', refreshToken, cookieOptions);
 
   await captureActivity(req, {
-    type: ActivityType.Login,
+    type: ActivityType.LOGIN,
     action_text: `User logged in: ${user.email}`,
     details: { email: user.email, role: user.role },
-    userId: user._id,
+    userId: user.id,
   });
 
   sendResponse(res, {
@@ -63,7 +62,7 @@ export const login = catchAsync(async (req: Request, res: Response) => {
     data: {
       accessToken,
       refreshToken,
-      user: { id: user._id, email: user.email, role: user.role },
+      user: { id: user.id, email: user.email, role: user.role },
     },
   });
 });
@@ -110,6 +109,6 @@ export const me = catchAsync(async (req: AuthenticatedRequest, res: Response) =>
     statusCode: 200,
     success: true,
     message: 'User retrieved successfully.',
-    data: { user: { id: user!._id, email: user!.email, role: user!.role } },
+    data: { user: { id: user!.id, email: user!.email, role: user!.role } },
   });
 });

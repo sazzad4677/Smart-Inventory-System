@@ -1,18 +1,27 @@
 import jwt from 'jsonwebtoken';
 import { protect, restrictTo } from '../auth.middleware';
-import User from '../../models/user.model';
-import Session from '../../models/session.model';
+import prisma from '../../config/prisma';
 import { AppError } from '../../utils/AppError';
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
+import { AuthenticatedRequest, UserRole } from '../../types';
 
 // Mock dependencies
 jest.mock('jsonwebtoken');
-jest.mock('../../models/user.model');
-jest.mock('../../models/session.model');
+jest.mock('../../config/prisma', () => ({
+  __esModule: true,
+  default: {
+    user: {
+      findUnique: jest.fn(),
+    },
+    session: {
+      findUnique: jest.fn(),
+    },
+  },
+}));
 
 describe('Auth Middleware - protect', () => {
-  let req: any;
-  let res: any;
+  let req: Partial<AuthenticatedRequest>;
+  let res: Partial<Response>;
   let next: NextFunction;
 
   beforeEach(() => {
@@ -21,11 +30,11 @@ describe('Auth Middleware - protect', () => {
       headers: {},
     };
     res = {};
-    next = jest.fn() as any;
+    next = jest.fn();
   });
 
   it('should call next with error if no authorization header is provided', async () => {
-    await protect(req as Request, res as Response, next);
+    await protect(req as AuthenticatedRequest, res as Response, next);
 
     expect(next).toHaveBeenCalledWith(expect.any(AppError));
     const error = (next as jest.Mock).mock.calls[0][0];
@@ -34,12 +43,12 @@ describe('Auth Middleware - protect', () => {
   });
 
   it('should call next with error if token is invalid or expired', async () => {
-    req.headers.authorization = 'Bearer invalid-token';
+    req.headers!.authorization = 'Bearer invalid-token';
     (jwt.verify as jest.Mock).mockImplementation(() => {
       throw new Error('invalid token');
     });
 
-    await protect(req as Request, res as Response, next);
+    await protect(req as AuthenticatedRequest, res as Response, next);
 
     expect(next).toHaveBeenCalledWith(expect.any(AppError));
     const error = (next as jest.Mock).mock.calls[0][0];
@@ -48,14 +57,14 @@ describe('Auth Middleware - protect', () => {
   });
 
   it('should call next with error if session does not exist', async () => {
-    req.headers.authorization = 'Bearer valid-token';
+    req.headers!.authorization = 'Bearer valid-token';
     const decoded = { id: 'user123', sessionId: 'session123' };
     (jwt.verify as jest.Mock).mockReturnValue(decoded);
 
-    (Session.findById as jest.Mock).mockResolvedValue(null);
-    (User.findById as jest.Mock).mockResolvedValue({ _id: 'user123' });
+    (prisma.session.findUnique as jest.Mock).mockResolvedValue(null);
+    (prisma.user.findUnique as jest.Mock).mockResolvedValue({ id: 'user123' });
 
-    await protect(req as any, res as Response, next);
+    await protect(req as AuthenticatedRequest, res as Response, next);
 
     expect(next).toHaveBeenCalledWith(expect.any(AppError));
     const error = (next as jest.Mock).mock.calls[0][0];
@@ -64,30 +73,30 @@ describe('Auth Middleware - protect', () => {
   });
 
   it('should attach user to req and call next if token and session are valid', async () => {
-    req.headers.authorization = 'Bearer valid-token';
+    req.headers!.authorization = 'Bearer valid-token';
     const decoded = { id: 'user123', sessionId: 'session123' };
     (jwt.verify as jest.Mock).mockReturnValue(decoded);
 
-    const mockUser = { _id: 'user123', email: 'test@test.com' };
-    const mockSession = { _id: 'session123' };
+    const mockUser = { id: 'user123', email: 'test@test.com', role: UserRole.Manager };
+    const mockSession = { id: 'session123' };
 
-    (Session.findById as jest.Mock).mockResolvedValue(mockSession);
-    (User.findById as jest.Mock).mockResolvedValue(mockUser);
+    (prisma.session.findUnique as jest.Mock).mockResolvedValue(mockSession);
+    (prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
 
-    await protect(req as any, res as Response, next);
+    await protect(req as AuthenticatedRequest, res as Response, next);
 
     expect(req.user).toEqual(mockUser);
     expect(next).toHaveBeenCalledWith();
   });
 
   it('should call next with error if user no longer exists', async () => {
-    req.headers.authorization = 'Bearer valid-token';
+    req.headers!.authorization = 'Bearer valid-token';
     const decoded = { id: 'missing-user', sessionId: 's1' };
     (jwt.verify as jest.Mock).mockReturnValue(decoded);
-    (Session.findById as jest.Mock).mockResolvedValue({ _id: 's1' });
-    (User.findById as jest.Mock).mockResolvedValue(null);
+    (prisma.session.findUnique as jest.Mock).mockResolvedValue({ id: 's1' });
+    (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
 
-    await protect(req as any, res as Response, next);
+    await protect(req as AuthenticatedRequest, res as Response, next);
     expect(next).toHaveBeenCalledWith(expect.any(AppError));
     const error = (next as jest.Mock).mock.calls[0][0];
     expect(error.statusCode).toBe(401);
@@ -96,32 +105,32 @@ describe('Auth Middleware - protect', () => {
 });
 
 describe('Auth Middleware - restrictTo', () => {
-  let req: any, res: any, next: NextFunction;
+  let req: Partial<AuthenticatedRequest>, res: Partial<Response>, next: NextFunction;
 
   beforeEach(() => {
-    req = { user: { role: 'Manager' } };
+    req = { user: { role: UserRole.Manager } as any };
     res = {};
-    next = jest.fn() as any;
+    next = jest.fn();
   });
 
   it('should call next if role is allowed', () => {
-    const middleware = restrictTo('Admin', 'Manager');
-    middleware(req, res, next);
+    const middleware = restrictTo(UserRole.Admin, UserRole.Manager);
+    middleware(req as AuthenticatedRequest, res as Response, next);
     expect(next).toHaveBeenCalledWith();
   });
 
   it('should throw 403 error if role is not allowed', () => {
-    const middleware = restrictTo('Admin');
-    middleware(req, res, next);
+    const middleware = restrictTo(UserRole.Admin);
+    middleware(req as AuthenticatedRequest, res as Response, next);
     expect(next).toHaveBeenCalledWith(expect.any(AppError));
     const error = (next as jest.Mock).mock.calls[0][0];
     expect(error.statusCode).toBe(403);
   });
 
   it('should throw 401 if user or role is missing', () => {
-    req.user = null;
-    const middleware = restrictTo('Admin');
-    middleware(req, res, next);
+    req.user = undefined;
+    const middleware = restrictTo(UserRole.Admin);
+    middleware(req as AuthenticatedRequest, res as Response, next);
     expect(next).toHaveBeenCalledWith(expect.any(AppError));
   });
 });

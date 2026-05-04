@@ -29,7 +29,8 @@ export const sendEmail = async (options: SendEmailOptions) => {
     logger.info(`Email sent: ${info.messageId}`);
     return info;
   } catch (error) {
-    logger.error(`Error sending email: ${(error as any).message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`Error sending email: ${errorMessage}`);
     throw error;
   }
 };

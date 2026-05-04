@@ -27,7 +27,7 @@ export function ProductActions({
   const isStaff = userRole === "Staff";
 
   const canEdit =
-    isAdminOrManager || (isStaff && product.created_by === currentUser?._id);
+    isAdminOrManager || (isStaff && product.created_by === currentUser?.id);
 
   const canDelete = isAdminOrManager;
 

@@ -12,8 +12,9 @@ const robustSendCommand = async (...args: string[]) => {
     }
     if (!redisClient.isOpen) return null;
     return await redisClient.sendCommand(args);
-  } catch (error: any) {
-    console.error('❌ Redis Command Failed:', error.message);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ Redis Command Failed:', errorMessage);
     return null; // Return null to fallback to memory
   }
 };

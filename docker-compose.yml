@@ -1,55 +1,37 @@
 services:
-  mongodb:
-    image: mongo:6.0
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--logpath", "/dev/null"]
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: smart_inventory
     ports:
-      - "27017:27017"
+      - "5432:5432"
     volumes:
-      - mongodb_data:/data/db
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
-
-  mongodb-setup:
-    image: mongo:6.0
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    command: >
-      mongosh --host mongodb:27017 --eval '
-        try {
-          if (!rs.status().ok) {
-            rs.initiate({
-              _id: "rs0",
-              members: [{ _id: 0, host: "mongodb:27017" }]
-            })
-          }
-        } catch (e) {
-          rs.initiate({
-            _id: "rs0",
-            members: [{ _id: 0, host: "mongodb:27017" }]
-          })
-        }
-      '
 
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
-      target: builder
+      target: development
     ports:
       - "5000:5000"
     command: pnpm --filter backend run dev
     environment:
       - PORT=5000
       - REDIS_URI=redis://redis:6379
-      - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017/smart_inventory}
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/smart_inventory?schema=public
     env_file:
       - ./backend/.env.local
     depends_on:
-      - mongodb
+      - postgres
       - redis
     volumes:
       - ./backend/src:/usr/src/app/backend/src
@@ -66,12 +48,13 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
-      target: builder
+      target: development
     ports:
       - "3000:3000"
     command: pnpm --filter frontend run dev
     environment:
       - INTERNAL_API_URL=http://backend:5000/api
+      - NEXT_PUBLIC_API_URL=http://backend:5000/api
     env_file:
       - ./frontend/.env.local
     volumes:
@@ -81,4 +64,4 @@ services:
       - ./frontend/next.config.ts:/usr/src/app/frontend/next.config.ts
 
 volumes:
-  mongodb_data:
+  postgres_data:
