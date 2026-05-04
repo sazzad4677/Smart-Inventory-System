@@ -13,20 +13,21 @@ COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 RUN pnpm install --frozen-lockfile
 
-# Stage 3: Builder
-FROM deps AS builder
+# Stage 3: Development
+FROM deps AS development
 WORKDIR /usr/src/app
-# Copy the whole repo but build will only focus on frontend
 COPY . .
-# Next.js build needs these env vars often if they are baked in, 
-# but here we use them at runtime mostly. 
-# However, during build, NEXT_PUBLIC_ vars might be needed.
+
+# Stage 4: Builder
+FROM development AS builder
+WORKDIR /usr/src/app
+# Next.js build needs these env vars often if they are baked in
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 RUN pnpm --filter frontend build
 
-# Stage 4: Runner
+# Stage 5: Runner
 FROM node:20-alpine AS runner
 WORKDIR /usr/src/app
 

@@ -12,21 +12,21 @@ COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 RUN pnpm install --frozen-lockfile
 
-# Stage 3: Builder (Production build)
-FROM deps AS builder
+# Stage 3: Development
+FROM deps AS development
 WORKDIR /usr/src/app
-# Copy prisma schema first for caching
 COPY backend/prisma ./backend/prisma
 RUN DATABASE_URL="postgresql://postgres:postgres@localhost:5432/db" pnpm --filter backend exec prisma generate
-
-# Copy the rest of the source
 COPY . .
+
+# Stage 4: Builder (Production build)
+FROM development AS builder
 RUN pnpm --filter backend build
 
 # Deploy only the backend and its prod dependencies to a separate folder
 RUN pnpm --filter backend --prod deploy /usr/src/app/deployed --legacy
 
-# Stage 4: Production
+# Stage 5: Production
 FROM node:20-alpine AS production
 WORKDIR /usr/src/app
 
