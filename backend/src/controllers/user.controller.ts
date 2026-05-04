@@ -2,9 +2,8 @@ import { Response } from 'express';
 import { catchAsync } from '../utils/catchAsync';
 import { sendResponse } from '../utils/sendResponse';
 import * as userService from '../services/user.service';
-import { AuthenticatedRequest } from '../middlewares/auth.middleware';
+import { AuthenticatedRequest, ActivityType } from '../types';
 import { captureActivity } from '../utils/activity-logger';
-import { ActivityType } from '../types';
 
 export const getUsers = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
   const users = await userService.getAllUsersWithSessions();

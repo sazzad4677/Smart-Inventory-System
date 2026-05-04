@@ -13,7 +13,7 @@ export interface IUser {
 }
 
 export interface AuthenticatedRequest extends Request {
-  user?: IUser;
+  user?: IUser | undefined;
 }
 
 export interface ICategory {
