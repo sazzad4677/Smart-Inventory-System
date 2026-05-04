@@ -2,13 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AppError } from '../utils/AppError';
 import { catchAsync } from '../utils/catchAsync';
-import User, { IUserDocument } from '../models/user.model';
-import Session from '../models/session.model';
+import prisma from '../config/prisma';
 import { config } from '../config/config';
-
-export interface AuthenticatedRequest extends Request {
-  user?: IUserDocument;
-}
+import { IUser, AuthenticatedRequest, UserRole } from '../types';
 
 const extractBearerToken = (req: Request): string | undefined => {
   if (req.headers.authorization?.startsWith('Bearer ')) {
@@ -17,16 +13,18 @@ const extractBearerToken = (req: Request): string | undefined => {
   return undefined;
 };
 
+/**
+ * Middleware to protect routes. Verifies the JWT access token and ensures
+ * the associated user and session still exist in the database.
+ */
 export const protect = catchAsync(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    // Get token from Authorization header
     const token = extractBearerToken(req);
 
     if (!token) {
       return next(new AppError('You are not logged in! Please log in to get access.', 401));
     }
 
-    // Verify token
     let decoded: jwt.JwtPayload;
     try {
       decoded = jwt.verify(token, config.jwt.accessSecret) as jwt.JwtPayload;
@@ -34,15 +32,20 @@ export const protect = catchAsync(
       return next(new AppError('Access token is invalid or expired.', 401));
     }
 
-    // Run database checks in parallel
     let sessionPromise = Promise.resolve(true);
     if (decoded.sessionId) {
-      sessionPromise = Session.findById(decoded.sessionId).then((s) => !!s);
+      sessionPromise = prisma.session
+        .findUnique({
+          where: { id: decoded.sessionId },
+        })
+        .then((s) => !!s);
     }
 
     const [sessionExists, currentUser] = await Promise.all([
       sessionPromise,
-      User.findById(decoded.id),
+      prisma.user.findUnique({
+        where: { id: decoded.id },
+      }),
     ]);
 
     if (!sessionExists) {
@@ -53,12 +56,16 @@ export const protect = catchAsync(
       return next(new AppError('The user belonging to this token no longer exists.', 401));
     }
 
-    req.user = currentUser;
+    req.user = currentUser as IUser;
     next();
   },
 );
 
-export const restrictTo = (...roles: string[]) => {
+/**
+ * Middleware to restrict access to specific roles.
+ * Must be used after the 'protect' middleware.
+ */
+export const restrictTo = (...roles: UserRole[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     const user = req.user;
     if (!user?.role) {

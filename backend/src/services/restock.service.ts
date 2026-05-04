@@ -1,23 +1,34 @@
-import Product, { IProductDocument } from '../models/product.model';
-import QueryBuilder from '../builders/QueryBuilder';
+import { Prisma } from '@prisma/client';
+import prisma from '../config/prisma';
 
-//GET /api/restock-queue (Permissions: Admin, Manager)
-
+/**
+ * Retrieves a list of products that require restocking based on the is_restock_required flag.
+ * Calculates restocking priority based on current stock levels relative to thresholds.
+ */
 export const getRestockQueueFromDB = async (query: Record<string, unknown>) => {
-  const lowStockFilter = {
-    $expr: { $lte: ['$stock_quantity', '$min_threshold'] },
+  const { searchTerm, page = 1, limit = 20, sort, ...filters } = query;
+
+  const skip = (Number(page) - 1) * Number(limit);
+  const take = Number(limit);
+
+  const where: Prisma.ProductWhereInput = {
+    is_restock_required: true,
+    is_deleted: false,
+    ...(filters as any),
   };
 
-  const searchableFields = ['name'];
+  if (searchTerm) {
+    where.OR = [{ name: { contains: searchTerm as string, mode: 'insensitive' } }];
+  }
 
-  const productQuery = new QueryBuilder<IProductDocument>(Product.find(lowStockFilter), query)
-    .search(searchableFields)
-    .sort()
-    .paginate()
-    .fields();
+  const products = await prisma.product.findMany({
+    where,
+    skip,
+    take,
+    orderBy: sort ? { [sort as string]: 'asc' } : { stock_quantity: 'asc' },
+  });
 
-  const products = (await productQuery.modelQuery.lean()) as any[];
-  const meta = await productQuery.countTotal();
+  const total = await prisma.product.count({ where });
 
   const result = products.map((product) => {
     let priority = 'Low';
@@ -28,7 +39,7 @@ export const getRestockQueueFromDB = async (query: Record<string, unknown>) => {
     }
 
     return {
-      _id: product._id,
+      id: product.id,
       name: product.name,
       stock_quantity: product.stock_quantity,
       min_threshold: product.min_threshold,
@@ -37,7 +48,12 @@ export const getRestockQueueFromDB = async (query: Record<string, unknown>) => {
   });
 
   return {
-    meta,
+    meta: {
+      page: Number(page),
+      limit: Number(limit),
+      total,
+      totalPage: Math.ceil(total / take),
+    },
     result,
   };
 };

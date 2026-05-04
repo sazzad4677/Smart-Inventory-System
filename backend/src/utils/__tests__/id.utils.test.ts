@@ -1,21 +1,17 @@
-import Sequence from '../../models/sequence.model';
 import { generateNextId } from '../id.utils';
-
-// Mock model
-jest.mock('../../models/sequence.model');
+import prisma from '../../config/prisma';
 
 describe('id.utils - generateNextId', () => {
-  it('should call findOneAndUpdate and return formatted ID', async () => {
-    const mockSequence = { id: 'test_id', seq: 42 };
-    (Sequence.findOneAndUpdate as jest.Mock).mockResolvedValue(mockSequence);
+  it('should call upsert and return formatted ID', async () => {
+    (prisma.idSequence.upsert as jest.Mock).mockResolvedValue({ id: 'product_id', seq: 5 });
 
-    const result = await generateNextId('test_id', 'TST');
+    const result = await generateNextId('product_id', 'PRD');
 
-    expect(Sequence.findOneAndUpdate).toHaveBeenCalledWith(
-      { id: 'test_id' },
-      { $inc: { seq: 1 } },
-      expect.any(Object),
-    );
-    expect(result).toBe('TST-0042');
+    expect(prisma.idSequence.upsert).toHaveBeenCalledWith({
+      where: { id: 'product_id' },
+      update: { seq: { increment: 1 } },
+      create: { id: 'product_id', seq: 1 },
+    });
+    expect(result).toBe('PRD-0005');
   });
 });

@@ -18,6 +18,9 @@ interface SendEmailOptions {
   html: string;
 }
 
+/**
+ * Generic utility to send emails using the configured SMTP transporter.
+ */
 export const sendEmail = async (options: SendEmailOptions) => {
   try {
     const info = await transporter.sendMail({
@@ -29,11 +32,15 @@ export const sendEmail = async (options: SendEmailOptions) => {
     logger.info(`Email sent: ${info.messageId}`);
     return info;
   } catch (error) {
-    logger.error(`Error sending email: ${(error as any).message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`Error sending email: ${errorMessage}`);
     throw error;
   }
 };
 
+/**
+ * Sends a welcome invitation email to a new user with a signup link containing the unique token.
+ */
 export const sendInvitationEmail = async (email: string, token: string) => {
   const signupLink = `${config.cors.clientUrl}/signup?token=${token}&email=${encodeURIComponent(email)}`;
 

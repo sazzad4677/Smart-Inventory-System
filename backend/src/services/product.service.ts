@@ -1,35 +1,41 @@
-import QueryBuilder from '../builders/QueryBuilder';
-import Product, { IProductDocument } from '../models/product.model';
-import Category from '../models/category.model';
-import OrderItem from '../models/order-item.model';
+import { Prisma, ProductStatus } from '@prisma/client';
+import prisma from '../config/prisma';
 import { CreateProductInput, UpdateProductInput } from '../validators/product.validator';
-import { Types } from 'mongoose';
 import { generateNextId } from '../utils/id.utils';
 import { AppError } from '../utils/AppError';
 import { captureActivity } from '../utils/activity-logger';
 import { ActivityType } from '../types';
 import { Request } from 'express';
 
-// ─── POST /api/product (Permissions: Admin Only) ─────────────────────────────
 export const createProductIntoDB = async (
   req: Request,
-  userId: Types.ObjectId,
+  userId: string,
   payload: CreateProductInput,
 ) => {
-  // Verify category exists
-  const categoryExists = await Category.findById(payload.category_id);
+  const categoryExists = await prisma.category.findUnique({
+    where: { id: payload.category_id },
+  });
   if (!categoryExists) {
     throw new AppError('The specified category does not exist.', 400);
   }
 
   const product_id = await generateNextId('product_id', 'PRD');
-  const result = await Product.create({ ...payload, product_id, created_by: userId } as any);
+  const result = await prisma.product.create({
+    data: {
+      ...payload,
+      product_id,
+      created_by: userId,
+      // Automatically set status and restock flags based on initial stock
+      status: payload.stock_quantity <= 0 ? ProductStatus.OutOfStock : ProductStatus.Active,
+      is_restock_required: payload.stock_quantity <= payload.min_threshold,
+    },
+  });
 
   if (result) {
     await captureActivity(req, {
-      type: ActivityType.Create,
+      type: ActivityType.CREATE,
       resource: 'PRODUCT',
-      resourceId: result._id.toString(),
+      resourceId: result.id,
       action_text: `New product created: ${result.name}`,
       details: {
         product_id: result.product_id,
@@ -44,83 +50,117 @@ export const createProductIntoDB = async (
   return result;
 };
 
-// ─── GET /api/product (Permissions: Admin, Manager) ──────────────────────────
 export const getAllProductsFromDB = async (query: Record<string, unknown>) => {
-  const searchableFields = ['name', 'product_id'];
+  const { searchTerm, page = 1, limit = 20, sort, ...filters } = query;
 
-  const productQuery = new QueryBuilder<IProductDocument>(
-    Product.find({ is_deleted: { $ne: true } }).populate('category_id'),
-    query,
-  )
-    .search(searchableFields)
-    .filter()
-    .sort()
-    .paginate()
-    .fields();
+  const skip = (Number(page) - 1) * Number(limit);
+  const take = Number(limit);
 
-  const result = await productQuery.modelQuery;
-  const meta = await productQuery.countTotal();
+  const where: Prisma.ProductWhereInput = {
+    is_deleted: false,
+    ...(filters as any),
+  };
+
+  if (searchTerm) {
+    where.OR = [
+      { name: { contains: searchTerm as string, mode: 'insensitive' } },
+      { product_id: { contains: searchTerm as string, mode: 'insensitive' } },
+    ];
+  }
+
+  const result = await prisma.product.findMany({
+    where,
+    skip,
+    take,
+    include: {
+      category: true,
+    },
+    orderBy: sort ? { [sort as string]: 'asc' } : { createdAt: 'desc' },
+  });
+
+  const total = await prisma.product.count({ where });
 
   return {
-    meta,
+    meta: {
+      page: Number(page),
+      limit: Number(limit),
+      total,
+      totalPage: Math.ceil(total / take),
+    },
     result,
   };
 };
 
-// ─── GET /api/product/:id (Permissions: Admin, Manager) ──────────────────────
 export const getProductByIdFromDB = async (id: string) => {
-  return await Product.findOne({ _id: id, is_deleted: { $ne: true } }).populate('category_id');
+  return await prisma.product.findUnique({
+    where: { id, is_deleted: false },
+    include: { category: true },
+  });
 };
 
-// ─── PUT /api/product/:id (Permissions: Admin, Manager) ──────────────────────
 export const updateProductInDB = async (
   req: Request,
-  userId: Types.ObjectId,
+  userId: string,
   userRole: string,
   id: string,
   payload: UpdateProductInput,
 ) => {
-  const product = await Product.findById(id);
+  const product = await prisma.product.findUnique({
+    where: { id },
+  });
   if (!product) throw new AppError('Product not found', 404);
 
-  // Capture old product state for diffing
-  const oldProduct: Record<string, any> = product.toObject();
-
-  // Staff permission logic
+  // Permission Logic: Staff can only update products they created, unless it's a simple stock update
   if (userRole === 'Staff') {
     const isRestockOnly = Object.keys(payload).length === 1 && payload.stock_quantity !== undefined;
-    const isCreator = product.created_by && product.created_by.toString() === userId.toString();
+    const isCreator = product.created_by === userId;
 
     if (!isRestockOnly && !isCreator) {
       throw new AppError('Staff can only update products they created.', 403);
     }
   }
 
-  Object.assign(product, payload);
-  const result = await product.save();
+  // Filter out undefined values to satisfy exactOptionalPropertyTypes: true
+  const data: Prisma.ProductUpdateInput = Object.fromEntries(
+    Object.entries(payload).filter(([_, v]) => v !== undefined),
+  );
+
+  // Recalculate status and restock flags if stock or threshold changes
+  if (payload.stock_quantity !== undefined) {
+    data.status = payload.stock_quantity <= 0 ? ProductStatus.OutOfStock : ProductStatus.Active;
+    const minThreshold =
+      payload.min_threshold !== undefined ? payload.min_threshold : product.min_threshold;
+    data.is_restock_required = payload.stock_quantity <= minThreshold;
+  } else if (payload.min_threshold !== undefined) {
+    data.is_restock_required = product.stock_quantity <= payload.min_threshold;
+  }
+
+  const result = await prisma.product.update({
+    where: { id },
+    data,
+  });
 
   if (result) {
-    // Generate diff
-    const diff: Record<string, any> = {};
+    const diff: Record<string, { old: unknown; new: unknown }> = {};
     Object.keys(payload).forEach((key) => {
       const k = key as keyof UpdateProductInput;
-      if (oldProduct[k] !== payload[k]) {
-        diff[k] = { old: oldProduct[k], new: payload[k] };
+      if (product[k] !== payload[k]) {
+        diff[k] = { old: product[k], new: payload[k] };
       }
     });
 
-    let type = ActivityType.Update;
+    let type: ActivityType = ActivityType.UPDATE;
     let actionText = `Product updated: ${result.name}`;
 
     if (payload.stock_quantity !== undefined) {
-      type = ActivityType.Restock;
+      type = ActivityType.RESTOCK;
       actionText = `Stock updated for ${result.name} to ${result.stock_quantity}`;
     }
 
     await captureActivity(req, {
       type,
       resource: 'PRODUCT',
-      resourceId: result._id.toString(),
+      resourceId: result.id,
       action_text: actionText,
       details: {
         product_id: result.product_id,
@@ -134,10 +174,9 @@ export const updateProductInDB = async (
   return result;
 };
 
-// ─── DELETE /api/product/:id (Permissions: Admin, Manager) ──────────────────
 export const deleteProductFromDB = async (
   req: Request,
-  userId: Types.ObjectId,
+  userId: string,
   userRole: string,
   id: string,
 ) => {
@@ -145,19 +184,24 @@ export const deleteProductFromDB = async (
     throw new AppError('Staff are not allowed to delete products.', 403);
   }
 
-  // Protection: Check if product has been ordered
-  const hasOrders = await OrderItem.exists({ product_id: id });
+  // Prevent deletion if product is linked to existing orders
+  const hasOrders = await prisma.orderItem.findFirst({
+    where: { product_id: id },
+  });
   if (hasOrders) {
     throw new AppError('Cannot delete product that has been ordered.', 400);
   }
 
-  const result = await Product.findByIdAndUpdate(id, { is_deleted: true }, { new: true });
+  const result = await prisma.product.update({
+    where: { id },
+    data: { is_deleted: true },
+  });
 
   if (result) {
     await captureActivity(req, {
-      type: ActivityType.Delete,
+      type: ActivityType.DELETE,
       resource: 'PRODUCT',
-      resourceId: result._id.toString(),
+      resourceId: result.id,
       action_text: `Product deleted: ${result.name}`,
       details: {
         product_id: result.product_id,
@@ -170,17 +214,14 @@ export const deleteProductFromDB = async (
   return result;
 };
 
-// ─── DELETE /api/product/bulk (Permissions: Admin) ──────────────────────────
-export const bulkDeleteProductsFromDB = async (
-  req: Request,
-  userId: Types.ObjectId,
-  ids: string[],
-) => {
-  // Protection: Filter out products that have orders
-  const productsWithOrders = await OrderItem.find({ product_id: { $in: ids } }).distinct(
-    'product_id',
-  );
-  const idsToDelete = ids.filter((id) => !productsWithOrders.some((pId) => pId.toString() === id));
+export const bulkDeleteProductsFromDB = async (req: Request, userId: string, ids: string[]) => {
+  // Filter out products that have orders to prevent relational integrity issues
+  const itemsWithOrders = await prisma.orderItem.findMany({
+    where: { product_id: { in: ids } },
+    select: { product_id: true },
+  });
+  const productIdsWithOrders = new Set(itemsWithOrders.map((item) => item.product_id));
+  const idsToDelete = ids.filter((id) => !productIdsWithOrders.has(id));
 
   if (idsToDelete.length === 0 && ids.length > 0) {
     throw new AppError(
@@ -189,16 +230,19 @@ export const bulkDeleteProductsFromDB = async (
     );
   }
 
-  const result = await Product.updateMany({ _id: { $in: idsToDelete } }, { is_deleted: true });
+  const result = await prisma.product.updateMany({
+    where: { id: { in: idsToDelete } },
+    data: { is_deleted: true },
+  });
 
-  if (result.modifiedCount > 0) {
+  if (result.count > 0) {
     await captureActivity(req, {
-      type: ActivityType.Delete,
+      type: ActivityType.DELETE,
       resource: 'PRODUCT',
-      action_text: `Bulk deleted ${result.modifiedCount} products`,
+      action_text: `Bulk deleted ${result.count} products`,
       details: {
         product_ids: ids,
-        count: result.modifiedCount,
+        count: result.count,
       },
       userId,
     });

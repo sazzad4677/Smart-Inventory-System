@@ -18,8 +18,8 @@
 
     // Other Outputs
     "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
+    "declaration": false,
+    "declarationMap": false,
 
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
@@ -42,5 +42,5 @@
     "moduleDetection": "force",
     "skipLibCheck": true
   },
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist", "prisma.config.ts"]
 }

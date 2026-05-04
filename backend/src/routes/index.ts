@@ -13,7 +13,7 @@ import userRouter from './user.route';
 
 const router: Router = Router();
 
-const moduleRoutes = [
+const moduleRoutes: { path: string; route: Router }[] = [
   { path: '/auth', route: authRouter },
   { path: '/categories', route: categoryRouter },
   { path: '/products', route: productRouter },

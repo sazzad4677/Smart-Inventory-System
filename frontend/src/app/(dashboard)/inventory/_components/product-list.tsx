@@ -36,7 +36,7 @@ export function ProductList({
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedIds(products.map((p) => p._id));
+      setSelectedIds(products.map((p) => p.id));
     } else {
       setSelectedIds([]);
     }
@@ -71,8 +71,8 @@ export function ProductList({
         <Input
           type="checkbox"
           className="!h-4 !w-4 !p-0 rounded border border-white/10 bg-slate-900/50 accent-indigo-600 transition-all cursor-pointer hover:border-indigo-500/20 focus:ring-2 focus:ring-indigo-500/20 focus:ring-offset-0"
-          checked={selectedIds.includes(product._id)}
-          onChange={(e) => handleSelectOne(product._id, e.target.checked)}
+          checked={selectedIds.includes(product.id)}
+          onChange={(e) => handleSelectOne(product.id, e.target.checked)}
           onClick={(e) => e.stopPropagation()}
         />
       ),
@@ -90,10 +90,7 @@ export function ProductList({
     {
       header: "Category",
       cell: (product) => {
-        const categoryName =
-          typeof product.category_id === "object"
-            ? (product.category_id as { name: string }).name
-            : "N/A";
+        const categoryName = product.category?.name || "N/A";
         return <span className="text-slate-400">{categoryName}</span>;
       },
     },

@@ -1,10 +1,16 @@
+import prisma from '../../config/prisma';
 import { getRestockQueueFromDB } from '../restock.service';
-import Product from '../../models/product.model';
-import QueryBuilder from '../../builders/QueryBuilder';
 
-// Mock models and QueryBuilder
-jest.mock('../../models/product.model');
-jest.mock('../../builders/QueryBuilder');
+// Mock dependencies
+jest.mock('../../config/prisma', () => ({
+  __esModule: true,
+  default: {
+    product: {
+      findMany: jest.fn(),
+      count: jest.fn(),
+    },
+  },
+}));
 
 describe('Restock Service', () => {
   beforeEach(() => {
@@ -12,38 +18,21 @@ describe('Restock Service', () => {
   });
 
   describe('getRestockQueueFromDB', () => {
-    it('should return restock queue with correct priority levels', async () => {
+    it('should return products that require restocking with correct priority', async () => {
       const mockProducts = [
-        { _id: '1', name: 'P1', stock_quantity: 0, min_threshold: 10 },
-        { _id: '2', name: 'P2', stock_quantity: 4, min_threshold: 10 },
-        { _id: '3', name: 'P3', stock_quantity: 8, min_threshold: 10 },
+        { id: 'p1', name: 'Product 1', stock_quantity: 0, min_threshold: 10 },
+        { id: 'p2', name: 'Product 2', stock_quantity: 2, min_threshold: 10 },
+        { id: 'p3', name: 'Product 3', stock_quantity: 8, min_threshold: 10 },
       ];
-
-      const mockQueryBuilderInstance = {
-        search: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockReturnThis(),
-        paginate: jest.fn().mockReturnThis(),
-        fields: jest.fn().mockReturnThis(),
-        modelQuery: {
-          lean: jest.fn().mockReturnThis(),
-          // Use a function that returns the desired mockProducts
-          exec: jest.fn().mockResolvedValue(mockProducts),
-        },
-        countTotal: jest.fn().mockResolvedValue({ total: 3 }),
-      };
-
-      // Adjusting to handle .lean()
-      (mockQueryBuilderInstance.modelQuery.lean as jest.Mock).mockReturnValue(mockProducts);
-
-      (QueryBuilder as jest.Mock).mockImplementation(() => mockQueryBuilderInstance);
+      (prisma.product.findMany as jest.Mock).mockResolvedValue(mockProducts);
+      (prisma.product.count as jest.Mock).mockResolvedValue(3);
 
       const result = await getRestockQueueFromDB({});
 
-      expect(Product.find).toHaveBeenCalled();
-      expect(result.result.length).toBe(3);
-      expect(result.result?.[0]?.priority).toBe('High'); // 0 stock
-      expect(result.result?.[1]?.priority).toBe('Medium'); // 4 stocks (<= 10/2)
-      expect(result.result?.[2]?.priority).toBe('Low'); // 8 stocks (> 10/2)
+      expect(prisma.product.findMany).toHaveBeenCalled();
+      expect(result.result[0]!.priority).toBe('High');
+      expect(result.result[1]!.priority).toBe('Medium');
+      expect(result.result[2]!.priority).toBe('Low');
     });
   });
 });

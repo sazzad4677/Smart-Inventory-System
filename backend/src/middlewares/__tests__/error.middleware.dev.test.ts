@@ -26,7 +26,7 @@ describe('Error Middleware - globalErrorHandler (Development)', () => {
   });
 
   it('should return detailed error object in development environment', () => {
-    const error: any = new Error('Detailed development error');
+    const error = new Error('Detailed development error') as any;
     error.statusCode = 401;
 
     globalErrorHandler(error, req as Request, res as Response, next);

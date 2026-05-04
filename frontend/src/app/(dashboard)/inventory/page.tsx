@@ -37,14 +37,14 @@ export default async function InventoryPage({
 
   const productsPromise = getProductsAction({
     searchTerm: params.searchTerm,
-    category_id: selectedCategory?._id,
+    category_id: selectedCategory?.id,
     page: params.page || "1",
     limit: params.limit || "10",
   });
 
   const categoryOptions = categories.map((cat: Category) => ({
     label: cat.name,
-    value: cat._id,
+    value: cat.id,
   }));
 
   const filters: FilterField[] = [

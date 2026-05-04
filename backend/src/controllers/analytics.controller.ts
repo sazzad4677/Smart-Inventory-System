@@ -1,35 +1,49 @@
 import { Request, Response } from 'express';
 import { catchAsync } from '../utils/catchAsync';
-import ClientEvent from '../models/ClientEvent.model';
-import ApiMetric from '../models/ApiMetric.model';
+import prisma from '../config/prisma';
+
+interface ClientEventInput {
+  eventName?: string;
+  createdAt?: string | Date;
+}
 
 export const trackClientEvents = catchAsync(async (req: Request, res: Response) => {
-  const events = req.body.events;
+  const events = req.body.events as ClientEventInput[];
 
   if (Array.isArray(events) && events.length > 0) {
-    // Add server-side timestamp or enrich data if necessary
-    // Bulk insert to handle many events at once
-    await ClientEvent.insertMany(events);
+    // Map events to Prisma schema
+    const data = events.map((e: ClientEventInput) => ({
+      event: e.eventName || 'unknown',
+      timestamp: e.createdAt || new Date(),
+    }));
+
+    await prisma.clientEvent.createMany({
+      data,
+    });
   }
 
   res.status(200).json({ success: true, message: 'Events tracked successfully' });
 });
 
 export const getMetrics = catchAsync(async (req: Request, res: Response) => {
-  // Simple metrics endpoint: returns average response time, slow requests count, total event count
-  // In a real app, you'd add date filters and aggregation pipelines.
+  // Simple metrics endpoint using Prisma
+  const totalApiMetrics = await prisma.apiMetric.count();
 
-  const totalApiMetrics = await ApiMetric.countDocuments();
-  const slowRequests = await ApiMetric.countDocuments({ responseTime: { $gt: 500 } });
+  // Slow requests (> 500ms)
+  const slowRequests = await prisma.apiMetric.count({
+    where: { duration: { gt: 500 } },
+  });
 
-  const totalClientEvents = await ClientEvent.countDocuments();
+  const totalClientEvents = await prisma.clientEvent.count();
 
   // Calculate average response time
-  const avgResponseTimeAggr = await ApiMetric.aggregate([
-    { $group: { _id: null, avgTime: { $avg: '$responseTime' } } },
-  ]);
+  const aggregate = await prisma.apiMetric.aggregate({
+    _avg: {
+      duration: true,
+    },
+  });
 
-  const avgResponseTime = avgResponseTimeAggr.length > 0 ? avgResponseTimeAggr[0].avgTime : 0;
+  const avgResponseTime = aggregate._avg.duration || 0;
 
   res.status(200).json({
     success: true,

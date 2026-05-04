@@ -1,8 +1,9 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export const catchAsync =
-  (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) =>
-  (req: Request, res: Response, next: NextFunction) => {
-    return Promise.resolve(fn(req, res, next)).catch(next);
+  <T extends Request>(
+    fn: (req: T, res: Response, next: NextFunction) => Promise<unknown>,
+  ): RequestHandler =>
+  (req, res, next) => {
+    return Promise.resolve(fn(req as T, res, next)).catch(next);
   };

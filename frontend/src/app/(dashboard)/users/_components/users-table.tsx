@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/card";
 
 export interface UserWithSessions {
-  _id: string;
+  id: string;
   email: string;
   role: string;
   createdAt: string;
@@ -69,7 +69,7 @@ export function UsersTable({
       {
         header: "User Info",
         cell: (u) => {
-          const isSelf = u._id === currentUser?._id;
+          const isSelf = u.id === currentUser?.id;
           return (
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 font-bold border border-indigo-500/20 shadow-inner">
@@ -163,7 +163,7 @@ export function UsersTable({
         className: "text-right",
         cell: (u) => {
           const isActive = u.activeSessionCount > 0;
-          const isSelf = u._id === currentUser?._id;
+          const isSelf = u.id === currentUser?.id;
           if (!isActive || isSelf) return null;
 
           return (
@@ -171,7 +171,7 @@ export function UsersTable({
               variant="ghost"
               size="sm"
               className="text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 transition-all rounded-xl"
-              onClick={() => onRevoke(u._id, u.email)}
+              onClick={() => onRevoke(u.id, u.email)}
               disabled={isPending}
             >
               <LogOut className="h-4 w-4 mr-2" />

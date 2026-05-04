@@ -1,7 +1,7 @@
 import { Request } from 'express';
-import ActivityLog from '../models/activity-log.model';
-import { ActivityType } from '../types';
-import { Types } from 'mongoose';
+import { Prisma } from '@prisma/client';
+import prisma from '../config/prisma';
+import { ActivityType, AuthenticatedRequest } from '../types';
 import { logger } from './logger';
 
 interface LogOptions {
@@ -9,19 +9,19 @@ interface LogOptions {
   resource?: string;
   resourceId?: string;
   action_text: string;
-  details?: Record<string, any>;
-  userId?: Types.ObjectId;
+  details?: Record<string, unknown>;
+  userId?: string;
 }
 
 /**
  * Robust activity logger that automatically captures IP and User-Agent from the request.
+ * Logs are stored in the database and emitted via Socket.io for real-time updates.
  */
 export const captureActivity = async (req: Request | null, options: LogOptions) => {
   try {
     const { type, resource, resourceId, action_text, details, userId } = options;
 
-    // Use userId from options or from req.user
-    const finalUserId = userId || (req as any)?.user?._id;
+    const finalUserId = userId || (req as AuthenticatedRequest | null)?.user?.id;
 
     if (!finalUserId) {
       console.warn('Attempted to log activity without a user ID:', action_text);
@@ -33,38 +33,46 @@ export const captureActivity = async (req: Request | null, options: LogOptions) 
       : undefined;
     const user_agent = req ? (req.headers['user-agent'] as string) : undefined;
 
-    const logData: any = {
+    const logData: Prisma.ActivityLogCreateInput = {
       action_text,
       type,
-      user_id: finalUserId,
+      user: { connect: { id: finalUserId } },
       timestamp: new Date(),
     };
 
     if (resource) logData.resource = resource;
     if (resourceId) logData.resource_id = resourceId;
-    if (details) logData.details = details;
+    if (details) logData.details = details as Prisma.InputJsonValue;
     if (ip_address) logData.ip_address = ip_address;
     if (user_agent) logData.user_agent = user_agent;
 
-    const newLog = await ActivityLog.create(logData);
-    const populatedLog = await newLog.populate('user_id', 'email role');
+    const populatedLog = await prisma.activityLog.create({
+      data: logData,
+      include: {
+        user: {
+          select: {
+            email: true,
+            role: true,
+          },
+        },
+      },
+    });
 
-    // Emit real-time activity event via Socket.io
     const io = req?.app?.get('io');
     if (io) {
-      // Keep it brief for the notification bell
+      // Format a brief message for frontend notification bell
       const briefMessage =
-        type === 'RESTOCK'
+        type === ActivityType.RESTOCK
           ? 'Stock Updated'
           : `${resource ? resource.charAt(0) + resource.slice(1).toLowerCase() : 'System'} ${type.toLowerCase()}`;
 
       io.emit('new_activity', {
-        ...populatedLog.toObject(),
+        ...populatedLog,
         message: briefMessage,
       });
     }
   } catch (error) {
-    // don't want activity logging to crash the main request
+    // Prevent activity logging failures from crashing the main request thread
     logger.error('Failed to capture activity log:', error);
   }
 };

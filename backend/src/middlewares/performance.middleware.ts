@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import ApiMetric from '../models/ApiMetric.model';
+import prisma from '../config/prisma';
 import { logger } from '../utils/logger';
 
 export const performanceMiddleware = (req: Request, res: Response, next: NextFunction) => {
@@ -10,25 +10,21 @@ export const performanceMiddleware = (req: Request, res: Response, next: NextFun
     const { method, originalUrl } = req;
     const { statusCode } = res;
 
-    const metricData: any = {
-      method,
-      endpoint: originalUrl,
-      statusCode,
-      responseTime: duration,
-    };
+    // Save asynchronously to Prisma
+    prisma.apiMetric
+      .create({
+        data: {
+          method,
+          path: originalUrl,
+          statusCode,
+          duration,
+        },
+      })
+      .catch((err) => {
+        logger.error(`Failed to save API metric: ${err.message}`);
+      });
 
-    const ip = req.ip || req.socket.remoteAddress;
-    if (ip) metricData.ip = ip;
-
-    const userAgent = req.get('user-agent');
-    if (userAgent) metricData.userAgent = userAgent;
-
-    // We don't want to block the thread, so we save asynchronously without awaiting
-    ApiMetric.create(metricData).catch((err) => {
-      logger.error(`Failed to save API metric: ${err.message}`);
-    });
-
-    // We can also log slow requests (e.g. > 1000ms)
+    // Log slow requests (e.g. > 1000ms)
     if (duration > 1000) {
       logger.warn(`SLOW API REQUEST: ${method} ${originalUrl} took ${duration}ms`);
     }

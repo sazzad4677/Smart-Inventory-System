@@ -23,19 +23,110 @@ jest.mock('../config/redis', () => ({
   connectRedis: jest.fn().mockResolvedValue(true),
 }));
 
-// Mock the API Metric model
-jest.mock('../models/ApiMetric.model', () => ({
+// Mock the Prisma client
+jest.mock('../config/prisma', () => ({
   __esModule: true,
   default: {
-    create: jest.fn().mockResolvedValue(true),
-    insertOne: jest.fn().mockResolvedValue(true),
-    countDocuments: jest.fn(),
-    find: jest.fn().mockReturnThis(),
-    sort: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockReturnThis(),
-    aggregate: jest.fn(),
+    user: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue({}),
+      delete: jest.fn().mockResolvedValue({}),
+      count: jest.fn().mockResolvedValue(0),
+    },
+    product: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue({}),
+      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      delete: jest.fn().mockResolvedValue({}),
+      count: jest.fn().mockResolvedValue(0),
+      groupBy: jest.fn().mockResolvedValue([]),
+      aggregate: jest.fn().mockResolvedValue({}),
+    },
+    category: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue({}),
+      delete: jest.fn().mockResolvedValue({}),
+      count: jest.fn().mockResolvedValue(0),
+    },
+    order: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue({}),
+      delete: jest.fn().mockResolvedValue({}),
+      count: jest.fn().mockResolvedValue(0),
+      groupBy: jest.fn().mockResolvedValue([]),
+      aggregate: jest.fn().mockResolvedValue({ _sum: { total_price: 0 } }),
+    },
+    orderItem: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue({}),
+      delete: jest.fn().mockResolvedValue({}),
+      count: jest.fn().mockResolvedValue(0),
+    },
+    activityLog: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue({}),
+      delete: jest.fn().mockResolvedValue({}),
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+      count: jest.fn().mockResolvedValue(0),
+    },
+    session: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue({}),
+      delete: jest.fn().mockResolvedValue({}),
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+      count: jest.fn().mockResolvedValue(0),
+    },
+    apiMetric: {
+      create: jest.fn().mockResolvedValue({}),
+      findMany: jest.fn().mockResolvedValue([]),
+      count: jest.fn().mockResolvedValue(0),
+      aggregate: jest.fn().mockResolvedValue({ _avg: { duration: 0 } }),
+    },
+    clientEvent: {
+      createMany: jest.fn().mockResolvedValue({ count: 0 }),
+      count: jest.fn().mockResolvedValue(0),
+    },
+    invitation: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue({}),
+      delete: jest.fn().mockResolvedValue({}),
+    },
+    idSequence: {
+      upsert: jest.fn().mockResolvedValue({ seq: 1 }),
+      findUnique: jest.fn().mockResolvedValue(null),
+    },
+    $transaction: jest.fn((callback) => callback(mockPrisma)),
+    $connect: jest.fn().mockResolvedValue(undefined),
+    $disconnect: jest.fn().mockResolvedValue(undefined),
   },
 }));
+
+// Helper to access the mock prisma
+const mockPrisma = require('../config/prisma').default;
 
 // Mock the Rate Limiter Middleware completely
 jest.mock('../middlewares/rateLimiter.middleware', () => ({

@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 interface RestockModalProps {
   product: {
-    _id: string;
+    id: string;
     name: string;
     stock_quantity: number;
     min_threshold: number;
@@ -38,7 +38,7 @@ export function RestockModal({
 
   const onSubmit = (data: RestockInput) => {
     if (onRestock) {
-      onRestock(product._id, data.quantity_to_add);
+      onRestock(product.id, data.quantity_to_add);
       onOpenChange(false);
       return;
     }
@@ -46,7 +46,7 @@ export function RestockModal({
     startTransition(async () => {
       try {
         const result = await updateProductStockAction(
-          product._id,
+          product.id,
           product.stock_quantity,
           data.quantity_to_add,
         );

@@ -18,8 +18,8 @@ const columns: Column<Category>[] = [
       <div className="flex items-center justify-end gap-2 text-slate-400">
         <Calendar className="h-3.5 w-3.5" />
         <span>
-          {category.created_at
-            ? new Date(category.created_at).toLocaleDateString("en-US", {
+          {category.createdAt
+            ? new Date(category.createdAt).toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "short",
                 day: "numeric",

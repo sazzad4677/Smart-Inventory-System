@@ -60,7 +60,7 @@ export function EditProductDialog({
 
   const onSubmit = (data: ProductInput) => {
     startTransition(async () => {
-      const result = await updateProductAction(product._id, data);
+      const result = await updateProductAction(product.id, data);
       if (result.success) {
         onOpenChange(false);
         toast.success("Product updated successfully");
@@ -70,10 +70,7 @@ export function EditProductDialog({
     });
   };
 
-  const categoryId =
-    typeof product.category_id === "object"
-      ? product.category_id._id
-      : product.category_id;
+  const categoryId = product.category?.id || product.category_id;
 
   return (
     <ActionModal

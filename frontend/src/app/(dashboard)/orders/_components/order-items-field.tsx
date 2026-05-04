@@ -113,9 +113,9 @@ export function OrderItemsField({
 
           const rowOptions = fetchedProducts.map((p: Product) => ({
             label: `${p.name} ($${p.price})`,
-            value: p._id,
+            value: p.id,
             disabled:
-              selectedProductIds.includes(p._id) && p._id !== currentProductId,
+              selectedProductIds.includes(p.id) && p.id !== currentProductId,
           }));
 
           if (
@@ -124,7 +124,7 @@ export function OrderItemsField({
           ) {
             rowOptions.unshift({
               label: `${currentProduct.name} ($${currentProduct.price})`,
-              value: currentProduct._id,
+              value: currentProduct.id,
               disabled: false,
             });
           }
@@ -211,8 +211,7 @@ export function OrderItemsField({
                   onClick={() => {
                     remove(index);
                     // Force re-validation after removal to update isValid state
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    setTimeout(() => form.trigger("items" as any), 0);
+                    setTimeout(() => form.trigger("items"), 0);
                   }}
                   className="h-9 w-9 text-rose-500 hover:text-rose-400 hover:bg-rose-500/10"
                   disabled={fields.length === 1}

@@ -36,16 +36,22 @@ jobs:
       - name: Install Dependencies
         run: pnpm install
 
+      - name: Generate Prisma Client
+        env:
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/test-db"
+        run: pnpm --filter backend exec prisma generate
+
       - name: Run Backend Tests
         env:
           # dummy variables to satisfy config.ts during tests
           NODE_ENV: "test"
           PORT: 5000
-          MONGODB_URI: "mongodb://localhost:27017/test-db"
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/test-db"
           JWT_SECRET: "super-secret-test-key"
           JWT_ACCESS_EXPIRES_IN: "1h"
           JWT_REFRESH_SECRET: "super-secret-test-key"
           JWT_REFRESH_EXPIRES_IN: "7d"
+          OPENROUTER_API_KEY: "dummy-key"
         run: pnpm --filter backend run test:coverage
 
       - name: Verify Backend Compilation

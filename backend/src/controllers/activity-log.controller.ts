@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { catchAsync } from '../utils/catchAsync';
 import { sendResponse } from '../utils/sendResponse';
 import { AppError } from '../utils/AppError';
@@ -7,13 +7,14 @@ import {
   undoActivityInDB,
   redoActivityInDB,
 } from '../services/activity-log.service';
+import { AuthenticatedRequest } from '../types';
 
 // ─── GET /api/activity-logs (Permissions: All Authenticated Users) ───────────────────
-export const getAllActivityLogs = catchAsync(async (req: Request, res: Response) => {
-  const user = (req as any).user;
-  const { meta, result } = await getAllActivityLogsFromDB(req.query, {
-    _id: user._id.toString(),
-    role: user.role,
+export const getAllActivityLogs = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
+  const user = req.user;
+  const { meta, result } = await getAllActivityLogsFromDB(req.query as Record<string, unknown>, {
+    id: user!.id,
+    role: user!.role,
   });
 
   sendResponse(res, {
@@ -26,7 +27,7 @@ export const getAllActivityLogs = catchAsync(async (req: Request, res: Response)
 });
 
 // ─── POST /api/activity-logs/:id/undo (Permissions: Admin, Manager) ──────────────────
-export const undoActivity = catchAsync(async (req: Request, res: Response) => {
+export const undoActivity = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
   if (!id) throw new AppError('Activity ID is required', 400);
 
@@ -41,7 +42,7 @@ export const undoActivity = catchAsync(async (req: Request, res: Response) => {
 });
 
 // ─── POST /api/activity-logs/:id/redo (Permissions: Admin, Manager) ──────────────────
-export const redoActivity = catchAsync(async (req: Request, res: Response) => {
+export const redoActivity = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
   if (!id) throw new AppError('Activity ID is required', 400);
 

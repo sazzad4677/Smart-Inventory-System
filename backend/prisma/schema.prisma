@@ -1,0 +1,181 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  Admin
+  Manager
+  Staff
+}
+
+enum ProductStatus {
+  Active
+  OutOfStock @map("Out of Stock")
+}
+
+enum OrderStatus {
+  Pending
+  Confirmed
+  Shipped
+  Delivered
+  Cancelled
+}
+
+enum ActivityType {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  RESTOCK
+  SYSTEM
+}
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  password_hash  String
+  role           UserRole @default(Manager)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  products       Product[]
+  categories     Category[]
+  sessions       Session[]
+  invitations    Invitation[]
+  activityLogs   ActivityLog[]
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products  Product[]
+  creator   User?    @relation(fields: [created_by], references: [id])
+  created_by String?
+}
+
+model Product {
+  id                  String        @id @default(uuid())
+  product_id          String?       @unique
+  name                String
+  price               Float
+  stock_quantity      Int           @default(0)
+  min_threshold       Int           @default(0)
+  status              ProductStatus @default(Active)
+  is_restock_required Boolean       @default(false)
+  is_deleted          Boolean       @default(false)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  category            Category      @relation(fields: [category_id], references: [id])
+  category_id         String
+
+  creator             User          @relation(fields: [created_by], references: [id])
+  created_by          String
+
+  orderItems          OrderItem[]
+}
+
+model Order {
+  id            String      @id @default(uuid())
+  order_id      String?     @unique
+  customer_name String
+  total_price   Float
+  status        OrderStatus @default(Pending)
+  is_deleted    Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  orderItems    OrderItem[]
+}
+
+model OrderItem {
+  id         String   @id @default(uuid())
+  quantity   Int
+  unit_price Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  order      Order    @relation(fields: [order_id], references: [id])
+  order_id   String
+
+  product    Product  @relation(fields: [product_id], references: [id])
+  product_id String
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  refreshToken String   @unique
+  expiresAt    DateTime
+  userAgent    String?
+  ipAddress    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id])
+  userId       String
+}
+
+model Invitation {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  token     String   @unique
+  role      UserRole
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  invitedBy User     @relation(fields: [userId], references: [id])
+  userId    String
+}
+
+model ActivityLog {
+  id          String       @id @default(uuid())
+  action_text String
+  type        ActivityType
+  resource    String?
+  resource_id String?
+  details     Json?
+  ip_address  String?
+  user_agent  String?
+  timestamp   DateTime     @default(now())
+  is_undone   Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  user        User         @relation(fields: [user_id], references: [id])
+  user_id     String
+}
+
+model ApiMetric {
+  id         String   @id @default(uuid())
+  path       String
+  method     String
+  statusCode Int
+  duration   Int
+  timestamp  DateTime @default(now())
+}
+
+model ClientEvent {
+  id        String   @id @default(uuid())
+  event     String
+  timestamp DateTime @default(now())
+}
+
+model IdSequence {
+  id        String   @id
+  seq       Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

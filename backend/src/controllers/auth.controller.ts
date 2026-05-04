@@ -3,13 +3,12 @@ import { catchAsync } from '../utils/catchAsync';
 import { sendResponse } from '../utils/sendResponse';
 import { signupUser, loginUser, logoutUser, refreshAccessToken } from '../services/auth.service';
 import type { SignupInput, LoginInput } from '../validators/auth.validator';
-import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 import { config } from '../config/config';
 import ms from 'ms';
 import { captureActivity } from '../utils/activity-logger';
-import { ActivityType } from '../types';
+import { ActivityType, AuthenticatedRequest } from '../types';
 
-const refreshExpiresIn = ms(config.jwt.refreshExpiresIn as any);
+const refreshExpiresIn = ms(config.jwt.refreshExpiresIn as ms.StringValue);
 const cookieOptions = {
   httpOnly: true,
   secure: config.server.nodeEnv === 'production',
@@ -17,18 +16,17 @@ const cookieOptions = {
   maxAge: typeof refreshExpiresIn === 'number' ? refreshExpiresIn : undefined,
 };
 
-// ─── POST /api/auth/signup (Public) ───────────────────────────────────────────
 export const signup = catchAsync(async (req: Request, res: Response) => {
   const { user, accessToken, refreshToken } = await signupUser(req.body as SignupInput);
 
   res.cookie('refreshToken', refreshToken, cookieOptions);
 
   await captureActivity(req, {
-    type: ActivityType.Create,
+    type: ActivityType.CREATE,
     resource: 'USER',
     action_text: `New account created: ${user.email}`,
     details: { email: user.email, role: user.role },
-    userId: user._id,
+    userId: user.id,
   });
 
   sendResponse(res, {
@@ -38,22 +36,21 @@ export const signup = catchAsync(async (req: Request, res: Response) => {
     data: {
       accessToken,
       refreshToken,
-      user: { id: user._id, email: user.email, role: user.role },
+      user: { id: user.id, email: user.email, role: user.role },
     },
   });
 });
 
-// ─── POST /api/auth/login (Public) ────────────────────────────────────────────
 export const login = catchAsync(async (req: Request, res: Response) => {
   const { user, accessToken, refreshToken } = await loginUser(req.body as LoginInput);
 
   res.cookie('refreshToken', refreshToken, cookieOptions);
 
   await captureActivity(req, {
-    type: ActivityType.Login,
+    type: ActivityType.LOGIN,
     action_text: `User logged in: ${user.email}`,
     details: { email: user.email, role: user.role },
-    userId: user._id,
+    userId: user.id,
   });
 
   sendResponse(res, {
@@ -63,12 +60,11 @@ export const login = catchAsync(async (req: Request, res: Response) => {
     data: {
       accessToken,
       refreshToken,
-      user: { id: user._id, email: user.email, role: user.role },
+      user: { id: user.id, email: user.email, role: user.role },
     },
   });
 });
 
-// ─── POST /api/auth/refresh-token  ────────────────────────────────────
 export const refreshToken = catchAsync(async (req: Request, res: Response) => {
   const token = (req.body as { refreshToken?: string })?.refreshToken || req.cookies?.refreshToken;
 
@@ -86,7 +82,6 @@ export const refreshToken = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// ─── POST /api/auth/logout (Public — no protect needed) ───────────────────────
 export const logout = catchAsync(async (req: Request, res: Response) => {
   const token = (req.body as { refreshToken?: string })?.refreshToken || req.cookies?.refreshToken;
 
@@ -103,13 +98,12 @@ export const logout = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, { statusCode: 200, success: true, message: 'Logged out successfully.' });
 });
 
-// ─── GET /api/auth/me (Private) ───────────────────────────────────────────────
 export const me = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
   const user = req.user;
   sendResponse(res, {
     statusCode: 200,
     success: true,
     message: 'User retrieved successfully.',
-    data: { user: { id: user!._id, email: user!.email, role: user!.role } },
+    data: { user: { id: user!.id, email: user!.email, role: user!.role } },
   });
 });

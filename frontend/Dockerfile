@@ -1,57 +1,50 @@
-# Stage 1: Deps
-FROM node:20-alpine AS deps
+# Stage 1: Base
+FROM node:20-alpine AS base
 RUN apk add --no-cache libc6-compat
-# Enable pnpm
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
 RUN npm install -g pnpm
 
+# Stage 2: Deps
+FROM base AS deps
 WORKDIR /usr/src/app
-
-# Copy workspace and lockfile
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
-
-# Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Stage 2: Builder
-FROM node:20-alpine AS builder
-# Enable pnpm
-RUN npm install -g pnpm
-
+# Stage 3: Development
+FROM deps AS development
 WORKDIR /usr/src/app
-
-COPY --from=deps /usr/src/app/node_modules ./node_modules
-COPY --from=deps /usr/src/app/frontend/node_modules ./frontend/node_modules
 COPY . .
 
-# Build the application
+# Stage 4: Builder
+FROM development AS builder
+WORKDIR /usr/src/app
+# Next.js build needs these env vars often if they are baked in
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 RUN pnpm --filter frontend build
 
-# Step 4: Runner
+# Stage 5: Runner
 FROM node:20-alpine AS runner
-
 WORKDIR /usr/src/app
 
 ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy the standalone output from builder
+# Copy standalone build
 COPY --from=builder --chown=nextjs:nodejs /usr/src/app/frontend/.next/standalone ./
-
-# Copy static assets to the correct package subfolder
 COPY --from=builder --chown=nextjs:nodejs /usr/src/app/frontend/public ./frontend/public
 COPY --from=builder --chown=nextjs:nodejs /usr/src/app/frontend/.next/static ./frontend/.next/static
-
-# Set the correct permission for prerender cache
-RUN mkdir -p frontend/.next
-RUN chown nextjs:nodejs frontend/.next
 
 USER nextjs
 
 EXPOSE 3000
-
-ENV PORT=3000
 
 CMD ["node", "frontend/server.js"]

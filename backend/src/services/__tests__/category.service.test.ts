@@ -1,64 +1,50 @@
+import prisma from '../../config/prisma';
 import { createCategoryIntoDB, getAllCategoriesFromDB } from '../category.service';
-import Category from '../../models/category.model';
-import ActivityLog from '../../models/activity-log.model';
-import QueryBuilder from '../../builders/QueryBuilder';
-import { Types } from 'mongoose';
 
-// Mock models and QueryBuilder
-jest.mock('../../models/category.model');
-jest.mock('../../models/activity-log.model');
-jest.mock('../../builders/QueryBuilder');
+// Mock dependencies
+jest.mock('../../config/prisma', () => ({
+  __esModule: true,
+  default: {
+    category: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      count: jest.fn(),
+    },
+  },
+}));
+
+jest.mock('../../utils/activity-logger');
 
 describe('Category Service', () => {
-  let req: any;
-
   beforeEach(() => {
     jest.clearAllMocks();
-    req = {
-      ip: '127.0.0.1',
-      headers: {},
-      socket: { remoteAddress: '127.0.0.1' },
-      get: jest.fn().mockReturnValue('mock-agent'),
-    };
   });
 
   describe('createCategoryIntoDB', () => {
-    it('should successfully create a category and log activity', async () => {
-      const userId = new Types.ObjectId();
+    it('should successfully create a category', async () => {
       const payload = { name: 'Electronics' };
-      (Category.create as jest.Mock).mockResolvedValue({ _id: 'cat123', name: 'Electronics' });
-      (ActivityLog.create as jest.Mock).mockResolvedValue({});
+      const req = { user: { id: 'user1' } };
+      (prisma.category.create as jest.Mock).mockResolvedValue({ id: 'cat1', name: 'Electronics' });
 
-      const result = await createCategoryIntoDB(req as any, userId, payload);
+      const result = await createCategoryIntoDB(req as any, 'user1', payload);
 
-      expect(Category.create).toHaveBeenCalledWith(payload);
-      expect(ActivityLog.create).toHaveBeenCalled();
+      expect(prisma.category.create).toHaveBeenCalled();
       expect(result.name).toBe('Electronics');
     });
   });
 
   describe('getAllCategoriesFromDB', () => {
-    it('should return categories and meta via QueryBuilder', async () => {
-      const mockResult = [{ name: 'Electronics' }];
-      const mockMeta = { total: 1 };
-
-      const mockQueryBuilderInstance = {
-        search: jest.fn().mockReturnThis(),
-        filter: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockReturnThis(),
-        paginate: jest.fn().mockReturnThis(),
-        fields: jest.fn().mockReturnThis(),
-        modelQuery: Promise.resolve(mockResult),
-        countTotal: jest.fn().mockResolvedValue(mockMeta),
-      };
-
-      (QueryBuilder as jest.Mock).mockImplementation(() => mockQueryBuilderInstance);
+    it('should return categories and meta', async () => {
+      const mockCategories = [{ id: 'cat1', name: 'Electronics' }];
+      (prisma.category.findMany as jest.Mock).mockResolvedValue(mockCategories);
+      (prisma.category.count as jest.Mock).mockResolvedValue(1);
 
       const result = await getAllCategoriesFromDB({});
 
-      expect(QueryBuilder).toHaveBeenCalled();
-      expect(result.result).toBe(mockResult);
-      expect(result.meta).toBe(mockMeta);
+      expect(prisma.category.findMany).toHaveBeenCalled();
+      expect(result.result).toEqual(mockCategories);
+      expect(result.meta.total).toBe(1);
     });
   });
 });

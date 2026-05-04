@@ -251,7 +251,7 @@ async function RecentActivity({
           {activities.length > 0 ? (
             activities.map((activity, i: number) => (
               <div
-                key={activity._id}
+                key={activity.id}
                 className="flex items-start gap-4 animate-in fade-in slide-in-from-left duration-500 group"
                 style={{ animationDelay: `${i * 100}ms` }}
               >
@@ -262,7 +262,7 @@ async function RecentActivity({
                   </p>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold text-indigo-400/80 bg-indigo-500/5 px-1.5 py-0.5 rounded border border-indigo-500/10 tracking-tight">
-                      {activity.user_id?.email?.split("@")[0] || "System"}
+                      {activity.user?.email?.split("@")[0] || "System"}
                     </span>
                     <span className="text-[10px] text-slate-600 font-medium">
                       {new Intl.DateTimeFormat("en-US", {
