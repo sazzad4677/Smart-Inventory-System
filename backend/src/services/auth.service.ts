@@ -8,9 +8,8 @@ import { captureActivity } from '../utils/activity-logger';
 import { ActivityType, IUser } from '../types';
 import { Request } from 'express';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { validateInvitation, markInvitationAsUsed } from './invitation.service';
-
-// ─── Token Generation ──────────────────────────────────────────────────────────
 
 interface TokenPair {
   accessToken: string;
@@ -54,13 +53,11 @@ const createSession = async (
 };
 
 const setupUserSession = async (user: IUser): Promise<TokenPair> => {
-  const sessionId = crypto.randomUUID(); // Use native crypto for UUIDs
+  const sessionId = crypto.randomUUID();
   const tokens = generateTokens(user.id, user.role, sessionId);
   await createSession(sessionId, user.id, tokens.refreshToken);
   return tokens;
 };
-
-// ─── POST /api/auth/signup ─────────────────────────────────────────────────────
 
 export const signupUser = async (
   data: SignupInput & { token: string },
@@ -72,10 +69,8 @@ export const signupUser = async (
     throw new AppError('An account with this email already exists.', 409);
   }
 
-  // Validate Invitation
   const invitation = await validateInvitation(data.email, data.token);
 
-  // Hash password manually (since Mongoose pre-save hook is gone)
   const salt = await bcrypt.genSalt(12);
   const password_hash = await bcrypt.hash(data.password, salt);
 
@@ -83,11 +78,10 @@ export const signupUser = async (
     data: {
       email: data.email,
       password_hash,
-      role: invitation.role, // Always take role from invitation
+      role: invitation.role, // Use role specified in the invitation
     },
   });
 
-  // Mark invitation as used
   await markInvitationAsUsed(invitation.id);
 
   const { accessToken, refreshToken } = await setupUserSession(user);
@@ -95,8 +89,6 @@ export const signupUser = async (
   const { password_hash: _, ...userWithoutPassword } = user;
   return { user: userWithoutPassword, accessToken, refreshToken };
 };
-
-// ─── POST /api/auth/login ──────────────────────────────────────────────────────
 
 export const loginUser = async (
   data: LoginInput,
@@ -119,12 +111,9 @@ export const loginUser = async (
   return { user: userWithoutPassword, accessToken, refreshToken };
 };
 
-// ─── POST /api/auth/refresh-token ─────────────────────────────────────────────
-
 export const refreshAccessToken = async (
   refreshToken: string,
 ): Promise<{ accessToken: string; refreshToken: string }> => {
-  // Verify the refresh token signature + expiry
   let decoded: jwt.JwtPayload;
   try {
     decoded = jwt.verify(refreshToken, config.jwt.refreshSecret) as jwt.JwtPayload;
@@ -132,7 +121,7 @@ export const refreshAccessToken = async (
     throw new AppError('Invalid or expired refresh token. Please log in again.', 401);
   }
 
-  // Confirm the session exists in DB (handles explicit logout / revocation)
+  // Verify session exists and hasn't been revoked
   const session = await prisma.session.findUnique({
     where: { refreshToken },
   });
@@ -140,7 +129,6 @@ export const refreshAccessToken = async (
     throw new AppError('Session has been revoked or already rotated. Please log in again.', 401);
   }
 
-  // Confirm user still exists
   const user = await prisma.user.findUnique({
     where: { id: decoded.id },
   });
@@ -148,11 +136,10 @@ export const refreshAccessToken = async (
     throw new AppError('The user belonging to this session no longer exists.', 401);
   }
 
-  // Issue a new pair of tokens (Rotation)
+  // Issue new token pair and rotate the refresh token in database
   const sessionId = session.id;
   const tokens = generateTokens(user.id, user.role, sessionId);
 
-  // Update the session with the new refresh token
   await prisma.session.update({
     where: { id: sessionId },
     data: {
@@ -163,8 +150,6 @@ export const refreshAccessToken = async (
 
   return tokens;
 };
-
-// ─── POST /api/auth/logout ────────────────────────────────────────────────────
 
 export const logoutUser = async (req: Request, refreshToken: string): Promise<void> => {
   const session = await prisma.session.findUnique({

@@ -14,13 +14,12 @@ interface LowStockProduct {
   stock: number;
 }
 
-// ─── POST /api/order (Permissions: Private) ──────────────────────────────────
 export const createOrderInDB = async (req: Request, userId: string, payload: CreateOrderInput) => {
   const { customer_name, items } = payload;
 
   const order_id = await generateNextId('order_id', 'ORD');
 
-  // 1. Check for duplicate product_ids
+  // Validate for duplicate product IDs in the request
   const productIds = items.map((item) => item.product_id);
   const uniqueProductIds = new Set(productIds);
   if (uniqueProductIds.size !== productIds.length) {
@@ -41,7 +40,6 @@ export const createOrderInDB = async (req: Request, userId: string, payload: Cre
         throw new AppError(`Product with ID ${item.product_id} not found`, 404);
       }
 
-      // Check if product is Active
       if (product.status !== ProductStatus.Active) {
         throw new AppError(
           `Conflict Detection: Product "${product.name}" is not Active (${product.status})`,
@@ -49,7 +47,6 @@ export const createOrderInDB = async (req: Request, userId: string, payload: Cre
         );
       }
 
-      // Check if requested_qty > stock_quantity
       if (item.quantity > product.stock_quantity) {
         throw new AppError(
           `Only ${product.stock_quantity} items available for "${product.name}"`,
@@ -61,7 +58,7 @@ export const createOrderInDB = async (req: Request, userId: string, payload: Cre
       const isRestockRequired = newStockQuantity <= product.min_threshold;
       const newStatus = newStockQuantity <= 0 ? ProductStatus.OutOfStock : ProductStatus.Active;
 
-      // Update product stock and flags
+      // Update inventory for each item in the order
       await tx.product.update({
         where: { id: product.id },
         data: {
@@ -89,7 +86,6 @@ export const createOrderInDB = async (req: Request, userId: string, payload: Cre
       });
     }
 
-    // Create the Order
     const order = await tx.order.create({
       data: {
         customer_name,
@@ -105,7 +101,6 @@ export const createOrderInDB = async (req: Request, userId: string, payload: Cre
       },
     });
 
-    // Activity Log
     await captureActivity(req, {
       type: ActivityType.CREATE,
       resource: 'ORDER',
@@ -117,7 +112,6 @@ export const createOrderInDB = async (req: Request, userId: string, payload: Cre
   });
 };
 
-// ─── GET /api/order (Permissions: Private) ───────────────────────────────────
 export const getAllOrdersFromDB = async (query: Record<string, unknown>) => {
   const { searchTerm, page = 1, limit = 20, sort, ...filters } = query;
 
@@ -156,7 +150,6 @@ export const getAllOrdersFromDB = async (query: Record<string, unknown>) => {
   };
 };
 
-// ─── GET /api/order/:id (Permissions: Private) ───────────────────────────────
 export const getOrderByIdFromDB = async (orderId: string) => {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
@@ -179,7 +172,6 @@ export const getOrderByIdFromDB = async (orderId: string) => {
   };
 };
 
-// ─── PUT /api/order/:id/status (Permissions: Admin, Manager) ─────────────────
 export const updateOrderStatusInDB = async (
   req: Request,
   userId: string,
@@ -200,6 +192,7 @@ export const updateOrderStatusInDB = async (
       throw new AppError('Order is already cancelled.', 400);
     }
 
+    // If order is being cancelled, restore stock for all items
     if (status === OrderStatus.Cancelled) {
       for (const item of existingOrder.orderItems) {
         const product = await tx.product.findUnique({
@@ -236,7 +229,6 @@ export const updateOrderStatusInDB = async (
   });
 };
 
-// ─── DELETE /api/order/:id (Permissions: Admin Only) ──────────────────────────
 export const deleteOrderFromDB = async (req: Request, userId: string, orderId: string) => {
   const order = await prisma.order.update({
     where: { id: orderId },

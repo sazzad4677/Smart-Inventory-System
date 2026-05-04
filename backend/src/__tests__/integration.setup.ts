@@ -1,11 +1,13 @@
-import mongoose from 'mongoose';
-import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import { app } from '../index';
+import prisma from '../config/prisma';
 
-// Increase timeout for integration tests (especially for MongoMemoryServer startup)
-jest.setTimeout(120000);
+// Mock Email Utility
+jest.mock('../utils/email', () => ({
+  sendEmail: jest.fn().mockResolvedValue({ messageId: 'test-id' }),
+  sendInvitationEmail: jest.fn().mockResolvedValue({ messageId: 'test-id' }),
+}));
 
-// Mock Redis to prevent integration tests from needing a real Redis server
+// Mock Redis
 jest.mock('../config/redis', () => ({
   redisClient: {
     isOpen: true,
@@ -20,52 +22,76 @@ jest.mock('../config/redis', () => ({
   connectRedis: jest.fn().mockResolvedValue(null),
 }));
 
-let mongoServer: MongoMemoryReplSet;
+// Mock Prisma
+jest.mock('../config/prisma', () => ({
+  __esModule: true,
+  default: {
+    user: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue({}),
+      delete: jest.fn().mockResolvedValue({}),
+      count: jest.fn().mockResolvedValue(0),
+    },
+    session: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue({}),
+      delete: jest.fn().mockResolvedValue({}),
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+      count: jest.fn().mockResolvedValue(0),
+    },
+    invitation: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue({}),
+      delete: jest.fn().mockResolvedValue({}),
+    },
+    product: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue({}),
+      delete: jest.fn().mockResolvedValue({}),
+      count: jest.fn().mockResolvedValue(0),
+    },
+    order: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+      create: jest.fn().mockResolvedValue({}),
+      update: jest.fn().mockResolvedValue({}),
+      delete: jest.fn().mockResolvedValue({}),
+      count: jest.fn().mockResolvedValue(0),
+    },
+    idSequence: {
+      upsert: jest.fn().mockResolvedValue({ seq: 1 }),
+      findUnique: jest.fn().mockResolvedValue(null),
+    },
+    apiMetric: {
+      create: jest.fn().mockResolvedValue({}),
+      count: jest.fn().mockResolvedValue(0),
+      aggregate: jest.fn().mockResolvedValue({ _avg: { duration: 0 } }),
+    },
+    $transaction: jest.fn((callback) => callback(jest.requireMock('../config/prisma').default)),
+    $connect: jest.fn().mockResolvedValue(undefined),
+    $disconnect: jest.fn().mockResolvedValue(undefined),
+  },
+}));
 
 beforeAll(async () => {
-  try {
-    mongoServer = await MongoMemoryReplSet.create({
-      replSet: {
-        name: 'rs0',
-        count: 1,
-        dbName: 'test_db',
-        storageEngine: 'wiredTiger',
-      },
-    });
-    const uri = mongoServer.getUri();
-
-    // Disconnect if already connected (to be safe)
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.disconnect();
-    }
-
-    await mongoose.connect(uri);
-  } catch (error) {
-    console.error('Failed to start/connect to MongoMemoryServer:', error);
-    throw error;
-  }
+  // Any global setup
 });
 
 afterEach(async () => {
-  if (mongoose.connection.readyState === 1) {
-    const collections = mongoose.connection.collections;
-    for (const key in collections) {
-      const collection = collections[key];
-      if (collection) {
-        await collection.deleteMany({});
-      }
-    }
-  }
-});
-
-afterAll(async () => {
-  if (mongoose.connection.readyState !== 0) {
-    await mongoose.connection.dropDatabase();
-    await mongoose.connection.close();
-  }
-  if (mongoServer) {
-    await mongoServer.stop();
-  }
+  jest.clearAllMocks();
 });
 
 export { app };

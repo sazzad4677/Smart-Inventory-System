@@ -1,8 +1,10 @@
 import { Prisma } from '@prisma/client';
 import prisma from '../config/prisma';
 
-//GET /api/restock-queue (Permissions: Admin, Manager)
-
+/**
+ * Retrieves a list of products that require restocking based on the is_restock_required flag.
+ * Calculates restocking priority based on current stock levels relative to thresholds.
+ */
 export const getRestockQueueFromDB = async (query: Record<string, unknown>) => {
   const { searchTerm, page = 1, limit = 20, sort, ...filters } = query;
 

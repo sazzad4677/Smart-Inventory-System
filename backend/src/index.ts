@@ -27,11 +27,13 @@ const io = new Server(server, {
   },
 });
 
-// Trust proxy for Render/Cloud environments
+/**
+ * Trust proxy for Render/Cloud environments to correctly identify client IPs
+ * and support rate limiting.
+ */
 app.set('trust proxy', 1);
 app.set('io', io);
 
-// Middleware
 app.use(morganMiddleware);
 app.use(performanceMiddleware);
 app.use(helmet());
@@ -44,10 +46,9 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-// Global Rate Limiter
+// Apply rate limiting to all /api routes
 app.use('/api', apiRateLimiter);
 
-// Routes
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.get('/', (req: Request, res: Response) => {
@@ -78,7 +79,6 @@ app.get('/health', async (req: Request, res: Response) => {
 
 app.use('/api', router);
 
-// Socket.io Connection Event
 io.on('connection', (socket) => {
   logger.info(`New client connected: ${socket.id}`);
   socket.on('disconnect', () => {
@@ -86,15 +86,16 @@ io.on('connection', (socket) => {
   });
 });
 
-// 404 Not Found Handler
 app.use((req: Request, res: Response, next: NextFunction) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
-// Global Error Handler
 app.use(globalErrorHandler);
 
-// Start server only when run directly (not when imported by tests)
+/**
+ * Bootstraps the application by connecting to databases and starting the server.
+ * Start server only when run directly (not when imported by tests).
+ */
 const startServer = async () => {
   try {
     await prisma.$connect();
@@ -109,7 +110,10 @@ const startServer = async () => {
   server.listen(config.server.port, () => {
     logger.info(`🚀 Server running in ${config.server.nodeEnv} mode on port ${config.server.port}`);
 
-    // Retention Job: Cleanup logs older than 90 days every 24 hours
+    /**
+     * Log Retention Job: Cleanup logs older than 90 days every 24 hours.
+     * Prevents activity log table from growing indefinitely.
+     */
     setInterval(
       async () => {
         try {

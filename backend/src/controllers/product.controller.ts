@@ -12,7 +12,6 @@ import {
 import type { CreateProductInput, UpdateProductInput } from '../validators/product.validator';
 import { AuthenticatedRequest } from '../types';
 
-// ─── POST /api/product (Permissions: Admin Only) ─────────────────────────────
 export const createProduct = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
   const userId = req.user?.id as string;
   const result = await createProductIntoDB(req, userId, req.body as CreateProductInput);
@@ -25,7 +24,6 @@ export const createProduct = catchAsync(async (req: AuthenticatedRequest, res: R
   });
 });
 
-// ─── GET /api/product (Permissions: Admin, Manager) ──────────────────────────
 export const getProducts = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
   const { meta, result } = await getAllProductsFromDB(req.query as Record<string, unknown>);
 
@@ -38,7 +36,6 @@ export const getProducts = catchAsync(async (req: AuthenticatedRequest, res: Res
   });
 });
 
-// ─── GET /api/product/:id (Permissions: Admin, Manager) ──────────────────────
 export const getProductById = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
   const result = await getProductByIdFromDB(id as string);
@@ -51,7 +48,6 @@ export const getProductById = catchAsync(async (req: AuthenticatedRequest, res: 
   });
 });
 
-// ─── PUT /api/product/:id (Permissions: Admin, Manager) ──────────────────────
 export const updateProduct = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
   const userId = req.user?.id as string;
@@ -72,7 +68,6 @@ export const updateProduct = catchAsync(async (req: AuthenticatedRequest, res: R
   });
 });
 
-// ─── DELETE /api/product/:id (Permissions: Admin, Manager) ──────────────────
 export const deleteProduct = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
   const userId = req.user?.id as string;
@@ -87,7 +82,6 @@ export const deleteProduct = catchAsync(async (req: AuthenticatedRequest, res: R
   });
 });
 
-// ─── DELETE /api/product/bulk (Permissions: Admin) ──────────────────────────
 export const bulkDeleteProducts = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
   const { ids } = req.body;
   const userId = req.user?.id as string;

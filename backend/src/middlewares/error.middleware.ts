@@ -88,7 +88,7 @@ export const globalErrorHandler = (
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 
-  if (config.server.nodeEnv === 'development') {
+  if (config.server.nodeEnv === 'development' || config.server.nodeEnv === 'test') {
     sendErrorDev(err, res);
   } else {
     let error = { ...err, message: err.message, name: err.name };

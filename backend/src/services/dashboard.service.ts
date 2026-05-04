@@ -1,19 +1,22 @@
 import { Prisma, OrderStatus, UserRole } from '@prisma/client';
 import prisma from '../config/prisma';
 
-// ─── GET /api/dashboard/dashboard (Permissions: Admin, Manager) ──────────────
+/**
+ * Aggregates various system-wide statistics for the dashboard.
+ * Includes today's metrics, low stock counts, revenue, and trends.
+ */
 export const getDashboardStatsFromDB = async () => {
   const startToday = new Date();
   startToday.setHours(0, 0, 0, 0);
 
-  // 1. Total orders today
+  // Today's total order volume
   const totalOrdersToday = await prisma.order.count({
     where: {
       createdAt: { gte: startToday },
     },
   });
 
-  // 2. Pending vs Completed orders (for today)
+  // Today's order status breakdown
   const orderStats = await prisma.order.groupBy({
     by: ['status'],
     where: {
@@ -35,17 +38,14 @@ export const getDashboardStatsFromDB = async () => {
       .reduce((acc, curr) => acc + curr._count.status, 0),
   };
 
-  // 3. Low stock count
-  // Prisma doesn't support comparing two columns directly in where easily without raw query or computed field
-  // But we can use findMany and filter or a raw query.
-  // For better performance, we'll use a raw query here.
+  // Count products where stock level has fallen below the min_threshold
   const lowStockCount = await prisma.product.count({
     where: {
       is_restock_required: true,
     },
   });
 
-  // 4. Revenue today
+  // Calculate gross revenue for today excluding cancelled orders
   const revenueTodayResult = await prisma.order.aggregate({
     where: {
       createdAt: { gte: startToday },
@@ -58,10 +58,9 @@ export const getDashboardStatsFromDB = async () => {
 
   const revenueToday = revenueTodayResult._sum.total_price || 0;
 
-  // 5. Total Products
   const totalProducts = await prisma.product.count();
 
-  // 6. Category Distribution
+  // Distribution of products across categories
   const categoryDistributionRaw = await prisma.product.groupBy({
     by: ['category_id'],
     _count: {
@@ -69,7 +68,6 @@ export const getDashboardStatsFromDB = async () => {
     },
   });
 
-  // Fetch category names
   const categories = await prisma.category.findMany({
     where: {
       id: { in: categoryDistributionRaw.map((c) => c.category_id) },
@@ -81,12 +79,11 @@ export const getDashboardStatsFromDB = async () => {
     value: item._count.id,
   }));
 
-  // 7. Order Trends (Last 7 Days)
+  // Order trends (Count and Revenue) for the last 7 days
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   sevenDaysAgo.setHours(0, 0, 0, 0);
 
-  // We'll fetch all orders from the last 7 days and process them in JS for easier date formatting
   const ordersLast7Days = await prisma.order.findMany({
     where: {
       createdAt: { gte: sevenDaysAgo },
@@ -120,7 +117,7 @@ export const getDashboardStatsFromDB = async () => {
     });
   }
 
-  // 8. Product Summary (Prioritize Low Stock Items)
+  // Brief inventory summary prioritized by low stock items
   const products = await prisma.product.findMany({
     orderBy: [{ stock_quantity: 'asc' }, { createdAt: 'desc' }],
     take: 10,
@@ -146,7 +143,10 @@ export const getDashboardStatsFromDB = async () => {
   };
 };
 
-// ─── GET /api/dashboard/activities (Permissions: All Logged In Users) ───────────────────
+/**
+ * Retrieves the 10 most recent activity logs.
+ * Non-admin users are restricted to viewing only their own activity.
+ */
 export const getLatestActivitiesFromDB = async (requestingUser?: {
   id: string;
   role: UserRole | string;

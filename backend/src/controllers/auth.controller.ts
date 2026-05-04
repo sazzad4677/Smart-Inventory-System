@@ -16,7 +16,6 @@ const cookieOptions = {
   maxAge: typeof refreshExpiresIn === 'number' ? refreshExpiresIn : undefined,
 };
 
-// ─── POST /api/auth/signup (Public) ───────────────────────────────────────────
 export const signup = catchAsync(async (req: Request, res: Response) => {
   const { user, accessToken, refreshToken } = await signupUser(req.body as SignupInput);
 
@@ -42,7 +41,6 @@ export const signup = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// ─── POST /api/auth/login (Public) ────────────────────────────────────────────
 export const login = catchAsync(async (req: Request, res: Response) => {
   const { user, accessToken, refreshToken } = await loginUser(req.body as LoginInput);
 
@@ -67,7 +65,6 @@ export const login = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// ─── POST /api/auth/refresh-token  ────────────────────────────────────
 export const refreshToken = catchAsync(async (req: Request, res: Response) => {
   const token = (req.body as { refreshToken?: string })?.refreshToken || req.cookies?.refreshToken;
 
@@ -85,7 +82,6 @@ export const refreshToken = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// ─── POST /api/auth/logout (Public — no protect needed) ───────────────────────
 export const logout = catchAsync(async (req: Request, res: Response) => {
   const token = (req.body as { refreshToken?: string })?.refreshToken || req.cookies?.refreshToken;
 
@@ -102,7 +98,6 @@ export const logout = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, { statusCode: 200, success: true, message: 'Logged out successfully.' });
 });
 
-// ─── GET /api/auth/me (Private) ───────────────────────────────────────────────
 export const me = catchAsync(async (req: AuthenticatedRequest, res: Response) => {
   const user = req.user;
   sendResponse(res, {

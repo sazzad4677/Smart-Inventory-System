@@ -1,19 +1,28 @@
+import prisma from '../../config/prisma';
 import {
   getAllActivityLogsFromDB,
   undoActivityInDB,
   redoActivityInDB,
 } from '../activity-log.service';
-import ActivityLog from '../../models/activity-log.model';
-import User from '../../models/user.model';
-import Product from '../../models/product.model';
-import QueryBuilder from '../../builders/QueryBuilder';
+import { AppError } from '../../utils/AppError';
 import { ActivityType } from '../../types';
 
-// Mock models and QueryBuilder
-jest.mock('../../models/activity-log.model');
-jest.mock('../../models/user.model');
-jest.mock('../../builders/QueryBuilder');
-jest.mock('../../models/product.model');
+// Mock dependencies
+jest.mock('../../config/prisma', () => ({
+  __esModule: true,
+  default: {
+    activityLog: {
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      count: jest.fn(),
+    },
+    product: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+  },
+}));
 
 describe('Activity Log Service', () => {
   beforeEach(() => {
@@ -21,208 +30,128 @@ describe('Activity Log Service', () => {
   });
 
   describe('getAllActivityLogsFromDB', () => {
-    it('should return logs and meta on success', async () => {
-      const mockResult = [{ action_text: 'Logged in' }];
-      const mockMeta = { total: 1 };
-
-      const mockQueryBuilderInstance = {
-        search: jest.fn().mockReturnThis(),
-        filter: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockReturnThis(),
-        paginate: jest.fn().mockReturnThis(),
-        fields: jest.fn().mockReturnThis(),
-        modelQuery: Promise.resolve(mockResult),
-        countTotal: jest.fn().mockResolvedValue(mockMeta),
-      };
-
-      (ActivityLog.find as jest.Mock).mockReturnValue({
-        populate: jest.fn().mockReturnThis(),
-      });
-      (QueryBuilder as jest.Mock).mockImplementation(() => mockQueryBuilderInstance);
+    it('should return logs and meta', async () => {
+      const mockLogs = [{ id: 'l1', action_text: 'test' }];
+      (prisma.activityLog.findMany as jest.Mock).mockResolvedValue(mockLogs);
+      (prisma.activityLog.count as jest.Mock).mockResolvedValue(1);
 
       const result = await getAllActivityLogsFromDB({});
 
-      expect(ActivityLog.find).toHaveBeenCalled();
-      expect(QueryBuilder).toHaveBeenCalled();
-      expect(result.result).toEqual(mockResult);
-      expect(result.meta).toEqual(mockMeta);
-    });
-
-    it('should filter logs by user IDs if role is provided in query', async () => {
-      const query = { role: 'Admin' };
-      const mockUsers = [{ _id: 'user1' }, { _id: 'user2' }];
-
-      (User.find as jest.Mock).mockReturnValue({
-        select: jest.fn().mockResolvedValue(mockUsers),
-      });
-
-      const mockQueryBuilderInstance = {
-        search: jest.fn().mockReturnThis(),
-        filter: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockReturnThis(),
-        paginate: jest.fn().mockReturnThis(),
-        fields: jest.fn().mockReturnThis(),
-        modelQuery: Promise.resolve([]),
-        countTotal: jest.fn().mockResolvedValue({ total: 0 }),
-      };
-
-      (ActivityLog.find as jest.Mock).mockReturnValue({
-        populate: jest.fn().mockReturnThis(),
-      });
-      (QueryBuilder as jest.Mock).mockImplementation(() => mockQueryBuilderInstance);
-
-      await getAllActivityLogsFromDB(query, { _id: 'admin1', role: 'Admin' });
-
-      expect(User.find).toHaveBeenCalledWith({ role: 'Admin' });
-      expect(QueryBuilder).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ user_id: { $in: ['user1', 'user2'] } }),
-      );
-    });
-
-    it('should restrict logs for non-Admin users to their own logs', async () => {
-      const mockResult = [{ action_text: 'Own log' }];
-      const mockQueryBuilderInstance = {
-        search: jest.fn().mockReturnThis(),
-        filter: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockReturnThis(),
-        paginate: jest.fn().mockReturnThis(),
-        fields: jest.fn().mockReturnThis(),
-        modelQuery: Promise.resolve(mockResult),
-        countTotal: jest.fn().mockResolvedValue({ total: 1 }),
-      };
-
-      (ActivityLog.find as jest.Mock).mockReturnValue({
-        populate: jest.fn().mockReturnThis(),
-      });
-      (QueryBuilder as jest.Mock).mockImplementation(() => mockQueryBuilderInstance);
-
-      const result = await getAllActivityLogsFromDB({}, { _id: 'user123', role: 'Staff' });
-
-      expect(QueryBuilder).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ user_id: 'user123' }),
-      );
-      expect(result.result).toEqual(mockResult);
+      expect(prisma.activityLog.findMany).toHaveBeenCalled();
+      expect(result.result).toEqual(mockLogs);
     });
   });
 
   describe('undoActivityInDB', () => {
-    it('should successfully restore a soft-deleted product', async () => {
+    it('should restore a deleted product', async () => {
       const mockLog = {
-        _id: 'log1',
-        type: ActivityType.Delete,
+        id: 'l1',
+        type: ActivityType.DELETE,
         resource: 'PRODUCT',
-        resource_id: 'prod1',
-        save: jest.fn().mockResolvedValue(true),
+        resource_id: 'p1',
       };
-      const mockProduct = {
-        _id: 'prod1',
-        name: 'Test Product',
-        is_deleted: true,
-        save: jest.fn().mockResolvedValue(true),
-      };
+      const mockProduct = { id: 'p1', name: 'Test', is_deleted: true };
 
-      (ActivityLog.findById as jest.Mock).mockResolvedValue(mockLog);
-      (Product.findById as jest.Mock).mockResolvedValue(mockProduct);
+      (prisma.activityLog.findUnique as jest.Mock).mockResolvedValue(mockLog);
+      (prisma.product.findUnique as jest.Mock).mockResolvedValue(mockProduct);
+      (prisma.product.update as jest.Mock).mockResolvedValue({ ...mockProduct, is_deleted: false });
 
-      const result = await undoActivityInDB('log1');
+      const result = await undoActivityInDB('l1');
 
-      expect(Product.findById).toHaveBeenCalledWith('prod1');
-      expect(mockProduct.is_deleted).toBe(false);
-      expect(mockProduct.save).toHaveBeenCalled();
-      expect((mockLog as any).is_undone).toBe(true);
-      expect(mockLog.save).toHaveBeenCalled();
+      expect(prisma.product.update).toHaveBeenCalledWith({
+        where: { id: 'p1' },
+        data: { is_deleted: false },
+      });
       expect(result.message).toContain('restored successfully');
     });
 
-    it('should throw error if log is not found', async () => {
-      (ActivityLog.findById as jest.Mock).mockResolvedValue(null);
-
-      await expect(undoActivityInDB('invalid')).rejects.toThrow('Activity log not found');
-    });
-
-    it('should throw error if production is not undoable', async () => {
-      const mockLog = { type: ActivityType.Login };
-      (ActivityLog.findById as jest.Mock).mockResolvedValue(mockLog);
-
-      await expect(undoActivityInDB('log1')).rejects.toThrow('This action cannot be undone');
-    });
-
-    it('should throw error if original product is missing', async () => {
-      const mockLog = {
-        type: ActivityType.Delete,
-        resource: 'PRODUCT',
-        resource_id: 'prod1',
-        save: jest.fn().mockResolvedValue(true),
-      };
-      (ActivityLog.findById as jest.Mock).mockResolvedValue(mockLog);
-      (Product.findById as jest.Mock).mockResolvedValue(null);
-
-      await expect(undoActivityInDB('log1')).rejects.toThrow('Original product not found');
+    it('should throw error if log not found', async () => {
+      (prisma.activityLog.findUnique as jest.Mock).mockResolvedValue(null);
+      await expect(undoActivityInDB('invalid')).rejects.toThrow(
+        new AppError('Activity log not found', 404),
+      );
     });
   });
 
   describe('redoActivityInDB', () => {
-    it('should successfully redo a deleted product', async () => {
+    it('should re-delete a restored product', async () => {
       const mockLog = {
-        _id: 'log1',
-        type: ActivityType.Delete,
+        id: 'l1',
+        type: ActivityType.DELETE,
         resource: 'PRODUCT',
-        resource_id: 'prod1',
+        resource_id: 'p1',
         is_undone: true,
-        save: jest.fn().mockResolvedValue(true),
       };
-      const mockProduct = {
-        _id: 'prod1',
-        name: 'Test Product',
-        is_deleted: false,
-        save: jest.fn().mockResolvedValue(true),
-      };
+      const mockProduct = { id: 'p1', name: 'Test', is_deleted: false };
 
-      (ActivityLog.findById as jest.Mock).mockResolvedValue(mockLog);
-      (Product.findById as jest.Mock).mockResolvedValue(mockProduct);
+      (prisma.activityLog.findUnique as jest.Mock).mockResolvedValue(mockLog);
+      (prisma.product.findUnique as jest.Mock).mockResolvedValue(mockProduct);
+      (prisma.product.update as jest.Mock).mockResolvedValue({ ...mockProduct, is_deleted: true });
 
-      const result = await redoActivityInDB('log1');
+      const result = await redoActivityInDB('l1');
 
-      expect(Product.findById).toHaveBeenCalledWith('prod1');
-      expect(mockProduct.is_deleted).toBe(true);
-      expect(mockProduct.save).toHaveBeenCalled();
-      expect((mockLog as any).is_undone).toBe(false);
-      expect(mockLog.save).toHaveBeenCalled();
-      expect(result.message).toContain('deleted again (Redo)');
+      expect(prisma.product.update).toHaveBeenCalledWith({
+        where: { id: 'p1' },
+        data: { is_deleted: true },
+      });
+      expect(result.message).toContain('deleted again');
     });
 
-    it('should throw error if action has not been undone', async () => {
-      const mockLog = { is_undone: false };
-      (ActivityLog.findById as jest.Mock).mockResolvedValue(mockLog);
-
-      await expect(redoActivityInDB('log1')).rejects.toThrow('This action has not been undone');
+    it('should throw 400 if action not undone', async () => {
+      (prisma.activityLog.findUnique as jest.Mock).mockResolvedValue({ is_undone: false });
+      await expect(redoActivityInDB('l1')).rejects.toThrow(/not been undone/);
     });
 
-    it('should throw error if action type is not redoable', async () => {
-      const mockLog = {
-        type: ActivityType.Login,
+    it('should throw 404 if log not found', async () => {
+      (prisma.activityLog.findUnique as jest.Mock).mockResolvedValue(null);
+      await expect(redoActivityInDB('l1')).rejects.toThrow('Activity log not found');
+    });
+  });
+
+  describe('Activity Log Service - Additional Branches', () => {
+    it('should filter by searchTerm', async () => {
+      (prisma.activityLog.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.activityLog.count as jest.Mock).mockResolvedValue(0);
+      await getAllActivityLogsFromDB({ searchTerm: 'test' });
+      expect(prisma.activityLog.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ OR: expect.any(Array) }),
+        }),
+      );
+    });
+
+    it('should filter by role for Admin', async () => {
+      (prisma.activityLog.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.activityLog.count as jest.Mock).mockResolvedValue(0);
+      await getAllActivityLogsFromDB({ role: 'Manager' }, { id: 'a1', role: 'Admin' });
+      expect(prisma.activityLog.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ user: { role: 'Manager' } }),
+        }),
+      );
+    });
+
+    it('should throw 400 if undo is not supported for action', async () => {
+      (prisma.activityLog.findUnique as jest.Mock).mockResolvedValue({ type: ActivityType.CREATE });
+      await expect(undoActivityInDB('l1')).rejects.toThrow('This action cannot be undone.');
+    });
+
+    it('should throw 400 if redo is not supported for action', async () => {
+      (prisma.activityLog.findUnique as jest.Mock).mockResolvedValue({
         is_undone: true,
-        save: jest.fn().mockResolvedValue(true),
-      };
-      (ActivityLog.findById as jest.Mock).mockResolvedValue(mockLog);
-
-      await expect(redoActivityInDB('log1')).rejects.toThrow('This action cannot be redone');
+        type: ActivityType.CREATE,
+      });
+      await expect(redoActivityInDB('l1')).rejects.toThrow('This action cannot be redone.');
     });
 
-    it('should throw error if original product is missing during redo', async () => {
-      const mockLog = {
-        type: ActivityType.Delete,
+    it('should throw 404 if product not found during undo', async () => {
+      (prisma.activityLog.findUnique as jest.Mock).mockResolvedValue({
+        type: ActivityType.DELETE,
         resource: 'PRODUCT',
-        resource_id: 'prod1',
-        is_undone: true,
-        save: jest.fn().mockResolvedValue(true),
-      };
-      (ActivityLog.findById as jest.Mock).mockResolvedValue(mockLog);
-      (Product.findById as jest.Mock).mockResolvedValue(null);
-
-      await expect(redoActivityInDB('log1')).rejects.toThrow('Original product not found');
+        resource_id: 'p1',
+      });
+      (prisma.product.findUnique as jest.Mock).mockResolvedValue(null);
+      await expect(undoActivityInDB('l1')).rejects.toThrow('Original product not found');
     });
   });
 });

@@ -1,5 +1,4 @@
 import { formatOrderId } from '../formatOrderId';
-import mongoose from 'mongoose';
 
 describe('formatOrderId', () => {
   it('should format a string ID', () => {
@@ -8,9 +7,10 @@ describe('formatOrderId', () => {
     expect(result).toBe('#439011');
   });
 
-  it('should format a mongoose ObjectId', () => {
-    const id = new mongoose.Types.ObjectId('507f1f77bcf86cd799439011');
+  it('should handle short IDs gracefully if implementation allows', () => {
+    const id = 'abc';
+    // Depending on slice(-6), it might return #ABC
     const result = formatOrderId(id);
-    expect(result).toBe('#439011');
+    expect(result).toBe('#ABC');
   });
 });

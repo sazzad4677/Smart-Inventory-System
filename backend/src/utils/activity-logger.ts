@@ -15,12 +15,12 @@ interface LogOptions {
 
 /**
  * Robust activity logger that automatically captures IP and User-Agent from the request.
+ * Logs are stored in the database and emitted via Socket.io for real-time updates.
  */
 export const captureActivity = async (req: Request | null, options: LogOptions) => {
   try {
     const { type, resource, resourceId, action_text, details, userId } = options;
 
-    // Use userId from options or from req.user
     const finalUserId = userId || (req as AuthenticatedRequest | null)?.user?.id;
 
     if (!finalUserId) {
@@ -58,10 +58,9 @@ export const captureActivity = async (req: Request | null, options: LogOptions) 
       },
     });
 
-    // Emit real-time activity event via Socket.io
     const io = req?.app?.get('io');
     if (io) {
-      // Keep it brief for the notification bell
+      // Format a brief message for frontend notification bell
       const briefMessage =
         type === ActivityType.RESTOCK
           ? 'Stock Updated'
@@ -73,7 +72,7 @@ export const captureActivity = async (req: Request | null, options: LogOptions) 
       });
     }
   } catch (error) {
-    // don't want activity logging to crash the main request
+    // Prevent activity logging failures from crashing the main request thread
     logger.error('Failed to capture activity log:', error);
   }
 };

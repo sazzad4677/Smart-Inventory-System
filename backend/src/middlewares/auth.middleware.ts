@@ -13,16 +13,18 @@ const extractBearerToken = (req: Request): string | undefined => {
   return undefined;
 };
 
+/**
+ * Middleware to protect routes. Verifies the JWT access token and ensures
+ * the associated user and session still exist in the database.
+ */
 export const protect = catchAsync(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    // Get token from Authorization header
     const token = extractBearerToken(req);
 
     if (!token) {
       return next(new AppError('You are not logged in! Please log in to get access.', 401));
     }
 
-    // Verify token
     let decoded: jwt.JwtPayload;
     try {
       decoded = jwt.verify(token, config.jwt.accessSecret) as jwt.JwtPayload;
@@ -30,7 +32,6 @@ export const protect = catchAsync(
       return next(new AppError('Access token is invalid or expired.', 401));
     }
 
-    // Run database checks in parallel
     let sessionPromise = Promise.resolve(true);
     if (decoded.sessionId) {
       sessionPromise = prisma.session
@@ -60,6 +61,10 @@ export const protect = catchAsync(
   },
 );
 
+/**
+ * Middleware to restrict access to specific roles.
+ * Must be used after the 'protect' middleware.
+ */
 export const restrictTo = (...roles: UserRole[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     const user = req.user;

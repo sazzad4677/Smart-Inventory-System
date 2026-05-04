@@ -1,14 +1,11 @@
 import dotenv from 'dotenv';
 
+// Load environment variables from .env.local (if exists) or .env
 dotenv.config({ path: ['.env.local', '.env'] });
 
-const requiredEnvVars = [
-  // 'MONGODB_URI',
-  'JWT_SECRET',
-  'JWT_REFRESH_SECRET',
-  'OPENROUTER_API_KEY',
-] as const;
+const requiredEnvVars = ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'OPENROUTER_API_KEY'] as const;
 
+// Ensure all critical secrets are defined before bootstrapping the app
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar] && process.env.NODE_ENV !== 'test') {
     throw new Error(`Missing required environment variable: ${envVar}`);
@@ -19,9 +16,6 @@ export const config = {
   server: {
     port: process.env.PORT || 5000,
     nodeEnv: process.env.NODE_ENV || 'development',
-  },
-  db: {
-    uri: process.env.MONGODB_URI as string,
   },
   jwt: {
     accessSecret: process.env.JWT_SECRET as string,

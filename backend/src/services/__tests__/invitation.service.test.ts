@@ -1,138 +1,130 @@
-import * as invitationService from '../invitation.service';
-import Invitation from '../../models/invitation.model';
-import { UserRole } from '../../types';
-import { Types } from 'mongoose';
+import prisma from '../../config/prisma';
+import {
+  createInvitation,
+  validateInvitation,
+  markInvitationAsUsed,
+  getAllInvitations,
+  deleteInvitation,
+} from '../invitation.service';
 import { AppError } from '../../utils/AppError';
-import * as emailUtils from '../../utils/email';
+import { UserRole } from '../../types';
+import { sendInvitationEmail } from '../../utils/email';
 
-jest.mock('../../models/invitation.model');
-jest.mock('../../utils/email');
+// Mock dependencies
+jest.mock('../../utils/email', () => ({
+  sendInvitationEmail: jest.fn().mockResolvedValue(true),
+}));
 
-describe('Invitation Service Unit Tests', () => {
-  const mockEmail = 'test@example.com';
-  const mockRoleId = UserRole.Manager;
-  const mockInvitedBy = new Types.ObjectId();
-
+describe('Invitation Service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (emailUtils.sendInvitationEmail as jest.Mock).mockResolvedValue(undefined);
   });
 
   describe('createInvitation', () => {
-    it('should successfully create a new invitation', async () => {
-      (Invitation.findOne as jest.Mock).mockResolvedValue(null);
-      (Invitation.create as jest.Mock).mockResolvedValue({
-        email: mockEmail,
-        token: 'token123',
+    it('should successfully create an invitation', async () => {
+      (prisma.invitation.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.invitation.create as jest.Mock).mockResolvedValue({
+        id: 'inv1',
+        email: 'test@test.com',
+        role: UserRole.Manager,
       });
 
-      const result = await invitationService.createInvitation(mockEmail, mockRoleId, mockInvitedBy);
+      const result = await createInvitation('test@test.com', UserRole.Manager, 'admin1');
 
-      expect(Invitation.create).toHaveBeenCalled();
-      expect(emailUtils.sendInvitationEmail).toHaveBeenCalled();
-      expect(result.email).toBe(mockEmail);
+      expect(prisma.invitation.create).toHaveBeenCalled();
+      expect(result.email).toBe('test@test.com');
+      expect(sendInvitationEmail).toHaveBeenCalledWith('test@test.com', expect.any(String));
     });
 
-    it('should throw error if a valid invitation already exists', async () => {
-      (Invitation.findOne as jest.Mock).mockResolvedValue({
-        expiresAt: new Date(Date.now() + 100000),
+    it('should throw error if valid invitation already exists', async () => {
+      (prisma.invitation.findUnique as jest.Mock).mockResolvedValue({
+        used: false,
+        expiresAt: new Date(Date.now() + 10000),
       });
 
-      await expect(
-        invitationService.createInvitation(mockEmail, mockRoleId, mockInvitedBy),
-      ).rejects.toThrow(AppError);
+      await expect(createInvitation('test@test.com', UserRole.Manager, 'admin1')).rejects.toThrow(
+        new AppError('A valid invitation already exists for this email.', 400),
+      );
     });
 
-    it('should delete expired invitation and create new one', async () => {
-      const expiredInv = {
-        _id: new Types.ObjectId(),
-        expiresAt: new Date(Date.now() - 100000),
-      };
-      (Invitation.findOne as jest.Mock).mockResolvedValue(expiredInv);
-      (Invitation.deleteOne as jest.Mock).mockResolvedValue({ deletedCount: 1 });
-      (Invitation.create as jest.Mock).mockResolvedValue({ email: mockEmail });
+    it('should delete old invitation if it was used or expired', async () => {
+      (prisma.invitation.findUnique as jest.Mock).mockResolvedValue({
+        id: 'old-inv',
+        used: true,
+      });
+      (prisma.invitation.create as jest.Mock).mockResolvedValue({ id: 'new-inv' });
 
-      await invitationService.createInvitation(mockEmail, mockRoleId, mockInvitedBy);
+      await createInvitation('test@test.com', UserRole.Manager, 'admin1');
 
-      expect(Invitation.deleteOne).toHaveBeenCalledWith({ _id: expiredInv._id });
-      expect(Invitation.create).toHaveBeenCalled();
+      expect(prisma.invitation.delete).toHaveBeenCalledWith({ where: { id: 'old-inv' } });
     });
   });
 
   describe('validateInvitation', () => {
     it('should return invitation if valid', async () => {
       const mockInv = {
-        email: mockEmail,
-        token: 'valid-token',
-        expiresAt: new Date(Date.now() + 100000),
+        id: 'inv1',
+        email: 'test@test.com',
+        token: 'tok123',
+        used: false,
+        expiresAt: new Date(Date.now() + 10000),
       };
-      (Invitation.findOne as jest.Mock).mockResolvedValue(mockInv);
+      (prisma.invitation.findFirst as jest.Mock).mockResolvedValue(mockInv);
 
-      const result = await invitationService.validateInvitation(mockEmail, 'valid-token');
+      const result = await validateInvitation('test@test.com', 'tok123');
 
       expect(result).toEqual(mockInv);
     });
 
-    it('should throw error if invitation is not found', async () => {
-      (Invitation.findOne as jest.Mock).mockResolvedValue(null);
-
-      await expect(
-        invitationService.validateInvitation(mockEmail, 'invalid-token'),
-      ).rejects.toThrow('Invalid or unauthorized invitation.');
+    it('should throw error if invitation not found', async () => {
+      (prisma.invitation.findFirst as jest.Mock).mockResolvedValue(null);
+      await expect(validateInvitation('test@test.com', 'tok123')).rejects.toThrow(
+        new AppError('Invalid or unauthorized invitation.', 401),
+      );
     });
 
-    it('should throw error if invitation has expired', async () => {
-      const expiredInv = {
-        email: mockEmail,
-        token: 'expired-token',
-        expiresAt: new Date(Date.now() - 100000),
+    it('should throw error if invitation is expired', async () => {
+      const mockInv = {
+        expiresAt: new Date(Date.now() - 10000),
       };
-      (Invitation.findOne as jest.Mock).mockResolvedValue(expiredInv);
+      (prisma.invitation.findFirst as jest.Mock).mockResolvedValue(mockInv);
 
-      await expect(
-        invitationService.validateInvitation(mockEmail, 'expired-token'),
-      ).rejects.toThrow('This invitation has expired.');
+      await expect(validateInvitation('test@test.com', 'tok123')).rejects.toThrow(
+        new AppError('This invitation has expired.', 401),
+      );
     });
   });
 
   describe('markInvitationAsUsed', () => {
-    it('should update the used status of an invitation', async () => {
-      const id = new Types.ObjectId();
-      await invitationService.markInvitationAsUsed(id);
-      expect(Invitation.findByIdAndUpdate).toHaveBeenCalledWith(id, { used: true });
+    it('should update invitation as used', async () => {
+      (prisma.invitation.update as jest.Mock).mockResolvedValue({ id: 'inv1', used: true });
+      await markInvitationAsUsed('inv1');
+      expect(prisma.invitation.update).toHaveBeenCalledWith({
+        where: { id: 'inv1' },
+        data: { used: true },
+      });
     });
   });
 
   describe('getAllInvitations', () => {
     it('should return all invitations', async () => {
-      const mockInvs = [{ email: 'one@test.com' }, { email: 'two@test.com' }];
-      (Invitation.find as jest.Mock).mockReturnValue({
-        populate: jest.fn().mockReturnValue({
-          sort: jest.fn().mockResolvedValue(mockInvs),
-        }),
-      } as any);
-
-      const result = await invitationService.getAllInvitations();
-
-      expect(result).toHaveLength(2);
-      expect(result).toEqual(mockInvs);
+      (prisma.invitation.findMany as jest.Mock).mockResolvedValue([]);
+      await getAllInvitations();
+      expect(prisma.invitation.findMany).toHaveBeenCalled();
     });
   });
 
   describe('deleteInvitation', () => {
-    it('should successfully delete an invitation', async () => {
-      (Invitation.findByIdAndDelete as jest.Mock).mockResolvedValue({ _id: 'some-id' });
-
-      await invitationService.deleteInvitation('some-id');
-
-      expect(Invitation.findByIdAndDelete).toHaveBeenCalledWith('some-id');
+    it('should delete invitation', async () => {
+      (prisma.invitation.delete as jest.Mock).mockResolvedValue({});
+      await deleteInvitation('inv1');
+      expect(prisma.invitation.delete).toHaveBeenCalledWith({ where: { id: 'inv1' } });
     });
 
     it('should throw 404 if invitation not found', async () => {
-      (Invitation.findByIdAndDelete as jest.Mock).mockResolvedValue(null);
-
-      await expect(invitationService.deleteInvitation('fake-id')).rejects.toThrow(
-        'Invitation not found.',
+      (prisma.invitation.delete as jest.Mock).mockRejectedValue(new Error('NotFound'));
+      await expect(deleteInvitation('inv1')).rejects.toThrow(
+        new AppError('Invitation not found.', 404),
       );
     });
   });

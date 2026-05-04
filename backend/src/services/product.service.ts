@@ -7,13 +7,11 @@ import { captureActivity } from '../utils/activity-logger';
 import { ActivityType } from '../types';
 import { Request } from 'express';
 
-// ─── POST /api/product (Permissions: Admin Only) ─────────────────────────────
 export const createProductIntoDB = async (
   req: Request,
   userId: string,
   payload: CreateProductInput,
 ) => {
-  // Verify category exists
   const categoryExists = await prisma.category.findUnique({
     where: { id: payload.category_id },
   });
@@ -27,6 +25,7 @@ export const createProductIntoDB = async (
       ...payload,
       product_id,
       created_by: userId,
+      // Automatically set status and restock flags based on initial stock
       status: payload.stock_quantity <= 0 ? ProductStatus.OutOfStock : ProductStatus.Active,
       is_restock_required: payload.stock_quantity <= payload.min_threshold,
     },
@@ -51,7 +50,6 @@ export const createProductIntoDB = async (
   return result;
 };
 
-// ─── GET /api/product (Permissions: Admin, Manager) ──────────────────────────
 export const getAllProductsFromDB = async (query: Record<string, unknown>) => {
   const { searchTerm, page = 1, limit = 20, sort, ...filters } = query;
 
@@ -93,7 +91,6 @@ export const getAllProductsFromDB = async (query: Record<string, unknown>) => {
   };
 };
 
-// ─── GET /api/product/:id (Permissions: Admin, Manager) ──────────────────────
 export const getProductByIdFromDB = async (id: string) => {
   return await prisma.product.findUnique({
     where: { id, is_deleted: false },
@@ -101,7 +98,6 @@ export const getProductByIdFromDB = async (id: string) => {
   });
 };
 
-// ─── PUT /api/product/:id (Permissions: Admin, Manager) ──────────────────────
 export const updateProductInDB = async (
   req: Request,
   userId: string,
@@ -114,7 +110,7 @@ export const updateProductInDB = async (
   });
   if (!product) throw new AppError('Product not found', 404);
 
-  // Staff permission logic
+  // Permission Logic: Staff can only update products they created, unless it's a simple stock update
   if (userRole === 'Staff') {
     const isRestockOnly = Object.keys(payload).length === 1 && payload.stock_quantity !== undefined;
     const isCreator = product.created_by === userId;
@@ -124,8 +120,12 @@ export const updateProductInDB = async (
     }
   }
 
-  // Automatic status and restock flag updates (equivalent to Mongoose pre-save hook)
-  const data: Prisma.ProductUpdateInput = { ...payload };
+  // Filter out undefined values to satisfy exactOptionalPropertyTypes: true
+  const data: Prisma.ProductUpdateInput = Object.fromEntries(
+    Object.entries(payload).filter(([_, v]) => v !== undefined),
+  );
+
+  // Recalculate status and restock flags if stock or threshold changes
   if (payload.stock_quantity !== undefined) {
     data.status = payload.stock_quantity <= 0 ? ProductStatus.OutOfStock : ProductStatus.Active;
     const minThreshold =
@@ -174,7 +174,6 @@ export const updateProductInDB = async (
   return result;
 };
 
-// ─── DELETE /api/product/:id (Permissions: Admin, Manager) ──────────────────
 export const deleteProductFromDB = async (
   req: Request,
   userId: string,
@@ -185,7 +184,7 @@ export const deleteProductFromDB = async (
     throw new AppError('Staff are not allowed to delete products.', 403);
   }
 
-  // Protection: Check if product has been ordered
+  // Prevent deletion if product is linked to existing orders
   const hasOrders = await prisma.orderItem.findFirst({
     where: { product_id: id },
   });
@@ -215,9 +214,8 @@ export const deleteProductFromDB = async (
   return result;
 };
 
-// ─── DELETE /api/product/bulk (Permissions: Admin) ──────────────────────────
 export const bulkDeleteProductsFromDB = async (req: Request, userId: string, ids: string[]) => {
-  // Protection: Filter out products that have orders
+  // Filter out products that have orders to prevent relational integrity issues
   const itemsWithOrders = await prisma.orderItem.findMany({
     where: { product_id: { in: ids } },
     select: { product_id: true },

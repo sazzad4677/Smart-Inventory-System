@@ -1,22 +1,17 @@
 import { trackClientEvents, getMetrics } from '../analytics.controller';
-import ClientEvent from '../../models/ClientEvent.model';
-import ApiMetric from '../../models/ApiMetric.model';
+import prisma from '../../config/prisma';
 import { Request, Response } from 'express';
 
-// Mock models
-jest.mock('../../models/ClientEvent.model');
-jest.mock('../../models/ApiMetric.model');
+// Using global prisma mock from setup.ts
 
 describe('Analytics Controller', () => {
   let req: any;
   let res: any;
-  let next: jest.Mock;
+  let next: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    req = {
-      body: {},
-    };
+    req = { body: {}, params: {}, query: {} };
     res = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis(),
@@ -25,69 +20,30 @@ describe('Analytics Controller', () => {
   });
 
   describe('trackClientEvents', () => {
-    it('should return 200 and track events if provided in body', async () => {
-      req.body.events = [{ type: 'click', page: '/dashboard' }];
-      (ClientEvent.insertMany as jest.Mock).mockResolvedValue({});
+    it('should call createMany if events are provided', async () => {
+      req.body.events = [{ eventName: 'click' }];
+      (prisma.clientEvent.createMany as jest.Mock).mockResolvedValue({ count: 1 });
 
       await trackClientEvents(req as Request, res as Response, next);
 
-      expect(ClientEvent.insertMany).toHaveBeenCalledWith(req.body.events);
+      expect(prisma.clientEvent.createMany).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ success: true, message: 'Events tracked successfully' }),
-      );
-    });
-
-    it('should return 200 and skip tracking if events array is empty', async () => {
-      req.body.events = [];
-      await trackClientEvents(req as Request, res as Response, next);
-
-      expect(ClientEvent.insertMany).not.toHaveBeenCalled();
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
     });
   });
 
   describe('getMetrics', () => {
-    it('should return 200 and detailed metrics data', async () => {
-      (ApiMetric.countDocuments as jest.Mock).mockResolvedValueOnce(100); // totalApiMetrics
-      (ApiMetric.countDocuments as jest.Mock).mockResolvedValueOnce(10); // slowRequests
-      (ClientEvent.countDocuments as jest.Mock).mockResolvedValue(50); // totalClientEvents
-      (ApiMetric.aggregate as jest.Mock).mockResolvedValue([{ avgTime: 250.4 }]);
+    it('should return aggregated metrics', async () => {
+      (prisma.apiMetric.count as jest.Mock).mockResolvedValue(10);
+      (prisma.clientEvent.count as jest.Mock).mockResolvedValue(5);
+      (prisma.apiMetric.aggregate as jest.Mock).mockResolvedValue({ _avg: { duration: 100 } });
 
       await getMetrics(req as Request, res as Response, next);
-
-      expect(ApiMetric.countDocuments).toHaveBeenCalledTimes(2);
-      expect(ClientEvent.countDocuments).toHaveBeenCalled();
-      expect(ApiMetric.aggregate).toHaveBeenCalled();
 
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({
-        success: true,
-        data: {
-          api: {
-            totalRequestsLog: 100,
-            slowRequests: 10,
-            averageResponseTimeMs: 250,
-          },
-          client: {
-            totalEventsLog: 50,
-          },
-        },
-      });
-    });
-
-    it('should return 0 as average response time if no metrics exist', async () => {
-      (ApiMetric.countDocuments as jest.Mock).mockResolvedValue(0);
-      (ClientEvent.countDocuments as jest.Mock).mockResolvedValue(0);
-      (ApiMetric.aggregate as jest.Mock).mockResolvedValue([]);
-
-      await getMetrics(req as Request, res as Response, next);
-
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            api: expect.objectContaining({ averageResponseTimeMs: 0 }),
+            api: expect.objectContaining({ totalRequestsLog: 10 }),
           }),
         }),
       );

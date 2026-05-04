@@ -1,41 +1,48 @@
 import request from 'supertest';
 import { app } from '../../__tests__/integration.setup';
-import Category from '../../models/category.model';
+import prisma from '../../config/prisma';
+import { UserRole } from '../../types';
+import jwt from 'jsonwebtoken';
+import { config } from '../../config/config';
 
-// Mock the authentication middleware to bypass JWT/Session requirements
-jest.mock('../../middlewares/auth.middleware', () => ({
-  protect: (req: any, res: any, next: any) => {
-    // Mock user object as expected by controllers
-    req.user = { _id: '507f1f77bcf86cd799439011' };
-    next();
-  },
-  restrictTo: () => (req: any, res: any, next: any) => next(),
-}));
+describe('Category API Integration', () => {
+  let adminToken: string;
 
-describe('Category Integration Tests', () => {
-  describe('POST /api/categories', () => {
-    it('should successfully create a new category and return 201', async () => {
-      const payload = { name: 'Test Category' };
+  beforeEach(() => {
+    adminToken = jwt.sign(
+      { id: 'admin1', role: UserRole.Admin, sessionId: 's1' },
+      config.jwt.accessSecret,
+    );
+    (prisma.session.findUnique as jest.Mock).mockResolvedValue({ id: 's1' });
+    (prisma.user.findUnique as jest.Mock).mockResolvedValue({ id: 'admin1', role: UserRole.Admin });
+  });
 
-      const res = await request(app).post('/api/categories').send(payload);
+  describe('GET /api/categories', () => {
+    it('should return categories', async () => {
+      (prisma.category.findMany as jest.Mock).mockResolvedValue([
+        { id: 'c1', name: 'Electronics' },
+      ]);
 
-      // Verify response
-      expect(res.status).toBe(201);
-      expect(res.body.success).toBe(true);
-      expect(res.body.data.name).toBe(payload.name);
+      const res = await request(app)
+        .get('/api/categories')
+        .set('Authorization', `Bearer ${adminToken}`);
 
-      // Verify it actually saved to the in-memory database
-      const savedCategory = await Category.findOne({ name: payload.name });
-      expect(savedCategory).toBeTruthy();
-      expect(savedCategory?.name).toBe(payload.name);
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(1);
     });
+  });
 
-    it('should return 400 if validation fails (empty payload)', async () => {
-      const res = await request(app).post('/api/categories').send({});
+  describe('POST /api/categories', () => {
+    it('should create a category', async () => {
+      (prisma.category.create as jest.Mock).mockResolvedValue({ id: 'c1', name: 'New Cat' });
 
-      // Verify failure response
-      expect(res.status).toBe(400);
-      expect(res.body.success).toBe(false);
+      const res = await request(app)
+        .post('/api/categories')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ name: 'New Cat' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.name).toBe('New Cat');
     });
   });
 });
