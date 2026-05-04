@@ -37,6 +37,8 @@ jobs:
         run: pnpm install
 
       - name: Generate Prisma Client
+        env:
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/test-db"
         run: pnpm --filter backend exec prisma generate
 
       - name: Run Backend Tests
