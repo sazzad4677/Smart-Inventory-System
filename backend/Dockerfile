@@ -16,6 +16,7 @@ RUN pnpm install --frozen-lockfile
 FROM deps AS development
 WORKDIR /usr/src/app
 COPY backend/prisma ./backend/prisma
+COPY backend/prisma.config.ts ./backend/prisma.config.ts
 RUN DATABASE_URL="postgresql://postgres:postgres@localhost:5432/db" pnpm --filter backend exec prisma generate
 COPY . .
 
@@ -25,6 +26,14 @@ RUN pnpm --filter backend build
 
 # Deploy only the backend and its prod dependencies to a separate folder
 RUN pnpm --filter backend --prod deploy /usr/src/app/deployed --legacy
+
+# Copy the compiled output into the deployed folder
+RUN cp -r /usr/src/app/backend/dist /usr/src/app/deployed/dist
+
+# Copy the generated Prisma client from the full node_modules into the deployed directory.
+# pnpm deploy --prod strips generated files, so we must restore them.
+RUN cp -r /usr/src/app/node_modules/.pnpm/@prisma+client*/node_modules/.prisma \
+    /usr/src/app/deployed/node_modules/.prisma
 
 # Stage 5: Production
 FROM node:20-alpine AS production

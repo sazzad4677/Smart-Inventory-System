@@ -681,7 +681,7 @@ export const swaggerDocument = {
         summary: 'System health check',
         description:
           '**PUBLIC — no authentication required.**\n\n' +
-          'Returns current server uptime, memory usage, and live connection state for MongoDB and Redis.\n\n' +
+          'Returns current server uptime, memory usage, and live connection state for PostgreSQL and Redis.\n\n' +
           '> ℹ️ This endpoint sits at the root (`GET /health`), **not** under `/api`. ' +
           'Call it directly: `http://localhost:5000/health`',
         servers: [{ url: '/', description: 'Root server (not /api)' }],
@@ -706,7 +706,7 @@ export const swaggerDocument = {
         description:
           '**PUBLIC — no authentication required.**\n\n' +
           'Accepts a batch of client-side analytics events (page views, feature usage, etc.) ' +
-          'and persists them to the `clientevents` MongoDB collection.\n\n' +
+          'and persists them to the `ClientEvent` table via Prisma.\n\n' +
           'The frontend `AnalyticsProvider` calls this automatically every 10 seconds ' +
           'or on page unload via `navigator.sendBeacon`.',
         requestBody: {

@@ -53,7 +53,7 @@ describe('Error Middleware - globalErrorHandler', () => {
     });
   });
 
-  it('should handle Mongoose Duplicate Key Error (code 11000) with a 400 status', () => {
+  it('should handle Duplicate Key Error (code 11000) with a 400 status', () => {
     const error: any = new Error();
     error.code = 11000;
     error.errmsg =
@@ -83,7 +83,7 @@ describe('Error Middleware - globalErrorHandler', () => {
     );
   });
 
-  it('should handle Mongoose CastError with 400 status', () => {
+  it('should handle CastError with 400 status', () => {
     const error: any = new Error();
     error.name = 'CastError';
     error.path = '_id';
@@ -99,7 +99,7 @@ describe('Error Middleware - globalErrorHandler', () => {
     );
   });
 
-  it('should handle Mongoose ValidationError with 400 status', () => {
+  it('should handle ValidationError with 400 status', () => {
     const error: any = new Error();
     error.name = 'ValidationError';
     error.errors = {
