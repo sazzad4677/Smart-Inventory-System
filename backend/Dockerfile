@@ -42,4 +42,4 @@ RUN mkdir -p logs && chown node:node logs
 
 USER node
 EXPOSE 5000
-CMD ["node", "dist/index.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
