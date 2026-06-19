@@ -25,6 +25,7 @@ RUN pnpm --filter backend build
 
 # Deploy only the backend and its prod dependencies to a separate folder
 RUN pnpm --filter backend --prod deploy /usr/src/app/deployed --legacy
+RUN cd /usr/src/app/deployed && DATABASE_URL="postgresql://dummy:dummy@dummy/dummy" npx prisma generate
 
 # Stage 5: Production
 FROM node:20-alpine AS production
