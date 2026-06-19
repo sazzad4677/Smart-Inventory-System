@@ -1,15 +1,14 @@
 # 🚀 Smart Inventory Management System
 
-[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.2-black?logo=next.js)](https://nextjs.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-4.0-38B2AC?logo=tailwind-css)](https://tailwindcss.com/)
 [![Express.js](https://img.shields.io/badge/Express.js-5.2-lightgrey?logo=express)](https://expressjs.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-6.0-47A248?logo=mongodb)](https://www.mongodb.com/)
+[![Prisma](https://img.shields.io/badge/Prisma-7.8-2D3748?logo=prisma)](https://www.prisma.io/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis-Latest-DC382D?logo=redis)](https://redis.io/)
 [![License](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
 
-A high-performance, enterprise-grade inventory management solution designed for real-time tracking, automated restock management, and comprehensive order analytics. This system is built for speed, scalability, and developer experience.
-
----
+A high-performance, enterprise-grade inventory management solution designed for real-time tracking, automated restock management, and comprehensive order analytics. This system is built for speed, scalability, and developer excellence, now powered by **PostgreSQL** and **Prisma ORM**.
 
 ---
 
@@ -58,7 +57,7 @@ A high-performance, enterprise-grade inventory management solution designed for 
 - **Inventory Management**: Comprehensive CRUD for products with multi-attribute tracking, image support, and bulk operations.
 - **Deletion Safeguards**: Intelligent business logic prevents the deletion of products that are linked to existing order history.
 - **Order Lifecycle**: End-to-end tracking from pending to delivery with automated stock adjustments and real-time status updates.
-- **AI Analytics**: Intelligent dashboard insights and "Magic Tips" using **OpenRouter** for proactive inventory management.
+- **AI Analytics**: Intelligent dashboard insights and "Magic Tips" using **OpenRouter** (LLM) for proactive inventory management.
 - **Swagger UI**: Interactive API documentation for seamless integration.
 
 ### 🎨 Modern UI/UX
@@ -76,8 +75,8 @@ A high-performance, enterprise-grade inventory management solution designed for 
 
 ### Frontend
 
-- **Framework**: Next.js 16 (App Router)
-- **State Management**: Zustand
+- **Framework**: Next.js 16.2 (App Router)
+- **State Management**: Zustand & SWR
 - **Auth**: NextAuth.js v5 (Beta)
 - **Styling**: Tailwind CSS 4, Lucide Icons, Shadcn UI
 - **Real-time**: Socket.io-client
@@ -85,14 +84,15 @@ A high-performance, enterprise-grade inventory management solution designed for 
 
 ### Backend
 
-- **Runtime**: Node.js 22 (CommonJS/TypeScript)
+- **Runtime**: Node.js 22 (TypeScript)
 - **Framework**: Express 5.2.x
-- **Database**: MongoDB 6.0 (Mongoose) with Replica Set support for transactions.
+- **ORM**: Prisma 7.8
+- **Database**: PostgreSQL 16
 - **Caching/Rate Limit**: Redis
 - **Docs**: Swagger UI (OpenAPI 3.0)
 - **Logging**: Winston, Morgan
 - **Real-time**: Socket.io
-- **AI Provider**: OpenRouter
+- **AI Provider**: OpenRouter (GPT-4o/Claude 3.5)
 - **Validation**: Zod (Shared schemas)
 
 ---
@@ -101,7 +101,7 @@ A high-performance, enterprise-grade inventory management solution designed for 
 
 ### 🏙️ High-Level Architecture (Infrastructure)
 
-Shows the Docker service orchestration, internal networking, and the relationship between the Frontend, Backend, Redis, and MongoDB Replica Set.
+Shows the Docker service orchestration, internal networking, and the relationship between the Frontend, Backend, Redis, and PostgreSQL.
 
 ```mermaid
 graph TD
@@ -124,7 +124,7 @@ graph TD
 
         subgraph Storage_Layer [Persistence & Caching]
             Redis[(Redis Cache & Rate Limit)]
-            MongoDB[(MongoDB Replica Set)]
+            PostgreSQL[(PostgreSQL - Prisma)]
         end
     end
 
@@ -138,19 +138,19 @@ graph TD
 
     Frontend -->|Internal API Requests| Backend
     Backend -->|Refresh Tokens| Redis
-    Backend -->|ACID Transactions| MongoDB
+    Backend -->|Type-Safe Queries| PostgreSQL
 
     %% Styling
     style Frontend fill:#111,stroke:#333,stroke-width:2px,color:#fff
     style Backend fill:#111,stroke:#333,stroke-width:2px,color:#fff
     style Redis fill:#221,stroke:#d32,stroke-width:2px,color:#fff
-    style MongoDB fill:#121,stroke:#4a4,stroke-width:2px,color:#fff
+    style PostgreSQL fill:#113,stroke:#369,stroke-width:2px,color:#fff
     style SocketIO fill:#333,stroke:#666,color:#fff
 ```
 
 ### 🗄️ Entity Relationship Diagram (ERD)
 
-The database schema is designed for high data integrity and efficient auditing. It features a normalized structure for products and categories with a robust link to activity logs for real-time auditing.
+The database schema is migrated to PostgreSQL using Prisma for high data integrity and efficient auditing.
 
 ```mermaid
 erDiagram
@@ -158,34 +158,61 @@ erDiagram
     User ||--o{ Session : "has active"
     User ||--o{ Product : "creates"
     User ||--o{ ActivityLog : "performs"
-    User ||--o{ Order : "places"
+    User ||--o{ Category : "manages"
 
     Category ||--o{ Product : "categorizes"
     Product ||--o{ OrderItem : "included in"
     Order ||--|{ OrderItem : "contains"
 
     User {
-        string email
+        string id PK
+        string email UK
         string password_hash
-        string role
+        enum role
         date createdAt
     }
 
     Invitation {
-        string email
-        string token
-        string role
+        string id PK
+        string email UK
+        string token UK
+        enum role
         date expiresAt
         boolean used
-        objectId invitedBy
+        string userId FK
     }
 
-    Session {
-        objectId userId
-        string refreshToken
-        date expiresAt
-        string userAgent
-        string ipAddress
+    Product {
+        string id PK
+        string product_id UK
+        string name
+        float price
+        int stock_quantity
+        int min_threshold
+        enum status
+        boolean is_restock_required
+        string category_id FK
+        string created_by FK
+    }
+
+    Order {
+        string id PK
+        string order_id UK
+        string customer_name
+        float total_price
+        enum status
+        date createdAt
+    }
+
+    ActivityLog {
+        string id PK
+        string action_text
+        enum type
+        string resource
+        string resource_id
+        json details
+        string user_id FK
+        date timestamp
     }
 ```
 
@@ -296,9 +323,9 @@ pnpm run test:coverage # Generate coverage report
 
 ### 📋 Prerequisites
 
-- **Node.js**: v18+
-- **pnpm**: v9+ (Highly recommended)
-- **Docker**: For running MongoDB/Redis easily
+- **Node.js**: v20+
+- **pnpm**: v9+
+- **Docker**: For running PostgreSQL/Redis easily
 
 ### 1. Repository Setup
 
@@ -314,18 +341,20 @@ Initialize your environment variables from the templates:
 
 ```bash
 # Backend
-cp backend/.env.example backend/.env.local
+cp backend/.env.example backend/.env
 
 # Frontend
 cp frontend/.env.example frontend/.env.local
 ```
 
-### 3. Database Seeding
+### 3. Database Migration & Seeding
 
-Populate your database with high-quality sample data:
+Setup your PostgreSQL database and populate it with sample data:
 
 ```bash
 cd backend
+npx prisma generate
+npx prisma migrate dev --name init
 pnpm run seed
 ```
 
@@ -349,10 +378,10 @@ The project leverages a multi-container Docker architecture to ensure environmen
 
 ### 📦 Services Orchestration
 
-- **`frontend`**: Next.js 15 app running in a Node environment.
-- **`backend`**: Express API server with hot-reloading enabled via volume mapping.
-- **`mongodb`**: Primary persistent database with volume storage.
-- **`redis`**: High-performance key-value store for session caching and rate limiting.
+- **`frontend`**: Next.js 16 app.
+- **`backend`**: Express API server.
+- **`postgres`**: Primary relational database.
+- **`redis`**: Cache and rate limiting.
 
 ### 🚀 Deployment Commands
 
@@ -362,17 +391,11 @@ From the root directory, spin up the entire ecosystem:
 docker compose up --build
 ```
 
-### 🛡️ Technical Details
-
-- **Networking**: All services communicate over an internal virtual network, isolating them from unauthorized external access.
-- **Persistence**: Database state is kept across container restarts using the `mongodb_data` named volume.
-- **Performance**: Multi-stage builds are used in the `Dockerfile`s to minimize image sizes for production.
-
 ---
 
 ## 🚀 Deployment & Infrastructure
 
-For a detailed guide on moving this project to production, covering **MongoDB Replica Sets**, **Redis Scaling**, and **CI/CD Pipelines**, please refer to our:
+For a detailed guide on moving this project to production, covering **PostgreSQL Scaling**, **Redis Optimization**, and **CI/CD Pipelines**, please refer to our:
 
 👉 **[Technical Architecture Deep-Dive](./docs/ARCHITECTURE_GUIDE.md)**
 👉 **[Deployment & Infrastructure Guide](./docs/DEPLOYMENT.md)**
