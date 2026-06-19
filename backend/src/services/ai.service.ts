@@ -118,7 +118,12 @@ const handleAIError = (error: unknown): never => {
   if (typeof error === 'object' && error !== null && 'status' in error) {
     const status = (error as { status: number }).status;
     const message = AI_ERRORS[status];
-    if (message) throw new AppError(message, status);
+    if (message) {
+      // Prevent propagating upstream 401/403 errors directly to the frontend,
+      // as the frontend will mistake it for a user session expiration and log them out.
+      // 502 Bad Gateway correctly indicates an upstream dependency failed.
+      throw new AppError(message, 502);
+    }
   }
 
   throw new AppError('Failed to generate AI insights. Please try again later.', 500);
