@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "files": [
     "dist",
-    "prisma"
+    "prisma",
+    "prisma.config.ts"
   ],
   "scripts": {
     "test": "jest",
