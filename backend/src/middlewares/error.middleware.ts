@@ -97,8 +97,8 @@ export const globalErrorHandler = (
     if (error.code === 11000 || error.code === '11000') error = handleDuplicateFieldsDB(error);
     if (error.name === 'ValidationError') error = handleValidationErrorDB(error);
     if (error.name === 'VersionError') error = handleVersionErrorDB();
-    if (error.name === 'ZodError' || error instanceof ZodError)
-      error = handleZodError(error as unknown as ZodError);
+    if (error.name === 'ZodError' || err instanceof ZodError)
+      error = handleZodError(err as unknown as ZodError);
     sendErrorProd(error, res);
   }
 };

@@ -14,7 +14,7 @@ export const trackClientEvents = catchAsync(async (req: Request, res: Response) 
     // Map events to Prisma schema
     const data = events.map((e: ClientEventInput) => ({
       event: e.eventName || 'unknown',
-      timestamp: e.createdAt || new Date(),
+      timestamp: e.createdAt ? new Date(e.createdAt) : new Date(),
     }));
 
     await prisma.clientEvent.createMany({
