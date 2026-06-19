@@ -7,10 +7,12 @@ export default auth((req) => {
 
   const isAuthRoute =
     pathname.startsWith("/login") || pathname.startsWith("/signup");
+  const isLandingRoute = pathname === "/";
   const isPublicRoute =
     pathname.startsWith("/api") ||
     pathname.startsWith("/_next") ||
-    pathname === "/favicon.ico";
+    pathname.match(/\.(png|jpg|jpeg|gif|svg|ico)$/i) ||
+    isLandingRoute;
 
   const sessionError = req.auth?.error;
   const isTokenExpired = sessionError === "RefreshAccessTokenError";
@@ -20,8 +22,8 @@ export default auth((req) => {
     `[Proxy] Path: ${pathname}, LoggedIn: ${isLoggedIn}, Error: ${sessionError}`,
   );
 
-  // 1. Authenticated user on an auth route OR root -> redirect to dashboard
-  if (isAuthenticated && (isAuthRoute || pathname === "/")) {
+  // 1. Authenticated user on an auth route -> redirect to dashboard
+  if (isAuthenticated && isAuthRoute) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
