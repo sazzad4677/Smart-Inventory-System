@@ -2,6 +2,8 @@ import OpenAI from 'openai';
 import { config } from '../config/config';
 import { logger } from '../utils/logger';
 
+import { AppError } from '../utils/AppError';
+
 export interface OrderTrend {
   date: string | undefined;
   count: number;
@@ -116,10 +118,10 @@ const handleAIError = (error: unknown): never => {
   if (typeof error === 'object' && error !== null && 'status' in error) {
     const status = (error as { status: number }).status;
     const message = AI_ERRORS[status];
-    if (message) throw new Error(message);
+    if (message) throw new AppError(message, status);
   }
 
-  throw new Error('Failed to generate AI insights. Please try again later.');
+  throw new AppError('Failed to generate AI insights. Please try again later.', 500);
 };
 
 /**
@@ -129,7 +131,7 @@ export const generateDashboardInsights = async (
   stats: DashboardInsightsParams,
 ): Promise<string> => {
   if (!stats) {
-    throw new Error('Dashboard stats are required to generate insights.');
+    throw new AppError('Dashboard stats are required to generate insights.', 400);
   }
 
   try {
@@ -149,7 +151,7 @@ export const generateDashboardInsights = async (
     const text = response.choices[0]?.message?.content ?? '';
 
     if (!text.trim()) {
-      throw new Error('AI returned an empty response. Please try again.');
+      throw new AppError('AI returned an empty response. Please try again.', 500);
     }
 
     return text.trim();
