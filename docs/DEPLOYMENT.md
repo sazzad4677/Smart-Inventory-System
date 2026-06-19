@@ -4,27 +4,28 @@ This guide provides technical details on the architecture, scaling strategies, a
 
 ---
 
-## 🏗️ 1. MongoDB Replica Sets & Transactions
+## 🏗️ 1. PostgreSQL Transactions
 
-Our system relies on **Mongoose Transactions** (e.g., during order creation where we must update stock and create activity logs simultaneously). MongoDB requires a **Replica Set** to enable these ACID transactions.
+Our system relies on **Prisma Transactions** (e.g., during order creation where we must update stock and create activity logs simultaneously). PostgreSQL natively supports these ACID transactions.
 
 ### 💻 Development Setup
 
-In local development, we use a single-node replica set automatically initiated via `docker-compose.yml`:
+In local development, we use a PostgreSQL container automatically initiated via `docker-compose.yml`:
 
 ```yaml
 # docker-compose.yml snippet
-command: mongod --replSet rs0 --bind_ip_all
-# ... followed by rs.initiate() in a healthcheck
+image: postgres:15-alpine
+environment:
+  POSTGRES_DB: smart_inventory
 ```
 
 ### ☁️ Production Recommendation
 
-For production, **do not** use a single-node replica set.
+For production, use a managed database service.
 
-- **Recommended**: [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) (Managed Service).
-- **Self-hosting**: Ensure at least 3 nodes (Primary, Secondary, Secondary) are configured for high availability.
-- **Connection String**: Ensure your `MONGODB_URI` includes `replicaSet=rs0` (or your specific set name).
+- **Recommended**: [Neon](https://neon.tech/) or [Supabase](https://supabase.com/) (Managed Service).
+- **Self-hosting**: Ensure you configure high availability and regular backups.
+- **Connection String**: Ensure your `DATABASE_URL` is set to the correct PostgreSQL connection string.
 
 ---
 
@@ -76,7 +77,7 @@ Before a live launch, ensure the following are configured:
 - [ ] **CORS Policy**: Restrict `CORS_ORIGIN` to your specific production domain.
 - [ ] **Rate Limiting**: Adjust `MAX_REQUESTS` based on expected traffic.
 - [ ] **Monitoring**: Set up **Winston Daily Rotate File** or a cloud logging service (e.g., Loggly / Datadog).
-- [ ] **Database Backups**: Enable automated daily backups for MongoDB.
+- [ ] **Database Backups**: Enable automated daily backups for PostgreSQL.
 
 ---
 

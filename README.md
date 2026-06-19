@@ -341,7 +341,7 @@ Initialize your environment variables from the templates:
 
 ```bash
 # Backend
-cp backend/.env.example backend/.env
+cp backend/.env.example backend/.env.local
 
 # Frontend
 cp frontend/.env.example frontend/.env.local

@@ -10,7 +10,7 @@ The codebase follows a strictly decoupled **Service-Controller** architecture. T
 
 - **Controllers**: Handle request validation, parameter parsing, and sending unified responses.
 - **Services**: Contain the core business logic, database transactions, and integrations with external services (AI, Socket.io).
-- **Builders**: A custom `QueryBuilder` class handles complex MongoDB filtering, sorting, and pagination across all modules.
+- **Builders**: A custom approach using Prisma handles complex filtering, sorting, and pagination across all modules.
 
 ---
 
@@ -44,13 +44,13 @@ Consistency is critical in inventory management. When a staff member processes a
 
 ## 💾 4. Transaction & Data Integrity
 
-We utilize **Mongoose Transactions** to ensure ACID compliance during complex operations.
+We utilize **Prisma Transactions** to ensure ACID compliance during complex operations.
 
 ### 🏦 The Order Lifecycle
 
 During order creation ([`order.service.ts`](../backend/src/services/order.service.ts)):
 
-1. **Start Transaction**: A MongoDB session is initiated.
+1. **Start Transaction**: A Prisma transaction is initiated.
 2. **Atomic Updates**:
    - Stock for each product is deducted.
    - Restock flags are set if thresholds are hit.
@@ -60,7 +60,7 @@ During order creation ([`order.service.ts`](../backend/src/services/order.servic
 3. **Commit/Abort**: If any step fails (e.g., a product goes out of stock mid-transaction), the entire operation rolls back.
 
 > [!NOTE]
-> This requires a **MongoDB Replica Set** to be enabled, even in single-node dev environments.
+> This utilizes PostgreSQL's native transaction handling to ensure atomicity.
 
 ---
 
@@ -111,7 +111,7 @@ src/
 ├── config/       # Environment & Connection logic
 ├── controllers/  # HTTP Handlers
 ├── middlewares/  # Security, Logging, Rate Limiting
-├── models/       # Mongoose Schemas (Translatable to SQL)
+├── prisma/       # Prisma Schema and Migrations
 ├── routes/       # API Endpoint Definitions
 ├── services/     # THE BRAIN: Dedicated Business Logic
 └── utils/        # Shared Helper Functions
